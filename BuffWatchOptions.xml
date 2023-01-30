@@ -1,0 +1,143 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+    <Script file="BuffWatchOptions.lua"/>
+    
+    <Frame name="BuffWatchOptionsFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
+        <Size>
+            <AbsDimension x="350" y="200"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+            <BackgroundInsets>
+                <AbsInset left="11" right="12" top="12" bottom="11"/>
+            </BackgroundInsets>
+            <TileSize>
+                <AbsValue val="32"/>
+            </TileSize>
+            <EdgeSize>
+                <AbsValue val="32"/>
+            </EdgeSize>
+        </Backdrop>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture name="BuffWatchOptionsFrameHeader" file="Interface\DialogFrame\UI-DialogBox-Header">
+                    <Size>
+                        <AbsDimension x="300" y="64"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset>
+                                <AbsDimension x="0" y="12"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+                <FontString inherits="GameFontNormal" text="BuffWatch Options">
+                    <Anchors>
+                        <Anchor point="TOP" relativeTo="BuffWatchOptionsFrameHeader">
+                            <Offset>
+                                <AbsDimension x="0" y="-14"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <CheckButton name="BuffWatchShowOnStartup" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="40" y="-40"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show on startup");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.show_on_startup = true
+                        else
+                            BuffWatchConfig.show_on_startup = false
+                        end
+                    </OnClick>
+                </Scripts>
+            </CheckButton>        
+            <CheckButton name="BuffWatchShowPets" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="40" y="-80"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Pets");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ShowPets = true
+                        else
+                            BuffWatchConfig.ShowPets = false
+                        end
+                        BW_Set_UNIT_IDs(true)
+			BW_GetAllBuffs()
+			BW_UpdateBuffStatus()
+			BW_ResizeWindow()
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+            <Slider name="BuffWatchAlpha" inherits="OptionsSliderTemplate">
+                <Size>
+                    <AbsDimension x="220" y="16"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOP">
+                        <Offset>
+                            <AbsDimension x="0" y="-120" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Transparency")
+                        getglobal(this:GetName().."High"):SetText()
+                        getglobal(this:GetName().."Low"):SetText()
+                        BuffWatchAlpha:SetMinMaxValues(0.0,1.0)
+                        BuffWatchAlpha:SetValueStep(0.01)
+                    </OnLoad>
+                    <OnValueChanged>
+                        BuffWatchConfig.alpha = BuffWatchAlpha:GetValue()
+                        BuffWatchBackdropFrame:SetAlpha( BuffWatchConfig.alpha )
+                    </OnValueChanged>
+                </Scripts>
+            </Slider>            
+            <Button name="BuffWatchOptionsFrameOkay" inherits="OptionsButtonTemplate" text="Okay">
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="-12" y="16"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        PlaySound("gsTitleOptionOK")
+                        HideUIPanel(BuffWatchOptionsFrame)
+                    </OnClick>
+                </Scripts>
+            </Button>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                BuffWatchOptionsFrame_OnLoad()
+            </OnLoad>
+        </Scripts>
+    </Frame>
+</Ui>
