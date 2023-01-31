@@ -14,6 +14,17 @@ made on the Curse Gaming site.
 Version History
 ---------------
 
+0.610
+-----
+
+Group checkbox for all
+Fixed playerframes left behind if you drop from raid down to party
+Toggle button added to options panel
+Help page will show even when BuffWatch is hidden
+Changed hiding and showing of pets to a toggle
+Option to hide debuffs
+
+
 0.600
 -----
 

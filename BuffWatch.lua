@@ -7,18 +7,17 @@
 -- //
 -- // TODO:
 -- //     Left align buffs
--- //     Show debuffs while locked (done)
--- //     Option to hide debuffs
 -- //     Option to only show debuffs i can cleanse
 -- //     Allow cleansing of debuffs
--- //     Group checkbox for all
 -- //     Lower spell rank support
 -- //     Option to only add castable buffs (key combination to override this for a player?)
--- //     Option to show/hide pets (done)
+-- //     Show poisons and weapon buffs for player
+-- //
 -- //
 -- // BUGS:
--- //     PlayerFrames left behind if you drop from raid down to party, seems to be similar 
--- //         as whats happening with the hide pets option. (fixed)
+-- //     Client seems to lag for ~15 secs when a pet is initially called,
+-- //       not sure yet whether this is down to buffwatch, or why.
+-- //     
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -26,7 +25,8 @@
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 
-BuffWatchConfig = { runCount, alpha, rightMouseSpell, show_on_startup, ShowPets }
+BuffWatchConfig = { runCount, alpha, rightMouseSpell, show_on_startup, 
+    ShowPets, ShowDebuffs }
 
 local UNIT_IDs = { }
 local lastspellcast
@@ -73,7 +73,7 @@ function BW_OnEvent()
             BuffWatchDetails = {
                 name = "BuffWatch",
                 description = "Keeps track of party/raid buffs",
-                version = "0.600",
+                version = "0.610",
                 releaseDate = "July 27, 2005",
                 author = "Tyrrael & Pup",
                 category = MYADDONS_CATEGORY_OTHERS,
@@ -81,7 +81,7 @@ function BW_OnEvent()
                 optionsframe = "BuffWatchOptionsFrame"
             }
 
-        BuffWatchHelp = { "              - BuffWatch Usage -\n\n" ..
+        BuffWatchHelp = { "              - BuffWatch Usage - v 0.610 -\n\n" ..
             "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
             "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
             "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
@@ -91,9 +91,12 @@ function BW_OnEvent()
             "  Right click spell:\n" ..
             "    - Cast any spell with a cast time (not instant).\n        Then type \"/bw set\"\n    - To cast it, right click any icon (will auto-target)\n\n" ..
             "  Deleting buffs:\n    - Lock the player's buffs (check the box).\n        Then [ CTRL + Right Click ] on the buff\n\n",
-            "  Slash Commands ( Use /buffwatch or /bw )\n    - /bw alpha # : Set the background opacity (0.0 to 1.0)\n" ..
-            "    - /bw toggle : shows/hides the window\n    - /bw [showonstartup / hideonstartup] : set to show or hide the window on startup\n" ..
-            "    - /bw [showpets / hidepets] : set to show or hide pets in the buffwatch window\n" ..
+            "  Slash Commands ( Use /buffwatch or /bw )\n" ..
+            "    - /bw alpha # : Set the background opacity (0.0 to 1.0)\n" ..
+            "    - /bw toggle : shows/hides the window\n" ..
+            "    - /bw [showonstartup / hideonstartup] : set to show or hide the window on startup\n" ..
+            "    - /bw pets : toggle to show or hide pets in the buffwatch window\n" ..
+            "    - /bw debuffs : toggle to show or hide debuffs in the buffwatch window\n" ..
             "    - /bw options : shows/hides the options window\n" ..
             "    - /bw : shows this help menu :)\n\n  << NEW >>\n  Verbosity:\n" ..
             "    - Hold [ Shift ] while left or right-clicking a buff icon to send a cast message to your party\n"
@@ -185,6 +188,10 @@ function BW_OnEvent()
         
         if BuffWatchConfig.ShowPets == nil then
             BuffWatchConfig.ShowPets = true
+        end
+        
+        if BuffWatchConfig.ShowDebuffs == nil then
+            BuffWatchConfig.ShowDebuffs = true
         end
         
         BuffWatchOptions_Init()
@@ -342,7 +349,7 @@ end
 function BW_GetAllBuffs()
 
     local firstvisibleplayer = true
-    local previousvisibleplayerww
+    local previousvisibleplayer
 
     for i=1,table.getn(UNIT_IDs) do
 
@@ -352,7 +359,6 @@ function BW_GetAllBuffs()
 
         local unitname = UnitName(UNIT_IDs[i])
 
---      BW_Print(i .. " : " .. UNIT_IDs[i] .. " : " .. UnitName(UNIT_IDs[i]))
         if unitname == nil then
 
             curr_playerframe:Hide()
@@ -464,13 +470,17 @@ function BW_Player_GetBuffs(i)
     
     else
     
-        for j=1,16 do
-            
-            if getglobal("BW_Player" .. i .. "_Buff" .. j):IsVisible() then
-                firstvisiblebutton = false
-                previousvisiblebutton = j
+        if BuffWatchConfig.ShowDebuffs == true then
+
+            for j=1,16 do
+
+                if getglobal("BW_Player" .. i .. "_Buff" .. j):IsVisible() then
+                    firstvisiblebutton = false
+                    previousvisiblebutton = j
+                end
+
             end
-        
+
         end
     
     end
@@ -487,7 +497,7 @@ function BW_Player_GetBuffs(i)
         local curr_buff_icon = getglobal("BW_Player" .. i .. "_Debuff" .. j .. "Icon")
         local curr_buff_iconpath = getglobal("BW_Player" .. i .. "_Debuff" .. j .. "TexturePath")
 
-        if texture == nil then
+        if texture == nil or BuffWatchConfig.ShowDebuffs == false then
 
             curr_buff:Hide()
             curr_buff_icon:Hide()
@@ -503,7 +513,7 @@ function BW_Player_GetBuffs(i)
             curr_buff_iconpath:Hide()
 
             if firstvisiblebutton then
-                
+
                 curr_lock:ClearAllPoints()
                 curr_lock:SetPoint("TOPRIGHT","BW_Player" .. i .. "_Name","TOPLEFT",1,-2)
                 curr_buff:ClearAllPoints()
@@ -527,9 +537,9 @@ function BW_Player_GetBuffs(i)
                 previousvisibledebuff = j
 
             end
-            
+
         end
-        
+
     end
     
 end
@@ -608,6 +618,7 @@ function BW_ResizeWindow()
 
     if rightcoord then
         width = rightcoord - BuffWatchBackdropFrame:GetLeft()
+        if width < 90 then width = 90 end
     end
     if bottomcoord and bottomcoord ~= 0 then
         height = BuffWatchBackdropFrame:GetTop() - bottomcoord
@@ -631,10 +642,23 @@ function BW_ResizeWindow()
 
 end
 
+function BW_Set_AllChecks(checked)
+    
+    for i=1,table.getn(UNIT_IDs) do
+    
+        local curr_lock = getglobal("BW_Player" .. i .. "_Lock")
+        
+        if curr_lock:IsVisible() then
+            curr_lock:SetChecked(checked)
+        end
+    
+    end
+
+end
 
 function BW_TimeControl(Time_Interval, Time_Precision)
 
-    local blah = math.mod( GetTime(),Time_Interval )
+    local blah = math.mod(GetTime(), Time_Interval)
 
     if blah <= Time_Precision then
         return true
@@ -664,6 +688,7 @@ function BW_MouseIsOverFrame()
 
         BuffWatchFrameHeader:Show()
         BuffWatchFrameHeaderText:Show()
+        BW_AllPlayer_Lock:Show()
 
         for i=1,table.getn(UNIT_IDs) do
             if getglobal("BW_Player" .. i .. "_Name"):IsVisible() then
@@ -675,6 +700,7 @@ function BW_MouseIsOverFrame()
 
         BuffWatchFrameHeader:Hide()
         BuffWatchFrameHeaderText:Hide()
+        BW_AllPlayer_Lock:Hide()
 
         for i=1,table.getn(UNIT_IDs) do
             getglobal("BW_Player" .. i .. "_Lock"):Hide()
@@ -710,6 +736,7 @@ function BW_SlashHandler(msg)
         BuffWatchConfig.alpha = param
         BuffWatchBackdropFrame:SetAlpha(BuffWatchConfig.alpha)
         BW_Print("BuffWatch window opacity set to: " .. BuffWatchConfig.alpha)
+        BuffWatchOptions_Init()
 
     elseif msg == "toggle" then
 
@@ -723,27 +750,41 @@ function BW_SlashHandler(msg)
 
         BuffWatchConfig.show_on_startup = true
         BW_Print("BuffWatch window will now be shown on startup.", 0.2, 0.9, 0.9 )
+        BuffWatchOptions_Init()
 
     elseif msg == "hideonstartup" then
 
         BuffWatchConfig.show_on_startup = false
         BW_Print("BuffWatch window will now be hidden on startup.", 0.2, 0.9, 0.9 )
+        BuffWatchOptions_Init()
         
-    elseif msg == "showpets" then
+    elseif msg == "pets" then
     
-        BuffWatchConfig.ShowPets = true
+        if BuffWatchConfig.ShowPets == false then    
+            BuffWatchConfig.ShowPets = true
+            BW_Print("BuffWatch will now show pets.", 0.2, 0.9, 0.9 )
+        else    
+            BuffWatchConfig.ShowPets = false
+            BW_Print("BuffWatch will now hide pets.", 0.2, 0.9, 0.9 )
+        end
+        
         BW_Set_UNIT_IDs(true)
         BW_GetAllBuffs()
         BW_UpdateBuffStatus()
         BW_ResizeWindow()
+        BuffWatchOptions_Init()
         
-    elseif msg == "hidepets" then
+    elseif msg == "debuffs" then
     
-        BuffWatchConfig.ShowPets = false
-        BW_Set_UNIT_IDs(true)
-        BW_GetAllBuffs()
-        BW_UpdateBuffStatus()
-        BW_ResizeWindow()
+        if BuffWatchConfig.ShowDebuffs == false then    
+            BuffWatchConfig.ShowDebuffs = true
+            BW_Print("BuffWatch will now show debuffs.", 0.2, 0.9, 0.9 )
+        else    
+            BuffWatchConfig.ShowDebuffs = false
+            BW_Print("BuffWatch will now hide debuffs.", 0.2, 0.9, 0.9 )
+        end
+        
+        BuffWatchOptions_Init()
 
     elseif msg == "options" then
     
@@ -853,6 +894,35 @@ function BW_Name_Clicked(button)
         AssistByName(playername)
     end
     
+end
+
+
+function BW_Check_Clicked()
+
+    local checked = this:GetChecked()
+
+    if checked then
+
+        for i=1,table.getn(UNIT_IDs) do
+
+            local curr_lock = getglobal("BW_Player" .. i .. "_Lock")
+
+            if curr_lock:IsVisible() then            
+                if not curr_lock:GetChecked() then
+                    checked = nil
+                    break
+                end                                
+            end
+
+        end 
+        
+        if checked then
+            BW_AllPlayer_Lock:SetChecked(true)
+        end
+    
+    else
+        BW_AllPlayer_Lock:SetChecked(false)    
+    end
 end
 
 
@@ -1152,7 +1222,7 @@ function BW_ShowHelp()
     BW_HelpFrame_Text:SetText(
 
         [[
-                            - BuffWatch Usage -
+        - BuffWatch Usage - v 0.610 -
 
         Show/Hide the BuffWatch window:
              - Bind a keyboard button to show/hide the window
@@ -1180,7 +1250,8 @@ function BW_ShowHelp()
              - /bw alpha # : Set the background opacity (0.0 to 1.0)
              - /bw toggle : shows/hides the window
              - /bw [showonstartup / hideonstartup] : set to show or hide the window on startup
-             - /bw [showpets / hidepets] : set to show or hide pets in the buffwatch window
+             - /bw pets : toggle to show or hide pets in the buffwatch window
+             - /bw debuffs : toggle to show or hide debuffs in the buffwatch window
              - /bw options : shows/hides the options window
              - /bw : shows this help menu :)
 

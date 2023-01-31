@@ -5,7 +5,7 @@
     
     <Frame name="BuffWatchOptionsFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
         <Size>
-            <AbsDimension x="350" y="200"/>
+            <AbsDimension x="350" y="240"/>
         </Size>
         <Anchors>
             <Anchor point="CENTER"/>
@@ -47,6 +47,27 @@
             </Layer>
         </Layers>
         <Frames>
+            <Button name="BuffWatchToggle" inherits="OptionsButtonTemplate" text="Toggle">
+                <Size>
+                    <AbsDimension x="60" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="275" y="-20"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        if BuffWatchFrame:IsVisible() then
+                            BuffWatchFrame:Hide()
+                        else
+                            BuffWatchFrame:Show()
+                        end
+                    </OnClick>
+                </Scripts>
+            </Button>
             <CheckButton name="BuffWatchShowOnStartup" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
@@ -87,12 +108,37 @@
                             BuffWatchConfig.ShowPets = false
                         end
                         BW_Set_UNIT_IDs(true)
-			BW_GetAllBuffs()
-			BW_UpdateBuffStatus()
-			BW_ResizeWindow()
+            		BW_GetAllBuffs()
+		      	BW_UpdateBuffStatus()
+            		BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
             </CheckButton>
+            <CheckButton name="BuffWatchShowDebuffs" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="40" y="-120"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Debuffs");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ShowDebuffs = true
+                        else
+                            BuffWatchConfig.ShowDebuffs = false
+                        end
+                        BW_Set_UNIT_IDs(true)
+            		BW_GetAllBuffs()
+		      	BW_UpdateBuffStatus()
+            		BW_ResizeWindow()
+                    </OnClick>
+                </Scripts>
+            </CheckButton>            
             <Slider name="BuffWatchAlpha" inherits="OptionsSliderTemplate">
                 <Size>
                     <AbsDimension x="220" y="16"/>
@@ -100,7 +146,7 @@
                 <Anchors>
                     <Anchor point="TOP">
                         <Offset>
-                            <AbsDimension x="0" y="-120" />
+                            <AbsDimension x="0" y="-160" />
                         </Offset>
                     </Anchor>
                 </Anchors>
