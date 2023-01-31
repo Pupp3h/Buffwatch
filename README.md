@@ -4,7 +4,7 @@ Buffwatch is a buff monitoring tool for all classes which lets you easily and cl
 You choose which buffs you want to monitor and Buffwatch lets you know when they have run out, with clickable buttons to recast them. 
 
 
-There is also a version for Classic here : Buffwatch Classic
+There is also a version for Classic here : [Buffwatch Classic](https://github.com/Pupp3h/Buffwatch-Classic)
 
 
 ###### Buffwatch can be used to :
