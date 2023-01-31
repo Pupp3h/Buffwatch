@@ -6,17 +6,24 @@
 -- //     fixes and new features by Pup
 -- //
 -- // TODO:
--- //     Left align buffs
--- //     Option to only show debuffs i can cleanse
+-- //     Keybinding to scan list and recast any expired buffs (probably need to tie in with below)
+-- //     Option to only add castable buffs (key combination to override this for a player?)
+-- //     Option to only show debuffs I can cleanse
 -- //     Allow cleansing of debuffs
 -- //     Lower spell rank support
--- //     Option to only add castable buffs (key combination to override this for a player?)
 -- //     Show poisons and weapon buffs for player
 -- //
+-- // CHANGES:
+-- //     Added BuffWatch Options Toggle to keybindings
+-- //     Changed checking code for mouse over frame
+-- //     Options toggle button added next to buffwatch label
+-- //     Option to left align buffs
+-- //     Removed variable RMouseSpellID
+-- //     Removed event PLAYER_REGEN_ENABLED
+-- //     Changed UNIT_AURA event code
+-- //     Can now click anywhere on player name to select them (used to be first 18 pixels)
+-- //     Fixed window resize error when first loaded
 -- //
--- // BUGS:
--- //     Client seems to lag for ~15 secs when a pet is initially called,
--- //       not sure yet whether this is down to buffwatch, or why.
 -- //     
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -25,13 +32,15 @@
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 
+BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
+
 BuffWatchConfig = { runCount, alpha, rightMouseSpell, show_on_startup, 
-    ShowPets, ShowDebuffs }
+    ShowPets, ShowDebuffs, AlignBuffs }
 
 local UNIT_IDs = { }
 local lastspellcast
-local RMouseSpellID
 local lastgrouptype
+local buttonalignposition
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -45,15 +54,12 @@ function BW_OnLoad()
 
     this:RegisterEvent("PARTY_MEMBERS_CHANGED")
     this:RegisterEvent("PLAYER_ENTERING_WORLD")
-    this:RegisterEvent("PLAYER_REGEN_ENABLED")
     this:RegisterEvent("RAID_ROSTER_UPDATE")
     this:RegisterEvent("SPELLCAST_START")
-    this:RegisterEvent("SPELLCAST_STOP")
     this:RegisterEvent("UNIT_AURA")
-    this:RegisterEvent("UNIT_NAME_UPDATE")
     this:RegisterEvent("UNIT_PET")
     this:RegisterEvent("VARIABLES_LOADED")
-    this:RegisterEvent("UI_ERROR_MESSAGE")
+--    this:RegisterEvent("UI_ERROR_MESSAGE")
 
     SlashCmdList["BUFFWATCH"] = BW_SlashHandler
     SLASH_BUFFWATCH1 = "/buffwatch"
@@ -73,15 +79,15 @@ function BW_OnEvent()
             BuffWatchDetails = {
                 name = "BuffWatch",
                 description = "Keeps track of party/raid buffs",
-                version = "0.610",
-                releaseDate = "July 27, 2005",
+                version = "0.620",
+                releaseDate = "August 30, 2005",
                 author = "Tyrrael & Pup",
                 category = MYADDONS_CATEGORY_OTHERS,
                 frame = "BuffWatchFrame",
                 optionsframe = "BuffWatchOptionsFrame"
             }
 
-        BuffWatchHelp = { "              - BuffWatch Usage - v 0.610 -\n\n" ..
+        BuffWatchHelp = { "              - BuffWatch Usage - v 0.620 -\n\n" ..
             "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
             "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
             "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
@@ -97,8 +103,10 @@ function BW_OnEvent()
             "    - /bw [showonstartup / hideonstartup] : set to show or hide the window on startup\n" ..
             "    - /bw pets : toggle to show or hide pets in the buffwatch window\n" ..
             "    - /bw debuffs : toggle to show or hide debuffs in the buffwatch window\n" ..
+            "    - /bw alignbuffs : toggle aligning of buff icons\n" ..
             "    - /bw options : shows/hides the options window\n" ..
-            "    - /bw : shows this help menu :)\n\n  << NEW >>\n  Verbosity:\n" ..
+            "    - /bw : shows this help menu :)\n\n" ..
+            "  Verbosity:\n" ..
             "    - Hold [ Shift ] while left or right-clicking a buff icon to send a cast message to your party\n"
         }
 
@@ -108,15 +116,14 @@ function BW_OnEvent()
         ---------------------
         -- support for Cosmos
         ---------------------
-        -- **** See if comma delimited does the same as colons here, and change icons
         if(EarthFeature_AddButton) then
             EarthFeature_AddButton({
-                id = "BuffWatch",
-                name = "BuffWatch",
-                subtext = "Buff monitoring",
-                tooltip = "Monitor Party or Raid buffs",
-                icon = "Interface\\Icons\\INV_Misc_Spyglass_03",
-                callback = BW_OptionsToggle,
+                id = "BuffWatch";
+                name = "BuffWatch";
+                subtext = "Buff monitoring";
+                tooltip = "Monitor Party or Raid buffs";
+                icon = "Interface\\Icons\\INV_Misc_Spyglass_03";
+                callback = BW_OptionsToggle;
                 test = nil
             })
         elseif(Cosmos_RegisterButton) then
@@ -145,7 +152,7 @@ function BW_OnEvent()
             )
         end             
         
-        BW_Print( "Tyrrael's BuffWatch loaded. Please type /buffwatch or /bw for Usage (window must be visible). Use \"/bw toggle\" to show window.", 0.2, 0.9, 0.9 )
+        BW_Print("Tyrrael's BuffWatch loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window.", 0.2, 0.9, 0.9 )
         
         getglobal("BuffWatchFrameHeaderText"):SetText("BuffWatch")
         getglobal("BuffWatchFrameHeaderText"):SetTextColor(0.2, 0.9, 0.9)
@@ -171,10 +178,6 @@ function BW_OnEvent()
 
         BuffWatchBackdropFrame:SetAlpha( BuffWatchConfig.alpha )
 
-        if BuffWatchConfig.rightMouseSpell then
-            RMouseSpellID = BuffWatchConfig.rightMouseSpell
-        end
-
         if BuffWatchConfig.show_on_startup == nil then
         
             BuffWatchConfig.show_on_startup = true
@@ -194,6 +197,10 @@ function BW_OnEvent()
             BuffWatchConfig.ShowDebuffs = true
         end
         
+        if BuffWatchConfig.AlignBuffs == nil then
+            BuffWatchConfig.AlignBuffs = true
+        end
+        
         BuffWatchOptions_Init()
         
     end
@@ -207,16 +214,6 @@ function BW_OnEvent()
             
         end
 
-        -- **** Check effects of removing this event
-        if event == "PLAYER_REGEN_ENABLED" then
-
-            BW_Set_UNIT_IDs()
-            BW_GetAllBuffs()
-            BW_UpdateBuffStatus()
-            BW_ResizeWindow()
-            
-        end
-
         if event == "SPELLCAST_START" then
             lastspellcast = arg1
         end
@@ -225,7 +222,7 @@ function BW_OnEvent()
 
             for i=1,table.getn(UNIT_IDs) do
             
-                if UnitName(arg1) == getglobal("BW_Player" .. i .. "_NameText"):GetText() then
+                if arg1 == UNIT_IDs[i] then
                     BW_Player_GetBuffs(i)
                     break
                 end
@@ -242,7 +239,9 @@ function BW_OnEvent()
             BW_ResizeWindow()
             
         end
+        
     end
+    
 end
 
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -317,7 +316,6 @@ function BW_Set_UNIT_IDs(forced)
             end
             
         else
-            local j
 
             if lastgrouptype == "raid" then
                 for i = 6, 40 do
@@ -350,12 +348,15 @@ function BW_GetAllBuffs()
 
     local firstvisibleplayer = true
     local previousvisibleplayer
+    
+    buttonalignposition = 0
 
     for i=1,table.getn(UNIT_IDs) do
 
         local curr_playerframe = getglobal("BW_Player" .. i)
         local curr_name_button = getglobal("BW_Player" .. i .. "_Name")
         local curr_name_fontstring = getglobal("BW_Player" .. i .. "_NameText")
+        local curr_lock = getglobal("BW_Player" .. i .. "_Lock")
 
         local unitname = UnitName(UNIT_IDs[i])
 
@@ -372,6 +373,15 @@ function BW_GetAllBuffs()
             curr_name_button:Show()
             curr_name_fontstring:Show()
             curr_name_fontstring:SetText(unitname)
+            curr_name_button:SetWidth(curr_name_fontstring:GetStringWidth())
+            
+            if BuffWatchConfig.AlignBuffs == true then
+
+                if buttonalignposition < curr_name_fontstring:GetStringWidth() then
+                    buttonalignposition = curr_name_fontstring:GetStringWidth()
+                end
+            
+            end
 
             local className = UnitClass(UNIT_IDs[i])
             
@@ -404,20 +414,22 @@ function BW_GetAllBuffs()
                 previousvisibleplayer = i
 
             end
-
-            BW_Player_GetBuffs(i)
+            
+            curr_lock:ClearAllPoints()
+            curr_lock:SetPoint("TOPRIGHT","BW_Player" .. i .. "_Name","TOPLEFT",1,-2)
 
         end
 
+    end
+    
+    for i=1,table.getn(UNIT_IDs) do
+        BW_Player_GetBuffs(i)
     end
 
 end
 
 
 function BW_Player_GetBuffs(i)
-
-    local firstvisiblebutton = true
-    local previousvisiblebutton
 
     local curr_lock = getglobal("BW_Player" .. i .. "_Lock")
 
@@ -447,46 +459,11 @@ function BW_Player_GetBuffs(i)
                 curr_buff_iconpath:SetText(texture)
                 curr_buff_iconpath:Hide()
 
-                if firstvisiblebutton then
-
-                    curr_lock:ClearAllPoints()
-                    curr_lock:SetPoint("TOPRIGHT","BW_Player" .. i .. "_Name","TOPLEFT",1,-2)
-                    curr_buff:ClearAllPoints()
-                    curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_NameText","TOPRIGHT",5,2)
-                    previousvisiblebutton = j
-                    firstvisiblebutton = false
-
-                else
-
-                    curr_buff:ClearAllPoints()
-                    curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_Buff" .. previousvisiblebutton,"TOPRIGHT",0,0)
-                    previousvisiblebutton = j
-
-                end
-
-            end
-
-        end
-    
-    else
-    
-        if BuffWatchConfig.ShowDebuffs == true then
-
-            for j=1,16 do
-
-                if getglobal("BW_Player" .. i .. "_Buff" .. j):IsVisible() then
-                    firstvisiblebutton = false
-                    previousvisiblebutton = j
-                end
-
             end
 
         end
     
     end
-    
-    local firstvisibledebuff = true
-    local previousvisibledebuff
 
     for j=1,8 do
 
@@ -512,42 +489,92 @@ function BW_Player_GetBuffs(i)
             curr_buff_iconpath:SetText(texture)
             curr_buff_iconpath:Hide()
 
-            if firstvisiblebutton then
-
-                curr_lock:ClearAllPoints()
-                curr_lock:SetPoint("TOPRIGHT","BW_Player" .. i .. "_Name","TOPLEFT",1,-2)
-                curr_buff:ClearAllPoints()
-                curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_NameText","TOPRIGHT",5,2)
-                previousvisiblebutton = j
-                firstvisiblebutton = false
-                previousvisibledebuff = j
-                firstvisibledebuff = false
-
-            elseif firstvisibledebuff then
-
-                curr_buff:ClearAllPoints()
-                curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_Buff" .. previousvisiblebutton,"TOPRIGHT",0,0)
-                previousvisibledebuff = j
-                firstvisibledebuff = false
-
-            else
-
-                curr_buff:ClearAllPoints()
-                curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_Debuff" .. previousvisibledebuff,"TOPRIGHT",0,0)
-                previousvisibledebuff = j
-
-            end
-
         end
 
     end
     
+    BW_Player_AdjustBuffs(i)
+    
+end
+
+
+function BW_Player_AdjustBuffs(i)
+
+    local firstvisiblebutton = true
+    local previousvisiblebutton
+
+    for j=1,16 do
+
+        local curr_buff = getglobal("BW_Player" .. i .. "_Buff" .. j)
+
+        if curr_buff:IsVisible() then
+
+            curr_buff:ClearAllPoints()
+
+            if firstvisiblebutton then
+                if buttonalignposition == 0 then
+                    curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_NameText","TOPRIGHT",5,2)
+                else
+                    curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_NameText","TOPLEFT",buttonalignposition + 5,2)
+                end                    
+                firstvisiblebutton = false
+                previousvisiblebutton = j
+            else
+                curr_buff:SetPoint("TOPLEFT","BW_Player" .. i .. "_Buff" .. previousvisiblebutton,"TOPRIGHT",0,0)
+                previousvisiblebutton = j
+            end
+            
+        end
+        
+    end
+
+    local firstvisibledebuff = true
+    local previousvisibledebuff
+
+    for j=1,8 do
+
+        local curr_debuff = getglobal("BW_Player" .. i .. "_Debuff" .. j)
+
+        if curr_debuff:IsVisible() then
+
+            curr_debuff:ClearAllPoints()
+
+            if firstvisiblebutton then
+
+                if buttonalignposition == 0 then
+                    curr_debuff:SetPoint("TOPLEFT","BW_Player" .. i .. "_NameText","TOPRIGHT",5,2)
+                else
+                    curr_debuff:SetPoint("TOPLEFT","BW_Player" .. i .. "_NameText","TOPLEFT",buttonalignposition + 5,2)
+                end
+                firstvisiblebutton = false
+                previousvisiblebutton = j
+                firstvisibledebuff = false
+                previousvisibledebuff = j
+
+            elseif firstvisibledebuff then
+
+                curr_debuff:SetPoint("TOPLEFT","BW_Player" .. i .. "_Buff" .. previousvisiblebutton,"TOPRIGHT",0,0)
+                firstvisibledebuff = false
+                previousvisibledebuff = j
+
+            else
+
+                curr_debuff:SetPoint("TOPLEFT","BW_Player" .. i .. "_Debuff" .. previousvisibledebuff,"TOPRIGHT",0,0)
+                previousvisibledebuff = j
+
+            end
+            
+        end
+        
+    end
+
 end
 
 
 function BW_UpdateBuffStatus()
 
     for i=1,table.getn(UNIT_IDs) do
+    
         local playerframe = "BW_Player" .. i
         
         if getglobal(playerframe):IsVisible() then
@@ -571,8 +598,11 @@ function BW_UpdateBuffStatus()
                     end
 
                 end
+                
             end
+            
         end
+        
     end
 
 end
@@ -616,7 +646,7 @@ function BW_ResizeWindow()
 
     end
 
-    if rightcoord then
+    if rightcoord and rightcoord ~= 0 then
         width = rightcoord - BuffWatchBackdropFrame:GetLeft()
         if width < 90 then width = 90 end
     end
@@ -668,27 +698,14 @@ function BW_TimeControl(Time_Interval, Time_Precision)
 
 end
 
-
 function BW_MouseIsOverFrame()
 
-    local Flag_MouseIsOverFrame = false
-
-    local cursor_x, cursor_y = GetCursorPosition()
-    cursor_x = cursor_x / BuffWatchFrame:GetScale();
-    cursor_y = cursor_y / BuffWatchFrame:GetScale();
-
-    if    cursor_x > BuffWatchFrame:GetLeft() and
-        cursor_x < BuffWatchFrame:GetRight() and
-        cursor_y > BuffWatchFrame:GetBottom() and
-        cursor_y < BuffWatchFrame:GetTop() then
-        Flag_MouseIsOverFrame = true
-    end
-
-    if Flag_MouseIsOverFrame then
+    if MouseIsOver(BuffWatchFrame) then
 
         BuffWatchFrameHeader:Show()
         BuffWatchFrameHeaderText:Show()
         BW_AllPlayer_Lock:Show()
+        BuffWatchOptionsButton:Show()
 
         for i=1,table.getn(UNIT_IDs) do
             if getglobal("BW_Player" .. i .. "_Name"):IsVisible() then
@@ -701,6 +718,7 @@ function BW_MouseIsOverFrame()
         BuffWatchFrameHeader:Hide()
         BuffWatchFrameHeaderText:Hide()
         BW_AllPlayer_Lock:Hide()
+        BuffWatchOptionsButton:Hide()
 
         for i=1,table.getn(UNIT_IDs) do
             getglobal("BW_Player" .. i .. "_Lock"):Hide()
@@ -785,6 +803,18 @@ function BW_SlashHandler(msg)
         end
         
         BuffWatchOptions_Init()
+        
+    elseif msg == "alignbuffs" then
+    
+        if BuffWatchConfig.AlignBuffs == false then    
+            BuffWatchConfig.AlignBuffs = true
+            BW_Print("BuffWatch will align buffs.", 0.2, 0.9, 0.9 )
+        else    
+            BuffWatchConfig.AlignBuffs = false
+            BW_Print("BuffWatch will not align buffs.", 0.2, 0.9, 0.9 )
+        end
+        
+        BuffWatchOptions_Init()
 
     elseif msg == "options" then
     
@@ -839,15 +869,14 @@ function BW_SetRightMouse()
 
         for i=1,300 do
             if GetSpellName(i,1) == lastspellcast then
-                RMouseSpellID = i
                 BuffWatchConfig.rightMouseSpell = i
 --                    break
             end
         end
 
-        if RMouseSpellID then
-            BW_Print( format(    "BuffWatch: Right mouse button set to %s (%s)",
-                                GetSpellName(RMouseSpellID,1) ), 0.2, 0.9, 0.9 )
+        if BuffWatchConfig.rightMouseSpell then
+            BW_Print( format("BuffWatch: Right mouse button set to %s (%s)",
+              GetSpellName(BuffWatchConfig.rightMouseSpell,1) ), 0.2, 0.9, 0.9 )
         end
 
     end
@@ -980,8 +1009,7 @@ function BW_Buff_Clicked(button)
 
         if not getglobal(playerframe .. "_Lock"):GetChecked() or not IsControlKeyDown() then
 
-            -- **** Why not use ButtWatch.rightMouseSpell instead of RMouseSpellID ?
-            if RMouseSpellID then
+            if BuffWatchConfig.rightMouseSpell then
                 if UnitName("target") and not UnitIsEnemy("target","player") then
                     if UnitName("target") ~= playername then
                         TargetByName(playername)
@@ -989,10 +1017,10 @@ function BW_Buff_Clicked(button)
                 end
 
                 if IsShiftKeyDown() then
-                    SendChatMessage(format("BW: Casting %s on %s", GetSpellName(RMouseSpellID,1), playername), "PARTY")
+                    SendChatMessage(format("BW: Casting %s on %s", GetSpellName(BuffWatchConfig.rightMouseSpell,1), playername), "PARTY")
                 end
 
-                CastSpell(RMouseSpellID,1)
+                CastSpell(BuffWatchConfig.rightMouseSpell,1)
 
                 if SpellIsTargeting() then
                     TargetByName(playername)
@@ -1000,71 +1028,15 @@ function BW_Buff_Clicked(button)
 
             else
 
-                BW_Print(    "     BuffWatch: Right mouse button spell has not yet been set.")
-                BW_Print(    "                Cast any spell with a duration. Then type \"/bw set\"")
+                BW_Print("     BuffWatch: Right mouse button spell has not yet been set.")
+                BW_Print("                Cast any spell with a duration. Then type \"/bw set\"")
 
             end
 
         elseif getglobal(playerframe .. "_Lock"):GetChecked() and IsControlKeyDown() then
 
             this:Hide()
-
-            local firstvisiblebutton = true
-            local previousvisiblebutton
-
-            for i=1,16 do
-
-                local curr_buff = getglobal(playerframe .. "_Buff" .. i)
-
-                if curr_buff:IsVisible() then
-
-                    curr_buff:ClearAllPoints()
-
-                    if firstvisiblebutton then
-                        curr_buff:SetPoint("TOPLEFT",playerframe .. "_NameText","TOPRIGHT",5,2)
-                        firstvisiblebutton = false
-                        previousvisiblebutton = i
-                    else
-                        curr_buff:SetPoint("TOPLEFT",playerframe .. "_Buff" .. previousvisiblebutton,"TOPRIGHT",0,0)
-                        previousvisiblebutton = i
-                    end
-                end
-            end
-
-            local firstvisibledebuff = true
-            local previousvisibledebuff
-
-            for i=1,8 do
-
-                local curr_debuff = getglobal(playerframe .. "_Debuff" .. i)
-
-                if curr_debuff:IsVisible() then
-
-                    curr_debuff:ClearAllPoints()
-
-                    if firstvisiblebutton then
-
-                        curr_debuff:SetPoint("TOPLEFT",playerframe .. "_NameText","TOPRIGHT",5,2)
-                        firstvisiblebutton        = false
-                        previousvisiblebutton    = i
-                        firstvisibledebuff        = false
-                        previousvisibledebuff    = j
-
-                    elseif firstvisibledebuff then
-
-                        curr_debuff:SetPoint("TOPLEFT",playerframe .. "_Buff" .. previousvisiblebutton,"TOPRIGHT",0,0)
-                        firstvisibledebuff        = false
-                        previousvisibledebuff    = i
-
-                    else
-
-                        curr_debuff:SetPoint("TOPLEFT",playerframe .. "_Debuff" .. previousvisibledebuff,"TOPRIGHT",0,0)
-                        previousvisibledebuff    = i
-
-                    end
-                end
-            end
-
+            BW_Player_AdjustBuffs(raid_buttonused)
             BW_ResizeWindow()
 
         end
@@ -1072,6 +1044,7 @@ function BW_Buff_Clicked(button)
     end
 
 end
+
 
 function BW_BuffTooltip()
 
@@ -1222,7 +1195,7 @@ function BW_ShowHelp()
     BW_HelpFrame_Text:SetText(
 
         [[
-        - BuffWatch Usage - v 0.610 -
+        - BuffWatch Usage - v 0.620 -
 
         Show/Hide the BuffWatch window:
              - Bind a keyboard button to show/hide the window
@@ -1252,10 +1225,10 @@ function BW_ShowHelp()
              - /bw [showonstartup / hideonstartup] : set to show or hide the window on startup
              - /bw pets : toggle to show or hide pets in the buffwatch window
              - /bw debuffs : toggle to show or hide debuffs in the buffwatch window
+             - /bw alignbuffs : toggle aligning of buff icons
              - /bw options : shows/hides the options window
              - /bw : shows this help menu :)
 
-        << NEW >>
         Verbosity:
              - Hold [ Shift ] while left or right-clicking a buff icon to send a cast message to your party
         ]] )

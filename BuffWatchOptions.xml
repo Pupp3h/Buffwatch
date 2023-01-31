@@ -5,7 +5,7 @@
     
     <Frame name="BuffWatchOptionsFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
         <Size>
-            <AbsDimension x="350" y="240"/>
+            <AbsDimension x="350" y="280"/>
         </Size>
         <Anchors>
             <Anchor point="CENTER"/>
@@ -138,7 +138,32 @@
             		BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
-            </CheckButton>            
+            </CheckButton>
+            <CheckButton name="BuffWatchAlignBuffs" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="40" y="-160"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Align Buffs");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.AlignBuffs = true
+                        else
+                            BuffWatchConfig.AlignBuffs = false
+                        end
+                        BW_Set_UNIT_IDs(true)
+            		BW_GetAllBuffs()
+		      	BW_UpdateBuffStatus()
+            		BW_ResizeWindow()
+                    </OnClick>
+                </Scripts>
+            </CheckButton>             
             <Slider name="BuffWatchAlpha" inherits="OptionsSliderTemplate">
                 <Size>
                     <AbsDimension x="220" y="16"/>
@@ -146,7 +171,7 @@
                 <Anchors>
                     <Anchor point="TOP">
                         <Offset>
-                            <AbsDimension x="0" y="-160" />
+                            <AbsDimension x="0" y="-200" />
                         </Offset>
                     </Anchor>
                 </Anchors>

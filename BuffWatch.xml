@@ -213,6 +213,33 @@
                 </Scripts>
             </Button>
             
+            <Button name="BuffWatchOptionsButton">
+            	<Size>
+	            <AbsDimension x="14" y="14"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="BuffWatchBackdropFrame" relativePoint="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-5" y="-5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>                
+                <NormalTexture file="Interface\Icons\INV_Misc_Spyglass_03"/>
+                <Scripts>
+                    <OnClick>
+                        BW_OptionsToggle()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+                        GameTooltip:SetText("Toggle Options")
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                        BW_MouseIsOverFrame()
+                    </OnLeave>                    
+                </Scripts>
+            </Button>
+            
             <Frame name="BW_Player1" inherits="BW_Player_Template" id="1"/>
             <Frame name="BW_Player2" inherits="BW_Player_Template" id="2"/>
             <Frame name="BW_Player3" inherits="BW_Player_Template" id="3"/>

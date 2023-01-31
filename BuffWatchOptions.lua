@@ -10,4 +10,5 @@ function BuffWatchOptions_Init()
     BuffWatchShowPets:SetChecked(BuffWatchConfig.ShowPets)
     BuffWatchShowDebuffs:SetChecked(BuffWatchConfig.ShowDebuffs)
     BuffWatchAlpha:SetValue(BuffWatchConfig.alpha)
+    BuffWatchAlignBuffs:SetChecked(BuffWatchConfig.AlignBuffs)
 end
