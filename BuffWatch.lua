@@ -8,6 +8,7 @@
 
 -- ** Check playerframe positioning if SortOrder == "Raid Order" and player gets moved groups.
 -- ** Check / Fix / Improve Window Resizing code
+-- ** Add seperate frame for debuffs, so it can be shown/hidden/ressized in combat?
 
 -- ** Warning message for buff expiring
 -- ** Debuffs
@@ -19,8 +20,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "2.0b1";
-BW_RELEASE_DATE = "2 January 2007";
+BW_VERSION = "2.0b2";
+BW_RELEASE_DATE = "5 January 2007";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -72,7 +73,7 @@ function Buffwatch_OnLoad()
 
     SlashCmdList["BUFFWATCH"] = Buffwatch_SlashHandler;
     SLASH_BUFFWATCH1 = "/buffwatch";
-    SLASH_BUFFWATCH2 = "/bw";
+    SLASH_BUFFWATCH2 = "/bfw";
 
 end
 
@@ -408,6 +409,10 @@ function Buffwatch_SlashHandler(msg)
 
         Buffwatch_Toggle();
 
+    elseif msg == "options" then
+
+        Buffwatch_OptionsToggle();
+
     elseif msg == "debug" then
 
         BuffwatchConfig.debug = not BuffwatchConfig.debug;
@@ -420,8 +425,9 @@ function Buffwatch_SlashHandler(msg)
 
     else
 
-        Buffwatch_Print("Buffwatch commands (/buffwatch or /bw):");
-        Buffwatch_Print("/bw toggle - Toggle the Buffwatch window on or off");
+        Buffwatch_Print("Buffwatch commands (/buffwatch or /bfw):");
+        Buffwatch_Print("/bfw toggle - Toggle the Buffwatch window on or off");
+        Buffwatch_Print("/bfw options - Toggle the options window on or off");
 
     end
 
@@ -965,20 +971,24 @@ end
 
 function Buffwatch_ResizeWindow()
 
-    BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
+    if not InCombatLockdown() then
 
-    local maxbuffs = 0;
+        BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
+
+        local maxbuffs = 0;
 -- ***** may need to move this to only check when buffs actually get hidden or shown
-    for k, v in pairs(BuffwatchPlayerBuffs) do
+        for k, v in pairs(BuffwatchPlayerBuffs) do
 
-        if maxbuffs < #v.Buffs then
-            maxbuffs = #v.Buffs;
---            maxbuffid = v.ID;
+            if maxbuffs < #v.Buffs then
+                maxbuffs = #v.Buffs;
+--                maxbuffid = v.ID;
+            end
+
         end
 
-    end
+        BuffwatchFrame:SetWidth(math.max(32 + maxnamewidth + (maxbuffs * 18), 100));
 
-    BuffwatchFrame:SetWidth(math.max(32 + maxnamewidth + (maxbuffs * 18), 100));
+    end
 
 end
 
