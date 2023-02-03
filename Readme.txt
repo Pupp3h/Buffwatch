@@ -18,6 +18,15 @@ here : http://www.curse-gaming.com/mod.php?addid=2003
 Version History
 ---------------
 
+1.10
+----
+
+Reset debuffs back to 8
+Option to hide players with no locked buffs
+Option to hide players with locked buffs until they expire
+Header text is now highlighted if a buff expires while minimised
+Updated Interface number to 10900
+
 1.01
 ----
 

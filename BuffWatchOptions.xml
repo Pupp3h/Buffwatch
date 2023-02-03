@@ -6,7 +6,7 @@
     <Frame name="BW_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
     
         <Size>
-            <AbsDimension x="350" y="300"/>
+            <AbsDimension x="350" y="360"/>
         </Size>
 
         <Anchors>
@@ -149,9 +149,9 @@
                             BuffWatchConfig.ShowPets = false
                         end
                         BW_Set_UNIT_IDs(true)
-            		BW_GetAllBuffs()
-		      	BW_UpdateBuffStatus()
-            		BW_ResizeWindow()
+                        BW_GetAllBuffs()
+                        BW_UpdateBuffStatus()
+                        BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -174,9 +174,9 @@
                         else
                             BuffWatchConfig.ShowDebuffs = false
                         end
-            		BW_GetAllBuffs()
-		      	BW_UpdateBuffStatus()
-            		BW_ResizeWindow()
+                        BW_GetAllBuffs()
+                        BW_UpdateBuffStatus()
+                        BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -199,9 +199,9 @@
                         else
                             BuffWatchConfig.AlignBuffs = false
                         end
-            		BW_GetAllBuffs()
-		      	BW_UpdateBuffStatus()
-            		BW_ResizeWindow()
+                        BW_GetAllBuffs()
+                        BW_UpdateBuffStatus()
+                        BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
             </CheckButton> 
