@@ -251,6 +251,21 @@
                 </Scripts>
 
             </Button>
+            
+            <Frame name="$parent_DropDown" inherits="UIDropDownMenuTemplate">
+                <Anchors>
+                    <Anchor point="TOP">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        BW_DropDown_OnLoad()
+                    </OnLoad>
+                </Scripts>
+            </Frame>            
 
             <Button name="$parent_MinimizeButton" hidden="true">
                 <Size>
@@ -292,92 +307,6 @@
                 </Anchors>
 
                 <Frames>
-
-                    <Button name="BW_OptionsButton" hidden="true">
-
-                        <Size>
-                            <AbsDimension x="14" y="14"/>
-                        </Size>
-
-                        <Anchors>
-                            <Anchor point="TOPRIGHT" relativeTo="BW_MinimizeButton" relativePoint="BOTTOMRIGHT">
-                                <Offset>
-                                    <AbsDimension x="-1" y="0"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-
-                        <NormalTexture file="Interface\Icons\INV_Misc_QuestionMark"/>
-
-                        <Scripts>
-                            <OnClick>
-                                BW_OptionsToggle()
-                            </OnClick>
-                            <OnEnter>
-                                GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-                                GameTooltip:SetText("Options")
-                            </OnEnter>
-                            <OnLeave>
-                                GameTooltip:Hide()
-                                BW_MouseIsOverFrame()
-                            </OnLeave>
-                        </Scripts>
-
-                    </Button>
-
-                    <Button name="BW_HideUnmonitoredButton" hidden="true">
-
-                        <Size>
-                            <AbsDimension x="14" y="14"/>
-                        </Size>
-
-                        <Anchors>
-                            <Anchor point="TOPRIGHT" relativeTo="BW_OptionsButton" relativePoint="BOTTOMRIGHT"/>
-                        </Anchors>
-
-                        <NormalTexture file="Interface\Icons\Ability_Hibernation"/>
-
-                        <Scripts>
-                            <OnClick>
-                                BW_HideUnmonitored_Clicked()
-                            </OnClick>
-                            <OnEnter>
-                                BW_HideUnmonitored_OnEnter()
-                            </OnEnter>
-                            <OnLeave>
-                                GameTooltip:Hide()
-                                BW_MouseIsOverFrame()
-                            </OnLeave>
-                        </Scripts>
-
-                    </Button>
-
-                    <Button name="BW_HideMonitoredButton" hidden="true">
-
-                        <Size>
-                            <AbsDimension x="14" y="14"/>
-                        </Size>
-
-                        <Anchors>
-                            <Anchor point="TOPRIGHT" relativeTo="BW_HideUnmonitoredButton" relativePoint="BOTTOMRIGHT"/>
-                        </Anchors>
-
-                        <NormalTexture file="Interface\Icons\Ability_Warrior_Revenge"/>
-
-                        <Scripts>
-                            <OnClick>
-                                BW_HideMonitored_Clicked()
-                            </OnClick>
-                            <OnEnter>
-                                BW_HideMonitored_OnEnter()
-                            </OnEnter>
-                            <OnLeave>
-                                GameTooltip:Hide()
-                                BW_MouseIsOverFrame()
-                            </OnLeave>
-                        </Scripts>
-
-                    </Button>
 
                     <Frame name="BW_Player1" inherits="BW_Player_Template" id="1"/>
                     <Frame name="BW_Player2" inherits="BW_Player_Template" id="2"/>
@@ -519,23 +448,6 @@
                 </FontString>
             </Layer>
         </Layers>
-
-        <Frames>
-            <Button name="$ParentOptionsButton" inherits="OptionsButtonTemplate" text="Options">
-                <Anchors>
-                    <Anchor point="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-50" y="-42"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-                <Scripts>
-                    <OnClick>
-                        BW_OptionsToggle()
-                    </OnClick>
-                </Scripts>
-            </Button>
-        </Frames>
 
     </Frame>
 

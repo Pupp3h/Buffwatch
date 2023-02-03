@@ -33,6 +33,8 @@ Original version here : http://www.curse-gaming.com/mod.php?addid=678
 General Usage
 -------------
 
+Right click the BuffWatch header text for various options and help.
+
 Setting up :
 
   * Cast the buffs you want monitor
@@ -48,10 +50,10 @@ Once setup :
   * If a player is dead or goes offline, their buffs will grey out.
   * To target a player, left click their name. To assist, right click.
   * To hide players for which you are not monitoring any buffs, toggle the
-      'Showing Unmonitored' icon in the BuffWatch window.
+      'Showing Unmonitored' icon in the BuffWatch header menu.
   * To hide players for which you do have monitored buffs, but having none
-      expired, toggle the 'Showing Monitored' icon in the BuffWatch window.
-      Player will re-appear when one of their buffs expires.
+      expired, toggle the 'Showing Monitored' icon in the BuffWatch header 
+      memu. Player will re-appear when one of their buffs expires.
   * Buffwatch will automatically cast the group version of a buff if you set
       the Buff Threshold setting in options to a value between 1 and 5.
       Buffwatch will check how many players are missing the buff (regardless
@@ -91,6 +93,13 @@ Known Issues
 
 Version History
 ---------------
+
+1.17
+----
+
+Moved options and toggle buttons to a right click menu off the Buffwatch Header
+Player frames now respond immediately to Monitored and Unmonitored toggles
+
 
 1.16
 ----

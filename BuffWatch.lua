@@ -5,28 +5,23 @@
 -- //
 -- // TODO: (possibly)
 -- //
--- //     
 -- //     Update ResizeWindow to run no more than once every 2 secs (check how often it actually is)
 -- //     Base resize on num players visible/buffs vis (store and count when scanning)
+-- //     Increase Buff Limit (Probably need recode for efficiency first)
 -- //
 -- //     Ignore dead / disconn in threshold count
 -- //     Window doesnt always properly resize
 -- //     Option to split into columns (previous changes might suffice)
 -- //     Localisation for various bits of text
--- //     Keybinding to scan list and recast any expired buffs
+-- //     Keybinding to scan list and recast any expired buffs (probably not poss after TBC)
 -- //     Show poisons and weapon buffs for player
--- //     Lower spell rank support
 -- //     Allow cleansing of debuffs
 -- //     UI Scaling
 -- //
 -- // CHANGES:
 -- //
--- //     Fixed PvP flagging (was broken with 1.11)
--- //     Remembers locked buff settings for players you have grouped with
--- //     Enabled dragging from header label
--- //     When Group Threshold is 0, buff cast will now be version (ie. single/group) 
--- //         that is locked (except Druid GotW)
--- //     Delays Buff Update if Max Updates has been reached
+-- //     Moved Option and toggle buttons to a right click menu off the Buffwatch Header text
+-- //     Player frames now respond immediately to Monitored and Unmonitored toggles
 -- //     
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -36,8 +31,8 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.16"
-BW_RELEASE_DATE = "July 20, 2006"
+BW_VERSION = "1.17"
+BW_RELEASE_DATE = "November 02, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -181,7 +176,7 @@ function BW_OnEvent()
             )
         end
 
-        BW_Print("BuffWatch v " .. BW_VERSION .. " loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window.", 0.2, 0.9, 0.9 )
+        BW_Print("BuffWatch v " .. BW_VERSION .. " loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window. Right click the BuffWatch header text for more options.", 0.2, 0.9, 0.9 )
 
         BW_HeaderText:SetText("BuffWatch")
         BW_HeaderText:SetTextColor(0.2, 0.9, 0.9)
@@ -463,6 +458,58 @@ function BW_OnUpdate(elapsed)
 
 end
 
+function BW_DropDown_OnLoad()
+    UIDropDownMenu_Initialize(this, BW_DropDown_Initialize, "MENU")
+    UIDropDownMenu_SetAnchor(0, 0, this, "TOPLEFT", "BW_Header", "CENTER")    
+end
+
+function BW_DropDown_Initialize()
+
+    info = {}
+    info.text = "Options"
+    info.func = BW_OptionsToggle
+    UIDropDownMenu_AddButton(info)
+    
+    info = {}
+    info.text = "Show Monitored"
+    info.func = BW_HideMonitored_Clicked
+    info.value = not HideMonitored
+    info.checked = not HideMonitored
+    info.keepShownOnClick = 1
+    UIDropDownMenu_AddButton(info)
+    
+    info = {}
+    info.text = "Show Unmonitored"
+    info.func = BW_HideUnmonitored_Clicked
+    info.value = not HideUnmonitored
+    info.checked = not HideUnmonitored
+    info.keepShownOnClick = 1
+    UIDropDownMenu_AddButton(info)
+    
+    info = {}
+    info.text = "Help"
+    info.func = BW_ShowHelp
+    UIDropDownMenu_AddButton(info)  
+
+    info = {}
+    info.text = "Close BuffWatch"
+    info.func = BW_Toggle
+    UIDropDownMenu_AddButton(info)    
+    
+    info = {}
+    info.disabled = 1
+    UIDropDownMenu_AddButton(info)
+
+    info = {}
+    info.text = "Hide"
+    info.func = function()
+        BW_DropDown:Hide()
+    end
+    UIDropDownMenu_AddButton(info)    
+    
+
+        
+end
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -1392,9 +1439,6 @@ function BW_MouseIsOverFrame()
 
         if not minimized then
 
-            BW_OptionsButton:Show()
-            BW_HideUnmonitoredButton:Show()
-            BW_HideMonitoredButton:Show()
             BW_Lock_All:Show()
 
             for k, v in Player_Info do
@@ -1410,9 +1454,6 @@ function BW_MouseIsOverFrame()
         if not minimized then
 
             BW_MinimizeButton:Hide()
-            BW_OptionsButton:Hide()
-            BW_HideUnmonitoredButton:Hide()
-            BW_HideMonitoredButton:Hide()
 
             for k, v in Player_Info do
                 getglobal("BW_Player" .. v.ID .. "_Lock"):Hide()
@@ -1762,7 +1803,7 @@ function BW_Header_Clicked(button)
     end
 
     if button == "RightButton" then
-        BW_Toggle()
+        ToggleDropDownMenu(1, nil, getglobal("BW_DropDown"), "BW_Header", 40, 0);
     end
 
 end
@@ -1787,45 +1828,17 @@ function BW_HideUnmonitored_Clicked()
 
     HideUnmonitored = not HideUnmonitored
 
-    BW_Player_AdjustFrames()
+    BW_UpdateBuffStatus(true)
     BW_ResizeWindow()
-
-    BW_HideUnmonitored_OnEnter()
-
-end
-
-function BW_HideUnmonitored_OnEnter()
-
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-
-    if HideUnmonitored == true then
-        GameTooltip:SetText("Hiding Unmonitored")
-    else
-        GameTooltip:SetText("Showing Unmonitored")
-    end
-
+    
 end
 
 function BW_HideMonitored_Clicked()
 
     HideMonitored = not HideMonitored
 
-    BW_Player_AdjustFrames()
+    BW_UpdateBuffStatus(true)
     BW_ResizeWindow()
-
-    BW_HideMonitored_OnEnter()
-
-end
-
-function BW_HideMonitored_OnEnter()
-
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-
-    if HideMonitored == true then
-        GameTooltip:SetText("Hiding Monitored")
-    else
-        GameTooltip:SetText("Showing Monitored")
-    end
 
 end
 
@@ -2020,17 +2033,21 @@ function BW_ShowHelp()
 
 "        - BuffWatch Usage - v " .. BW_VERSION .. " - " .. [[
 
-        Show/Hide the BuffWatch window:
-             - Bind a keyboard button to show/hide the window
-             - You can also close it by right clicking the "BuffWatch" label (appears on mouseover)
-
         Showing Buffs:
-             - Left click the BuffWatch label
+             - Left click the BuffWatch label to refresh all buffs
              - Also occurs automatically whenever your gain/lose a party or raid member
 
         Locking a player's watched buffs:
              - If the checkbox to the left is unchecked, buffs will be added automatically whenever they gain a buff
-             - If checked, buffs will not be added, or removed
+             - If checked, buffs will not be added, or removed and will show when expired
+
+        Deleting buffs:
+             - Lock the player's buffs (check the box). Then [ CTRL + Right Click ] on the buff
+             - Optionally, [ ALT + Right Click ] to delete all but the selected one.
+
+        Hiding players to minimise window:
+             - Toggle 'Show Monitored' and/or 'Show Unmonitored' in the right click menu (off the header text)
+                 which will hide locked players which have buffs set or players with no buffs set respectively
 
         Rebuffing:
              - Left click an icon (will auto-target)
@@ -2038,10 +2055,6 @@ function BW_ShowHelp()
         Right click spell:
              - Cast any spell with a cast time (not instant). Then type "/bw set"
              - To cast it, right click any icon (will auto-target)
-
-        Deleting buffs:
-             - Lock the player's buffs (check the box). Then [ CTRL + Right Click ] on the buff
-             - Optionally, [ ALT + Right Click ] to delete all but the selected one.
 
         Slash Commands ( Use /buffwatch or /bw )
              - /bw toggle : shows/hides the window
