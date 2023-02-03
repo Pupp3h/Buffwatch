@@ -283,7 +283,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("GroupBuff Threshold")
+                        getglobal(this:GetName().."Text"):SetText("GroupBuff Threshold (" .. this:GetValue() .. ")")
                         getglobal(this:GetName().."High"):SetText("5+")
                         getglobal(this:GetName().."Low"):SetText("0 (off)")
                         this:SetMinMaxValues(0,5)
@@ -291,6 +291,7 @@
                     </OnLoad>
                     <OnValueChanged>
                         BuffWatchConfig.BuffThreshold = this:GetValue()
+                        getglobal(this:GetName().."Text"):SetText("GroupBuff Threshold (" .. this:GetValue() .. ")")
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(this, "ANCHOR_RIGHT")

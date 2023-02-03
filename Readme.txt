@@ -67,8 +67,27 @@ For help and information on other features, type '/bw' or '/buffwatch' in game.
 
 -------------------------------------------------------------------------------
 
+Known Issues
+------------
+
+  * When buffwatch checks to see if a group buff is in your spellbook (eg 
+      Arcane Brilliance or Greater Blessing of Wisdom), it stores the spell id 
+      to save searching for it on subsequent usage. If you learn new spells 
+      (including new ranks) the spell id's can change, and buffwatch might 
+      start to cast the wrong spell instead of the group buff. If this happens, 
+      you will need to reload your UI or log out and back in again.
+
+-------------------------------------------------------------------------------
+
 Version History
 ---------------
+
+1.12
+----
+
+Ignores pets for GroupBuff Threshold count
+Added current Threshold value to slider label
+Added casting of druids group buff GotW based on Threshold
 
 1.11
 ----

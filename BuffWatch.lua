@@ -22,10 +22,9 @@
 -- //
 -- // CHANGES:
 -- //
--- //     Switches buff icon between lesser and greater type buffs
--- //     Added Buff Threshold option to determine version to cast for 
--- //       Group buffs and their lesser versions (except Druid GOTW)
--- //     Added tooltips to options panel
+-- //     Ignores pets for GroupBuff Threshold count
+-- //     Added current Threshold value to slider label
+-- //     Added casting of druids group buff GOTW based on Threshold
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -35,8 +34,8 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.11"
-BW_RELEASE_DATE = "January 13, 2006"
+BW_VERSION = "1.12"
+BW_RELEASE_DATE = "February 15, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -207,6 +206,13 @@ function BW_OnEvent()
         if BuffWatchConfig.BuffThreshold == nil then
             BuffWatchConfig.BuffThreshold = 0
         end
+
+        -- Mark of the Wild (Same icon as Gift of the Wild)
+        GroupBuffs["Interface\\Icons\\Spell_Nature_Regeneration"] = {
+            ["Greater"] = "Gift of the Wild",
+            ["Type"] = "SubGroup",
+            ["ByName"] = 1
+        }
 
         -- Power Word Fortitude
         GroupBuffs["Interface\\Icons\\Spell_Holy_WordFortitude"] = {
@@ -437,6 +443,7 @@ function BW_GetPlayerInfo()
 
                 if (lastgrouptype == "party" and i > 5) or (lastgrouptype == "raid" and i > 40) then
                     Player_Info[unitname]["IsPet"] = 1
+                    Player_Info[unitname]["Class"] = ""
                 else
                     Player_Info[unitname]["IsPet"] = 0
                 end
@@ -456,11 +463,11 @@ function BW_GetPlayerInfo()
                     if color then
                         nametext:SetTextColor(color.r, color.g, color.b)
                     else
-                        nametext:SetTextColor(1, 1, 1)
+                        nametext:SetTextColor(1.0, 0.9, 0.8)
                     end
 
                 else
-                    nametext:SetTextColor(1, 1, 1)
+                    nametext:SetTextColor(1.0, 0.9, 0.8)
                 end
 
             end
@@ -878,7 +885,7 @@ function BW_UpdateBuffStatus()
                         -- If not found, check if lesser or greater exists instead
                         if Flag_BuffFound == false then
 
-                            if GroupBuffs[texture] then
+                            if GroupBuffs[texture] and not GroupBuffs[texture].ByName then
 
                                 if GroupBuffs[texture].Lesser then
 
@@ -1194,13 +1201,26 @@ function BW_Buff_Clicked(button)
                             otherspelltexture = GroupBuffs[spelltexture].Lesser
                         end
 
-                        -- Check they have other spell, and save OtherSpellID
+                        -- Check if we have other spell, and save OtherSpellID
                         if not GroupBuffs[spelltexture].OtherSpellID then
 
-                            for i = 1, 300 do
-                                if GetSpellTexture(i, 1) == otherspelltexture then
-                                    GroupBuffs[spelltexture].OtherSpellID = i
+                            if GroupBuffs[spelltexture].ByName then
+                            
+                                for i = 1, 300 do
+                                    local spellName, _ = GetSpellName(i, 1)
+                                    if spellName == otherspelltexture then
+                                        GroupBuffs[spelltexture].OtherSpellID = i
+                                    end
                                 end
+                            
+                            else
+
+                                for i = 1, 300 do
+                                    if GetSpellTexture(i, 1) == otherspelltexture then
+                                        GroupBuffs[spelltexture].OtherSpellID = i
+                                    end
+                                end
+                            
                             end
 
                             if not GroupBuffs[spelltexture].OtherSpellID then
@@ -1210,7 +1230,7 @@ function BW_Buff_Clicked(button)
 
                         end
 
-                        -- Check whether to cast greater or lesser. If they dont have greater, then skip.
+                        -- Check whether to cast greater or lesser. If we dont have greater, then skip.
                         if GroupBuffs[spelltexture].OtherSpellID ~= 0 then
 
                             for k, v in Player_Info do
@@ -1218,7 +1238,7 @@ function BW_Buff_Clicked(button)
                                 local Flag_BuffFound = false
 
                                 -- Find players with same SubGroup/Class
-                                if v[GroupBuffs[spelltexture].Type] == Player_Info[playername][GroupBuffs[spelltexture].Type] then
+                                if Player_Info[v.Name].IsPet == 0 and v[GroupBuffs[spelltexture].Type] == Player_Info[playername][GroupBuffs[spelltexture].Type] then
 
                                     -- Check for missing buff
                                     for j = 1, 16 do
