@@ -18,6 +18,14 @@ here : http://www.curse-gaming.com/mod.php?addid=2003
 Version History
 ---------------
 
+
+0.622
+-----
+
+Darkens buff icon if player is dead or offline
+Minimize button to hide players (Warning message will still display)
+Updated Interface number to 1800
+
 0.621
 -----
 

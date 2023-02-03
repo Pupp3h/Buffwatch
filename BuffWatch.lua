@@ -16,10 +16,8 @@
 -- //
 -- // CHANGES:
 -- // 
--- //     Alt-RightClick to remove all buffs OTHER than this one 
--- //     Optional warning message for when a monitored buff expires
--- //     Added support for 16 debuffs
--- //     Updated Interface number to 1700
+-- //     Darkens buff icon if player is dead or offline
+-- //     Minimize button to hide players (Warning message will still display)
 -- //
 -- //     
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +36,8 @@ local UNIT_IDs = { }
 local lastspellcast
 local lastgrouptype
 local buttonalignposition
-local buffexpired 
+local buffexpired
+local minimized
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -77,7 +76,7 @@ function BW_OnEvent()
             BuffWatchDetails = {
                 name = "BuffWatch",
                 description = "Keeps track of party/raid buffs",
-                version = "0.621",
+                version = "0.622",
                 releaseDate = "September 14, 2005",
                 author = "Tyrrael & Pup",
                 category = MYADDONS_CATEGORY_OTHERS,
@@ -85,7 +84,7 @@ function BW_OnEvent()
                 optionsframe = "BuffWatchOptionsFrame"
             }
 
-        BuffWatchHelp = { "              - BuffWatch Usage - v 0.621 -\n\n" ..
+        BuffWatchHelp = { "              - BuffWatch Usage - v 0.622 -\n\n" ..
             "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
             "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
             "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
@@ -372,8 +371,12 @@ function BW_GetAllBuffs()
             curr_name_fontstring:SetText(nil)
 
         else
-
-            curr_playerframe:Show()
+            
+            if minimized then
+                curr_playerframe:Hide()    
+            else
+                curr_playerframe:Show()
+            end
             curr_name_button:Show()
             curr_name_fontstring:Show()
             curr_name_fontstring:SetText(unitname)
@@ -583,30 +586,39 @@ function BW_UpdateBuffStatus()
     
         local playerframe = "BW_Player" .. i
         
-        if getglobal(playerframe):IsVisible() then
+        if getglobal(playerframe .. "_NameText"):GetText() then
 
             for j=1,16 do
             
-                if getglobal(playerframe .. "_Buff" .. j):IsVisible() then
+                if getglobal(playerframe .. "_Buff" .. j .. "TexturePath"):GetText() then
                 
-                    local Flag_BuffFound = false
-    
-                    for k=1,16 do
-                        if UnitBuff(UNIT_IDs[i],k) == getglobal(playerframe .. "_Buff" .. j .. "TexturePath"):GetText() then
-                            Flag_BuffFound = true
-                        end
-                    end
-    
-                    if Flag_BuffFound then
-                        getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(1,1,1)
-                    else
-                        getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(1,0,0)
+                    if UnitIsDeadOrGhost(UNIT_IDs[i]) or UnitIsConnected(UNIT_IDs[i]) == nil then
+                    
+                        getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(0.4,0.4,0.4)
                         
-                        if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
-                            UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, UIERRORS_HOLD_TIME * 2)
-                            buffexpired = true
+                    else
+
+                     
+                     local Flag_BuffFound = false
+
+                        for k=1,16 do
+                            if UnitBuff(UNIT_IDs[i],k) == getglobal(playerframe .. "_Buff" .. j .. "TexturePath"):GetText() then
+                                Flag_BuffFound = true
+                            end
                         end
-                        hasbuffexpired = true
+
+                        if Flag_BuffFound then
+                            getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(1,1,1)
+                        else
+                            getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(1,0,0)
+
+                            if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
+                                UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, UIERRORS_HOLD_TIME * 2)
+                                buffexpired = true
+                            end
+                            hasbuffexpired = true
+                        end
+                        
                     end
 
                 end
@@ -631,17 +643,22 @@ function BW_ResizeWindow()
 
     for i=1,table.getn(UNIT_IDs) do
 
-        local curr_name_button = getglobal("BW_Player" .. i .. "_Name")
-        local curr_name_fontstring = getglobal("BW_Player" .. i .. "_NameText")
+        if not minimized then
 
-        if curr_name_fontstring:GetText() then --isvisible
-            bottomcoord = curr_name_button:GetBottom()
-        end
+            local curr_name_button = getglobal("BW_Player" .. i .. "_Name")
+            local curr_name_fontstring = getglobal("BW_Player" .. i .. "_NameText")
+
+            if curr_name_fontstring:GetText() then --isvisible
+                bottomcoord = curr_name_button:GetBottom()
+            end
+
+        end 
 
         for j=1,16 do
             local curr_buff = getglobal("BW_Player" .. i .. "_Buff" .. j)
+            local curr_buff_iconpath = getglobal("BW_Player" .. i .. "_Buff" .. j .. "TexturePath")
 
-            if curr_buff:IsVisible() and curr_buff:GetRight() then
+            if curr_buff_iconpath:GetText() and curr_buff:GetRight() then
                 if curr_buff:GetRight() > rightcoord then
                     rightcoord = curr_buff:GetRight()
                 end
@@ -650,8 +667,9 @@ function BW_ResizeWindow()
 
         for j=1,16 do
             local curr_buff = getglobal("BW_Player" .. i .. "_Debuff" .. j)
-
-            if curr_buff:IsVisible() and curr_buff:GetRight() then
+            local curr_buff_iconpath = getglobal("BW_Player" .. i .. "_Debuff" .. j .. "TexturePath")
+            
+            if curr_buff_iconpath:GetText() and curr_buff:GetRight() then
                 if curr_buff:GetRight() > rightcoord then
                     rightcoord = curr_buff:GetRight()
                 end
@@ -664,18 +682,23 @@ function BW_ResizeWindow()
         width = rightcoord - BuffWatchBackdropFrame:GetLeft()
         if width < 90 then width = 90 end
     end
-    if bottomcoord and bottomcoord ~= 0 then
-        height = BuffWatchBackdropFrame:GetTop() - bottomcoord
+    
+    if minimized then
+        height = 5
+    else
+        if bottomcoord and bottomcoord ~= 0 then
+            height = BuffWatchBackdropFrame:GetTop() - bottomcoord
+        end
     end
 
     if width > 0 then
-        BuffWatchBackdropFrame:SetWidth(width + 15)
-        BuffWatchFrame:SetWidth(width + 15)
+        BuffWatchBackdropFrame:SetWidth(width + 20)
+        BuffWatchFrame:SetWidth(width + 20)
     else
-        BuffWatchBackdropFrame:SetWidth(150)
-        BuffWatchFrame:SetWidth(150)
+        BuffWatchBackdropFrame:SetWidth(100)
+        BuffWatchFrame:SetWidth(100)
     end
-    
+
     if height > 0 then
         BuffWatchBackdropFrame:SetHeight(height + 15)
         BuffWatchFrame:SetHeight(height + 15)
@@ -683,7 +706,7 @@ function BW_ResizeWindow()
         BuffWatchBackdropFrame:SetHeight(50)
         BuffWatchFrame:SetHeight(50)
     end
-
+    
 end
 
 function BW_Set_AllChecks(checked)
@@ -717,23 +740,32 @@ function BW_MouseIsOverFrame()
     if MouseIsOver(BuffWatchFrame) then
 
         BuffWatchFrameHeader:Show()
-        BuffWatchFrameHeaderText:Show()
-        BW_AllPlayer_Lock:Show()
-        BuffWatchOptionsButton:Show()
+        BuffWatchFrameHeaderText:Show()        
+        BuffWatchMinimizeButton:Show()
 
-        for i=1,table.getn(UNIT_IDs) do
-            if getglobal("BW_Player" .. i .. "_Name"):IsVisible() then
-                getglobal("BW_Player" .. i .. "_Lock"):Show()
+        if not minimized then 
+            BuffWatchOptionsButton:Show()
+            BW_AllPlayer_Lock:Show()
+
+            for i=1,table.getn(UNIT_IDs) do
+                if getglobal("BW_Player" .. i):IsVisible() then
+                    getglobal("BW_Player" .. i .. "_Lock"):Show()
+                end
             end
+
         end
 
     else
 
-        BuffWatchFrameHeader:Hide()
-        BuffWatchFrameHeaderText:Hide()
-        BW_AllPlayer_Lock:Hide()
+        if not minimized then 
+            BuffWatchFrameHeader:Hide()
+            BuffWatchFrameHeaderText:Hide()
+        end
+        
+        BuffWatchMinimizeButton:Hide()
         BuffWatchOptionsButton:Hide()
 
+        BW_AllPlayer_Lock:Hide()
         for i=1,table.getn(UNIT_IDs) do
             getglobal("BW_Player" .. i .. "_Lock"):Hide()
         end
@@ -840,7 +872,7 @@ function BW_SlashHandler(msg)
             BW_Print("BuffWatch message will not be displayed.", 0.2, 0.9, 0.9 )
         end
         
-        BuffWatchOptions_Init()    	
+        BuffWatchOptions_Init()     
 
     elseif msg == "options" then
     
@@ -1028,6 +1060,7 @@ function BW_Buff_Clicked(button)
         if getglobal(playerframe .. "_Lock"):GetChecked() and IsControlKeyDown() then
 
             this:Hide()
+            getglobal(playerframe .. "_Buff" .. buffid .. "TexturePath"):SetText(nil)
             BW_Player_AdjustBuffs(playerid)
             BW_ResizeWindow()
 
@@ -1036,6 +1069,7 @@ function BW_Buff_Clicked(button)
             for i=1,16 do
                 if i ~= buffid then
                     getglobal(playerframe .. "_Buff" .. i):Hide()
+                    getglobal(playerframe .. "_Buff" .. i .. "TexturePath"):SetText(nil)
                 end
             end
             
@@ -1074,6 +1108,15 @@ function BW_Buff_Clicked(button)
 
 end
 
+function BW_MinimizeButton_Clicked()
+
+    minimized = not minimized
+
+    BW_GetAllBuffs()
+    BW_UpdateBuffStatus()
+    BW_ResizeWindow()
+    
+end
 
 function BW_BuffTooltip()
  
@@ -1218,7 +1261,7 @@ function BW_ShowHelp()
     BW_HelpFrame_Text:SetText(
 
         [[
-        - BuffWatch Usage - v 0.621 -
+        - BuffWatch Usage - v 0.622 -
 
         Show/Hide the BuffWatch window:
              - Bind a keyboard button to show/hide the window

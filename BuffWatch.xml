@@ -220,15 +220,44 @@
                     </OnLeave>
                 </Scripts>
             </Button>
+
+            <Button name="BuffWatchMinimizeButton">
+                <Size>
+                    <AbsDimension x="16" y="16"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="BuffWatchBackdropFrame" relativePoint="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-1" y="-1"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <NormalTexture file="Interface\AddOns\BuffWatch\MinimizeButton-Up"/>
+                <PushedTexture file="Interface\AddOns\BuffWatch\MinimizeButton-Down"/>
+                <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
+                <Scripts>
+                    <OnClick>
+                        BW_MinimizeButton_Clicked()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+                        GameTooltip:SetText("Minimize")
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                        BW_MouseIsOverFrame()                        
+                    </OnLeave>
+                </Scripts>
+            </Button>
             
             <Button name="BuffWatchOptionsButton">
             	<Size>
 	            <AbsDimension x="14" y="14"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOPRIGHT" relativeTo="BuffWatchBackdropFrame" relativePoint="TOPRIGHT">
+                    <Anchor point="TOPRIGHT" relativeTo="BuffWatchMinimizeButton" relativePoint="BOTTOMRIGHT">
                         <Offset>
-                            <AbsDimension x="-5" y="-5"/>
+                            <AbsDimension x="-1" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>                
