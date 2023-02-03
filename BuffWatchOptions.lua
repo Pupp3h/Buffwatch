@@ -12,6 +12,8 @@ BW_TTIP_HIGHLIGHTPVP = "Highlight players that are PvP Flagged"
 BW_TTIP_PREVENTPVPBUFF = "Prevent BuffWatch from buffing players that are PvP Flagged"
 BW_TTIP_BUFFTHRESHOLD = "Number of players missing the buff for it to cast group version"
 BW_TTIP_ALPHA = "Sets the transparency of the BuffWatch window"
+BW_TTIP_UPDPERSEC = "Maximum number of updates per second to refresh buffs"
+BW_TTIP_SHOWUPDPERSEC = "Show updates per second counter"
 
 function BW_Options_OnLoad()
 
@@ -34,6 +36,13 @@ function BW_Options_Init()
     BW_Options_PreventPvPBuff:SetChecked(BuffWatchConfig.PreventPvPBuff)
     BW_Options_BuffThreshold:SetValue(BuffWatchConfig.BuffThreshold)
     BW_Options_Alpha:SetValue(BuffWatchConfig.alpha)
+    BW_Options_UpdPerSec:SetValue(BuffWatchConfig.UpdPerSec)
+    BW_Options_ShowUpdPerSec:SetChecked(BuffWatchConfig.ShowUpdPerSec)
+    if BuffWatchConfig.ShowUpdPerSec == true then
+        BW_UPS:Show()
+    else
+        BW_UPS:Hide()
+    end        
 end
 
 function BW_Options_SortOrder_OnClick()
@@ -41,7 +50,7 @@ function BW_Options_SortOrder_OnClick()
     UIDropDownMenu_SetSelectedID(BW_Options_SortOrder, i)
     BuffWatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[i]
     BW_GetAllBuffs()
-    BW_UpdateBuffStatus()
+    BW_UpdateBuffStatus(true)
     BW_ResizeWindow()
 end
 

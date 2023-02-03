@@ -5,6 +5,8 @@
 -- //
 -- // TODO: (possibly)
 -- //
+-- //     Base resize on num players visible/buffs vis (store and count when scanning)
+-- //
 -- //     Ignore dead / disconn in threshold count
 -- //     Window doesnt always properly resize
 -- //     Update ResizeWindow to run no more than once every 2 secs
@@ -18,9 +20,8 @@
 -- //
 -- // CHANGES:
 -- //
--- //     Option to always show players with debuffs
--- //     Added Shadow and Spirit Group Buffs
--- //     Added optional sound on expired buff
+-- //    Added option to restrict buff updates
+-- //    Fixed a couple of bugs as a result of 1.11
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -30,8 +31,8 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.14"
-BW_RELEASE_DATE = "May 03, 2006"
+BW_VERSION = "1.15"
+BW_RELEASE_DATE = "June 25, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -41,7 +42,7 @@ BW_SORTORDER_DROPDOWN_LIST = {
 BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup, ShowPets,
     ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, DebuffsAlwaysVisible, 
     AlignBuffs, ExpiredWarning, ExpiredSound, SortOrder, BuffThreshold, HighlightPvP, 
-    PreventPvPBuff }
+    PreventPvPBuff, UpdPerSec, ShowUpdPerSec }
 
 local lastspellcast
 local lastgrouptype
@@ -57,6 +58,14 @@ local Player_Left = { }
 local UNIT_IDs = { }
 
 local GroupBuffs = { }
+
+local BuffUpdateTime
+local LastBuffStatusUpdated
+local BuffUpdatePending = false
+local UpdPerSec = { }
+local CurrSec = 0
+local SAMPLE_SIZE = 10
+
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
 -- //                Events
@@ -230,6 +239,14 @@ function BW_OnEvent()
             BuffWatchConfig.PreventPvPBuff = false
         end
 
+        if BuffWatchConfig.UpdPerSec == nil then
+            BuffWatchConfig.UpdPerSec = 0
+        end
+
+        if BuffWatchConfig.ShowUpdPerSec == nil then
+            BuffWatchConfig.ShowUpdPerSec = false
+        end
+
         -- Mark of the Wild (Same icon as Gift of the Wild)
         GroupBuffs["Interface\\Icons\\Spell_Nature_Regeneration"] = {
             ["Greater"] = "Gift of the Wild",
@@ -338,6 +355,17 @@ function BW_OnEvent()
             ["Type"] = "Class"
         }
 
+        if LastBuffStatusUpdate == nil then
+            LastBuffStatusUpdate = math.floor(GetTime())
+            BuffUpdateTime = GetTime()
+        end
+
+        UpdPerSec = { }
+
+        for i = 0, SAMPLE_SIZE - 1 do
+            UpdPerSec[i] = 0
+        end
+    
         BW_Options_Init()
 
         BW_PlayersFrame:Show()
@@ -581,7 +609,6 @@ function BW_GetPlayerInfo()
 
 end
 
-
 function BW_GetAllBuffs()
 
     -- Setup temp array for sorting, and get buffs for all players
@@ -589,6 +616,7 @@ function BW_GetAllBuffs()
         BW_Player_GetBuffs(v)
     end
 
+-- ***** Does this need to be called here?
     BW_Player_AdjustFrames()
 
     -- Adjust buff icon positions
@@ -762,6 +790,7 @@ function BW_Player_AdjustBuffs(v)
 
         if curr_buff:IsVisible() then
 
+-- ***** Add code to sort this when buffs get hidden/shown, rather than refreshing all each time?
             curr_buff:ClearAllPoints()
 
             if firstbutton then
@@ -790,6 +819,7 @@ function BW_Player_AdjustBuffs(v)
 
         if curr_debuff:IsVisible() then
 
+-- ***** Add code to sort this when buffs get hidden/shown, rather than refreshing all each time?
             curr_debuff:ClearAllPoints()
 
             if firstbutton then
@@ -874,7 +904,7 @@ function BW_ResizeWindow()
         if not minimized then
             local playerframe = getglobal("BW_Player" .. v.ID)
 
-            if playerframe:GetBottom() ~= nil then
+            if playerframe:GetBottom() ~= nil and playerframe:IsVisible() then
                 if bottomcoord > playerframe:GetBottom() or bottomcoord == 0 then
                     bottomcoord = playerframe:GetBottom()
                 end
@@ -907,7 +937,11 @@ function BW_ResizeWindow()
         height = 20
     else
         if bottomcoord and bottomcoord ~= 0 then
-            height = BW_Background:GetTop() - bottomcoord + 15
+            if BuffWatchConfig.ShowUpdPerSec == true then
+                height = BW_Background:GetTop() - bottomcoord + 25
+            else
+                height = BW_Background:GetTop() - bottomcoord + 15
+            end
             if height < 65 then height = 65 end
         else
             height = 65
@@ -922,18 +956,84 @@ function BW_ResizeWindow()
     end
 
     BW_Background:SetHeight(height)
-    BW:SetHeight(height)
+    BW:SetHeight(height)  
 
     BW_Background:SetWidth(width)
     BW:SetWidth(width)
 
 end
 
+function BW_UpdateUPS()
 
-function BW_UpdateBuffStatus()
+    local TimeDiff = math.floor(GetTime() - LastBuffStatusUpdate)
 
+    if TimeDiff == 0 then
+        UpdPerSec[CurrSec] = UpdPerSec[CurrSec] + 1
+    elseif TimeDiff < SAMPLE_SIZE then
+
+        for i = 0, TimeDiff - 2 do
+
+            CurrSec = math.mod(CurrSec + 1, SAMPLE_SIZE)
+
+            UpdPerSec[CurrSec] = 0
+
+        end
+
+        CurrSec = math.mod(CurrSec + 1, SAMPLE_SIZE)
+
+        UpdPerSec[CurrSec] = 1
+
+    else
+
+        for i = 0, SAMPLE_SIZE - 1 do
+            UpdPerSec[i] = 0
+        end
+
+        CurrSec = math.mod(CurrSec + TimeDiff, SAMPLE_SIZE)
+
+        UpdPerSec[CurrSec] = 1
+
+    end
+
+    LastBuffStatusUpdate = math.floor(GetTime())
+    
+    if BuffWatchConfig.ShowUpdPerSec == true then
+
+        local UPS = 0
+
+        for i = 0, SAMPLE_SIZE - 1 do
+
+            UPS = UPS + UpdPerSec[i]
+
+        end
+
+        UPS = UPS / SAMPLE_SIZE
+
+        BW_UPS:SetText("UPS = " .. format("%4.1f", UPS))
+    
+    end
+
+end
+
+
+function BW_UpdateBuffStatus(forced)
+
+    if BuffWatchConfig.UpdPerSec > 0 then
+
+        if (BuffUpdateTime + (1 / BuffWatchConfig.UpdPerSec) < GetTime()) or forced == true then
+            BuffUpdateTime = GetTime()
+            BuffUpdatePending = false
+        else
+            BuffUpdatePending = true
+            return
+        end
+    
+    end
+    
     local hasbuffexpired = false
     local playerframechanges = false
+    
+    BW_UpdateUPS()
 
     for k, v in Player_Info do
 
@@ -1005,7 +1105,7 @@ function BW_UpdateBuffStatus()
                             getglobal(player .. "_Buff" .. j .. "Icon"):SetVertexColor(1,0,0)
 
                             if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
-                                UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, UIERRORS_HOLD_TIME * 2)
+                                UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, 2.0)
                                 buffexpired = true
                                 
                                 if BuffWatchConfig.ExpiredSound then

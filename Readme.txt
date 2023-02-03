@@ -62,6 +62,10 @@ Once setup :
   * If you have run out of reagents for a group buff, have not yet learnt the
       spell(s), or never want BuffWatch to cast them, set the Threshold
       setting to 0.
+  * If you find buffwatch starts to reduce your fps in some boss fights 
+      (eg. Lucifron when he debuffs whole raid), then play with the 'Max 
+      Updates Per Second' setting to improve performance. Setting Max UPS to 
+      to a low value may cause short delays in buffs being updated.
 
 For help and information on other features, type '/bw' or '/buffwatch' in game.
 
@@ -87,6 +91,12 @@ Known Issues
 
 Version History
 ---------------
+
+1.15
+----
+
+Added option to restrict buff updates
+Fixed a couple of bugs as a result of 1.11
 
 1.14
 ----

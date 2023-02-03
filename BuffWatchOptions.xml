@@ -6,7 +6,7 @@
     <Frame name="BW_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="350" y="520"/>
+            <AbsDimension x="350" y="580"/>
         </Size>
 
         <Anchors>
@@ -462,7 +462,7 @@
                         GameTooltip:Hide()
                     </OnLeave>
                 </Scripts>
-            </CheckButton>            
+            </CheckButton>
 
             <Slider name="$parent_BuffThreshold" inherits="OptionsSliderTemplate">
                 <Size>
@@ -480,7 +480,7 @@
                         getglobal(this:GetName().."Text"):SetText("GroupBuff Threshold (" .. this:GetValue() .. ")")
                         getglobal(this:GetName().."High"):SetText("5+")
                         getglobal(this:GetName().."Low"):SetText("0 (off)")
-                        this:SetMinMaxValues(0,5)
+                        this:SetMinMaxValues(0, 5)
                         this:SetValueStep(1)
                     </OnLoad>
                     <OnValueChanged>
@@ -531,6 +531,74 @@
                 </Scripts>
             </Slider>
 
+            <Slider name="$parent_UpdPerSec" inherits="OptionsSliderTemplate">
+                <Size>
+                    <AbsDimension x="220" y="16"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_Alpha" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-20" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Max Updates Per Second (" .. this:GetValue() .. ")")
+                        getglobal(this:GetName().."High"):SetText("10")
+                        getglobal(this:GetName().."Low"):SetText("0 (off)")
+                        this:SetMinMaxValues(0, 10)
+                        this:SetValueStep(1)
+                    </OnLoad>
+                    <OnValueChanged>
+                        BuffWatchConfig.UpdPerSec = this:GetValue()
+                        getglobal(this:GetName().."Text"):SetText("Max Updates Per Second (" .. this:GetValue() .. ")")
+                    </OnValueChanged>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_UPDPERSEC)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Slider>
+            
+            <CheckButton name="$parent_ShowUpdPerSec" inherits="OptionsCheckButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>            
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_UpdPerSec" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="50" y="-5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show UPS Counter");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ShowUpdPerSec = true
+                            BW_UPS:Show()
+                        else
+                            BuffWatchConfig.ShowUpdPerSec = false
+                            BW_UPS:Hide()
+                        end
+                        BW_ResizeWindow()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWUPDPERSEC)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>      
+            
             <Button name="$parent_Okay" inherits="OptionsButtonTemplate" text="Okay">
                 <Anchors>
                     <Anchor point="BOTTOMRIGHT">

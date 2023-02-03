@@ -124,7 +124,6 @@
 
     <!--==================================================================================-->
 
-
     <Frame name="BW" frameStrata="LOW" toplevel="false" enableMouse="true" movable="true" parent="UIParent" hidden="false">
 
         <Size>
@@ -139,6 +138,22 @@
             </Anchor>
         </Anchors>
 
+        <Layers>
+            <Layer level="BACKGROUND">
+
+                <FontString name="BW_UPS" inherits="GameFontNormal" text="CPS = 0">
+                    <Anchors>
+                        <Anchor point="BOTTOM" relativeTo="BW" relativePoint="BOTTOM">
+                            <Offset>
+                                <AbsDimension x="0" y="5"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            
+            </Layer>
+        </Layers>
+        
         <Frames>
 
             <Frame name="$parent_Background">
@@ -460,6 +475,9 @@
             <OnEvent>
                 BW_OnEvent()
             </OnEvent>
+--            <OnUpdate> 
+--                BW_OnUpdate(arg1)
+--            </OnUpdate>
             <OnMouseDown>
                 BW_OnMouseDown(arg1)
             </OnMouseDown>
@@ -467,7 +485,7 @@
                 BW_OnMouseUp(arg1)
             </OnMouseUp>
             <OnEnter>
-                BW_UpdateBuffStatus()
+--                BW_UpdateBuffStatus()
                 BW_MouseIsOverFrame()
             </OnEnter>
             <OnLeave>
