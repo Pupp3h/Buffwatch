@@ -5,11 +5,12 @@
 -- //
 -- // TODO: (possibly)
 -- //
+-- //     
+-- //     Update ResizeWindow to run no more than once every 2 secs (check how often it actually is)
 -- //     Base resize on num players visible/buffs vis (store and count when scanning)
 -- //
 -- //     Ignore dead / disconn in threshold count
 -- //     Window doesnt always properly resize
--- //     Update ResizeWindow to run no more than once every 2 secs
 -- //     Option to split into columns (previous changes might suffice)
 -- //     Localisation for various bits of text
 -- //     Keybinding to scan list and recast any expired buffs
@@ -20,9 +21,13 @@
 -- //
 -- // CHANGES:
 -- //
--- //    Added option to restrict buff updates
--- //    Fixed a couple of bugs as a result of 1.11
--- //
+-- //     Fixed PvP flagging (was broken with 1.11)
+-- //     Remembers locked buff settings for players you have grouped with
+-- //     Enabled dragging from header label
+-- //     When Group Threshold is 0, buff cast will now be version (ie. single/group) 
+-- //         that is locked (except Druid GotW)
+-- //     Delays Buff Update if Max Updates has been reached
+-- //     
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -31,8 +36,8 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.15"
-BW_RELEASE_DATE = "June 25, 2006"
+BW_VERSION = "1.16"
+BW_RELEASE_DATE = "July 20, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -42,7 +47,9 @@ BW_SORTORDER_DROPDOWN_LIST = {
 BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup, ShowPets,
     ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, DebuffsAlwaysVisible, 
     AlignBuffs, ExpiredWarning, ExpiredSound, SortOrder, BuffThreshold, HighlightPvP, 
-    PreventPvPBuff, UpdPerSec, ShowUpdPerSec }
+    PreventPvPBuff, UpdPerSec, ShowUpdPerSec, debug }
+    
+BuffWatchPlayerBuffs = { }
 
 local lastspellcast
 local lastgrouptype
@@ -65,6 +72,8 @@ local BuffUpdatePending = false
 local UpdPerSec = { }
 local CurrSec = 0
 local SAMPLE_SIZE = 10
+local UpdateInterval = 2.0
+local TimeSinceLastUpdate
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -80,9 +89,11 @@ function BW_OnLoad()
     this:RegisterEvent("SPELLCAST_START")
     this:RegisterEvent("UNIT_AURA")
     this:RegisterEvent("UNIT_PET")
-    this:RegisterEvent("UNIT_PVP_UPDATE")
+    this:RegisterEvent("UNIT_FACTION")
     this:RegisterEvent("VARIABLES_LOADED")
-
+    
+    TimeSinceLastUpdate = 0
+    
     SlashCmdList["BUFFWATCH"] = BW_SlashHandler
     SLASH_BUFFWATCH1 = "/buffwatch"
     SLASH_BUFFWATCH2 = "/bw"
@@ -170,7 +181,7 @@ function BW_OnEvent()
             )
         end
 
-        BW_Print("BuffWatch loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window.", 0.2, 0.9, 0.9 )
+        BW_Print("BuffWatch v " .. BW_VERSION .. " loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window.", 0.2, 0.9, 0.9 )
 
         BW_HeaderText:SetText("BuffWatch")
         BW_HeaderText:SetTextColor(0.2, 0.9, 0.9)
@@ -246,6 +257,10 @@ function BW_OnEvent()
         if BuffWatchConfig.ShowUpdPerSec == nil then
             BuffWatchConfig.ShowUpdPerSec = false
         end
+
+--        if BuffWatchConfig.debug == nil then
+--            BuffWatchConfig.debug = false
+--        end
 
         -- Mark of the Wild (Same icon as Gift of the Wild)
         GroupBuffs["Interface\\Icons\\Spell_Nature_Regeneration"] = {
@@ -413,7 +428,7 @@ function BW_OnEvent()
 
         end
 
-        if event == "UNIT_PVP_UPDATE" then
+        if event == "UNIT_FACTION" then
 
             local unitpet = BW_GetPetUnitID(arg1)
 
@@ -426,6 +441,23 @@ function BW_OnEvent()
             end
 
         end
+
+    end
+
+end
+
+
+function BW_OnUpdate(elapsed)
+
+    TimeSinceLastUpdate = TimeSinceLastUpdate + elapsed;    
+
+    if (TimeSinceLastUpdate > UpdateInterval) then
+
+        if BuffUpdatePending == true then
+            BW_UpdateBuffStatus()
+        end
+
+        TimeSinceLastUpdate = 0.0
 
     end
 
@@ -547,6 +579,8 @@ function BW_GetPlayerInfo()
 
                 Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i]
                 BW_Player_ColourName(Player_Info[unitname])
+                
+                BW_Player_LoadBuffs(id)
 
             end
 
@@ -1020,11 +1054,14 @@ function BW_UpdateBuffStatus(forced)
 
     if BuffWatchConfig.UpdPerSec > 0 then
 
-        if (BuffUpdateTime + (1 / BuffWatchConfig.UpdPerSec) < GetTime()) or forced == true then
+        if (BuffUpdateTime + (1.0 / BuffWatchConfig.UpdPerSec) < GetTime()) or forced == true then
             BuffUpdateTime = GetTime()
             BuffUpdatePending = false
         else
-            BuffUpdatePending = true
+            if BuffUpdatePending == false then 
+                BuffUpdatePending = true
+                TimeSinceLastUpdate = 0
+            end
             return
         end
     
@@ -1222,6 +1259,67 @@ function BW_UpdateBuffStatus(forced)
 
 end
 
+function BW_Player_SaveBuffs(playerid)
+
+    local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
+    local i
+    
+    if getglobal("BW_Player" .. playerid .. "_Lock"):GetChecked() then
+    
+        i = 0
+        BuffWatchPlayerBuffs[playername] = { }
+        BuffWatchPlayerBuffs[playername]["Buffs"] = { }
+        
+        for j = 1, 16 do
+
+            if getglobal("BW_Player" .. playerid .. "_Buff" .. j):IsShown() then
+            
+                i = i + 1
+                BuffWatchPlayerBuffs[playername]["Buffs"][i] = { }
+                BuffWatchPlayerBuffs[playername]["Buffs"][i]["texture"] = getglobal("BW_Player" .. playerid .. "_Buff" .. j .. "Icon"):GetTexture()
+            end
+            
+        end        
+    
+    else
+    
+        BuffWatchPlayerBuffs[playername] = nil
+    
+    end
+
+
+end
+
+function BW_Player_LoadBuffs(playerid)
+
+    local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
+
+    if BuffWatchPlayerBuffs[playername] then 
+
+        for j = 1, 16 do
+        
+            if BuffWatchPlayerBuffs[playername]["Buffs"][j] then
+
+                getglobal("BW_Player" .. playerid .. "_Buff" .. j):Show()
+                getglobal("BW_Player" .. playerid .. "_Buff" .. j .. "Icon"):SetTexture(BuffWatchPlayerBuffs[playername]["Buffs"][j]["texture"])
+            
+            else
+            
+                getglobal("BW_Player" .. playerid .. "_Buff" .. j):Hide()
+                getglobal("BW_Player" .. playerid .. "_Buff" .. j .. "Icon"):SetTexture(nil)
+            
+            end
+
+        end
+        
+        getglobal("BW_Player" .. playerid .. "_Lock"):SetChecked(true)
+             
+     end
+     
+     BW_Check_Clicked(getglobal("BW_Player" .. playerid .. "_Lock"))
+
+end
+
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
 -- //                Slash Commands
@@ -1247,6 +1345,16 @@ function BW_SlashHandler(msg)
     elseif msg == "" or msg == "help" then
 
         BW_ShowHelp()
+    
+--    elseif msg == "debug" then
+    
+--        BuffWatchConfig.debug = not BuffWatchConfig.debug
+        
+--        if BuffWatchConfig.debug == true then
+--            BW_Print("Buffwatch debugging ON")
+--        else
+--            BW_Print("Buffwatch debugging OFF")
+--        end
 
     else
 
@@ -1318,22 +1426,26 @@ function BW_MouseIsOverFrame()
 end
 
 
-function BW_Check_Clicked()
+function BW_Check_Clicked(obj)
 
-    local checked = this:GetChecked()
+    local checked 
+    
+    if obj then 
+        checked = obj:GetChecked()
+    else
+        checked = this:GetChecked()
+    end
 
     if checked then
-
+            
         for k, v in Player_Info do
 
             local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
 
---            if curr_lock:IsVisible() then
-                if not curr_lock:GetChecked() then
-                    checked = nil
-                    break
-                end
---            end
+            if not curr_lock:GetChecked() then
+                checked = nil
+                break
+            end
 
         end
 
@@ -1345,14 +1457,16 @@ function BW_Check_Clicked()
         BW_Lock_All:SetChecked(false)
     end
 
+    if not obj then
+        BW_Player_SaveBuffs(this:GetParent():GetID())
+    end
+
 end
 
 
 function BW_Name_Clicked(button)
 
-    local id = this:GetParent():GetID()
-
-    local playername = getglobal("BW_Player" .. id .. "_NameText"):GetText()
+    local playername = getglobal("BW_Player" .. this:GetParent():GetID() .. "_NameText"):GetText()
 
     if button == "LeftButton" then
         TargetByName(playername)
@@ -1400,14 +1514,13 @@ function BW_Buff_Clicked(button)
                 end
 
                 -- Check if it's a group buff or a lesser version.
-                if GroupBuffs[spelltexture] then
+                if GroupBuffs[spelltexture] and BuffWatchConfig.BuffThreshold > 0 then
 
                     local castgreater = false
                     local newspelltexture = nil
 
                     -- Check Buff Threshold for whether to cast single or group
-                    if BuffWatchConfig.BuffThreshold > 0 and
-                        (GetNumPartyMembers() >= (BuffWatchConfig.BuffThreshold - 1) or GetNumRaidMembers() >= BuffWatchConfig.BuffThreshold) then
+                    if (GetNumPartyMembers() >= (BuffWatchConfig.BuffThreshold - 1) or GetNumRaidMembers() >= BuffWatchConfig.BuffThreshold) then
 
                         local castcount = 0
                         local otherspelltexture
@@ -1542,6 +1655,7 @@ function BW_Buff_Clicked(button)
             this:Hide()
             BW_Player_AdjustBuffs(Player_Info[playername])
             BW_ResizeWindow()
+            BW_Player_SaveBuffs(playerid)
 
         elseif getglobal(playerframe .. "_Lock"):GetChecked() and IsAltKeyDown() then
 
@@ -1553,6 +1667,7 @@ function BW_Buff_Clicked(button)
 
             BW_Player_AdjustBuffs(Player_Info[playername])
             BW_ResizeWindow()
+            BW_Player_SaveBuffs(playerid)
 
         else
 
@@ -1624,7 +1739,14 @@ end
 function BW_Set_AllChecks(checked)
 
     for k, v in Player_Info do
-        getglobal("BW_Player" .. v.ID .. "_Lock"):SetChecked(checked)
+    
+        local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
+
+        if curr_lock:GetChecked() ~= checked then 
+            curr_lock:SetChecked(checked)
+            BW_Player_SaveBuffs(v.ID)
+        end
+        
     end
 
 end
@@ -1834,6 +1956,7 @@ function BW_GetNextID(unitname)
     end
 
     getglobal("BW_Player" .. i .. "_Lock"):SetChecked(false)
+    BW_Lock_All:SetChecked(false)
 
     return i
 
@@ -1858,6 +1981,9 @@ function BW_GetPetUnitID(unitid)
 ]]--
 end
 
+function BW_SetBuffUpdatePending(value)
+    BuffUpdatePending = value
+end
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -1870,6 +1996,13 @@ function BW_Print(msg, R, G, B)
     DEFAULT_CHAT_FRAME:AddMessage(msg, R, G, B);
 
 end
+
+--function BW_Debug(msg, R, G, B)
+
+--    ChatFrame7:AddMessage(msg, R, G, B);
+
+--end
+
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //

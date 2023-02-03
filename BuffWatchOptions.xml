@@ -553,6 +553,7 @@
                     <OnValueChanged>
                         BuffWatchConfig.UpdPerSec = this:GetValue()
                         getglobal(this:GetName().."Text"):SetText("Max Updates Per Second (" .. this:GetValue() .. ")")
+                        BW_SetBuffUpdatePending(false)
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(this, "ANCHOR_RIGHT")

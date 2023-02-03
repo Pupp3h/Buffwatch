@@ -92,6 +92,17 @@ Known Issues
 Version History
 ---------------
 
+1.16
+----
+
+Fixed PvP flagging (was broken with 1.11)
+Remembers locked buff settings for players you have grouped with
+Enabled dragging from header label
+When Group Threshold is 0, buff cast will now be version (ie. single/group) 
+    that is locked (except Druid GotW)
+Delays Buff Update if Max Updates has been reached (rather than ignore it)
+
+
 1.15
 ----
 

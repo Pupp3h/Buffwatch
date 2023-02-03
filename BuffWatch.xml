@@ -239,6 +239,12 @@
                     <Onclick>
                         BW_Header_Clicked(arg1)
                     </Onclick>
+                    <OnMouseDown>
+                        BW_OnMouseDown(arg1)
+                    </OnMouseDown>
+                    <OnMouseUp>
+                        BW_OnMouseUp(arg1)
+                    </OnMouseUp>                    
                     <OnLeave>
                         BW_MouseIsOverFrame()
                     </OnLeave>
@@ -475,9 +481,9 @@
             <OnEvent>
                 BW_OnEvent()
             </OnEvent>
---            <OnUpdate> 
---                BW_OnUpdate(arg1)
---            </OnUpdate>
+            <OnUpdate> 
+                BW_OnUpdate(arg1)
+            </OnUpdate>
             <OnMouseDown>
                 BW_OnMouseDown(arg1)
             </OnMouseDown>
