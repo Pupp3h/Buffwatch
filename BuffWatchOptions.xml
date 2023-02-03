@@ -5,7 +5,7 @@
     
     <Frame name="BuffWatchOptionsFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
         <Size>
-            <AbsDimension x="350" y="280"/>
+            <AbsDimension x="350" y="320"/>
         </Size>
         <Anchors>
             <Anchor point="CENTER"/>
@@ -163,6 +163,27 @@
             		BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
+            </CheckButton> 
+            <CheckButton name="BuffWatchShowExpiredWarning" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="40" y="-200"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Expired Warning");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ExpiredWarning = true
+                        else
+                            BuffWatchConfig.ExpiredWarning = false
+                        end
+                    </OnClick>
+                </Scripts>
             </CheckButton>             
             <Slider name="BuffWatchAlpha" inherits="OptionsSliderTemplate">
                 <Size>
@@ -171,7 +192,7 @@
                 <Anchors>
                     <Anchor point="TOP">
                         <Offset>
-                            <AbsDimension x="0" y="-200" />
+                            <AbsDimension x="0" y="-240" />
                         </Offset>
                     </Anchor>
                 </Anchors>

@@ -11,4 +11,5 @@ function BuffWatchOptions_Init()
     BuffWatchShowDebuffs:SetChecked(BuffWatchConfig.ShowDebuffs)
     BuffWatchAlpha:SetValue(BuffWatchConfig.alpha)
     BuffWatchAlignBuffs:SetChecked(BuffWatchConfig.AlignBuffs)
+    BuffWatchShowExpiredWarning:SetChecked(BuffWatchConfig.ExpiredWarning)
 end

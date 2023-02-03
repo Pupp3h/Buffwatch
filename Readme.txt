@@ -18,6 +18,15 @@ here : http://www.curse-gaming.com/mod.php?addid=2003
 Version History
 ---------------
 
+0.621
+-----
+
+Alt-RightClick to remove all buffs other than this one
+Optional warning message for when a monitored buff expires
+Added support for 16 debuffs
+Updated Interface number to 1700
+
+
 0.620
 -----
 

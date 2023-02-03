@@ -6,6 +6,7 @@
 -- //     fixes and new features by Pup
 -- //
 -- // TODO:
+-- //     Maintain locked buff settings when raid/party is adjusted
 -- //     Keybinding to scan list and recast any expired buffs (probably need to tie in with below)
 -- //     Option to only add castable buffs (key combination to override this for a player?)
 -- //     Option to only show debuffs I can cleanse
@@ -14,15 +15,11 @@
 -- //     Show poisons and weapon buffs for player
 -- //
 -- // CHANGES:
--- //     Added BuffWatch Options Toggle to keybindings
--- //     Changed checking code for mouse over frame
--- //     Options toggle button added next to buffwatch label
--- //     Option to left align buffs
--- //     Removed variable RMouseSpellID
--- //     Removed event PLAYER_REGEN_ENABLED
--- //     Changed UNIT_AURA event code
--- //     Can now click anywhere on player name to select them (used to be first 18 pixels)
--- //     Fixed window resize error when first loaded
+-- // 
+-- //     Alt-RightClick to remove all buffs OTHER than this one 
+-- //     Optional warning message for when a monitored buff expires
+-- //     Added support for 16 debuffs
+-- //     Updated Interface number to 1700
 -- //
 -- //     
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -35,12 +32,13 @@
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
 
 BuffWatchConfig = { runCount, alpha, rightMouseSpell, show_on_startup, 
-    ShowPets, ShowDebuffs, AlignBuffs }
+    ShowPets, ShowDebuffs, AlignBuffs, ExpiredWarning }
 
 local UNIT_IDs = { }
 local lastspellcast
 local lastgrouptype
 local buttonalignposition
+local buffexpired 
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -79,15 +77,15 @@ function BW_OnEvent()
             BuffWatchDetails = {
                 name = "BuffWatch",
                 description = "Keeps track of party/raid buffs",
-                version = "0.620",
-                releaseDate = "August 30, 2005",
+                version = "0.621",
+                releaseDate = "September 14, 2005",
                 author = "Tyrrael & Pup",
                 category = MYADDONS_CATEGORY_OTHERS,
                 frame = "BuffWatchFrame",
                 optionsframe = "BuffWatchOptionsFrame"
             }
 
-        BuffWatchHelp = { "              - BuffWatch Usage - v 0.620 -\n\n" ..
+        BuffWatchHelp = { "              - BuffWatch Usage - v 0.621 -\n\n" ..
             "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
             "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
             "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
@@ -96,7 +94,8 @@ function BW_OnEvent()
             "  Rebuffing:\n    - Left click an icon (will auto-target)\n\n" ..
             "  Right click spell:\n" ..
             "    - Cast any spell with a cast time (not instant).\n        Then type \"/bw set\"\n    - To cast it, right click any icon (will auto-target)\n\n" ..
-            "  Deleting buffs:\n    - Lock the player's buffs (check the box).\n        Then [ CTRL + Right Click ] on the buff\n\n",
+            "  Deleting buffs:\n    - Lock the player's buffs (check the box).\n        Then [ CTRL + Right Click ] on the buff\n" ..
+            "    - Optionally, [ ALT + Right Click ] to delete all but the selected one.\n\n",
             "  Slash Commands ( Use /buffwatch or /bw )\n" ..
             "    - /bw alpha # : Set the background opacity (0.0 to 1.0)\n" ..
             "    - /bw toggle : shows/hides the window\n" ..
@@ -104,6 +103,7 @@ function BW_OnEvent()
             "    - /bw pets : toggle to show or hide pets in the buffwatch window\n" ..
             "    - /bw debuffs : toggle to show or hide debuffs in the buffwatch window\n" ..
             "    - /bw alignbuffs : toggle aligning of buff icons\n" ..
+            "    - /bw expiredwarning : toggle expired buff warning message\n" ..
             "    - /bw options : shows/hides the options window\n" ..
             "    - /bw : shows this help menu :)\n\n" ..
             "  Verbosity:\n" ..
@@ -199,6 +199,10 @@ function BW_OnEvent()
         
         if BuffWatchConfig.AlignBuffs == nil then
             BuffWatchConfig.AlignBuffs = true
+        end
+
+        if BuffWatchConfig.ExpiredWarning == nil then
+            BuffWatchConfig.ExpiredWarning = true
         end
         
         BuffWatchOptions_Init()
@@ -465,7 +469,7 @@ function BW_Player_GetBuffs(i)
     
     end
 
-    for j=1,8 do
+    for j=1,16 do
 
         local unit = UNIT_IDs[i]
 
@@ -531,7 +535,7 @@ function BW_Player_AdjustBuffs(i)
     local firstvisibledebuff = true
     local previousvisibledebuff
 
-    for j=1,8 do
+    for j=1,16 do
 
         local curr_debuff = getglobal("BW_Player" .. i .. "_Debuff" .. j)
 
@@ -573,6 +577,8 @@ end
 
 function BW_UpdateBuffStatus()
 
+    local hasbuffexpired = false
+
     for i=1,table.getn(UNIT_IDs) do
     
         local playerframe = "BW_Player" .. i
@@ -595,6 +601,12 @@ function BW_UpdateBuffStatus()
                         getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(1,1,1)
                     else
                         getglobal(playerframe .. "_Buff" .. j .. "Icon"):SetVertexColor(1,0,0)
+                        
+                        if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
+                            UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, UIERRORS_HOLD_TIME * 2)
+                            buffexpired = true
+                        end
+                        hasbuffexpired = true
                     end
 
                 end
@@ -604,6 +616,8 @@ function BW_UpdateBuffStatus()
         end
         
     end
+    
+    buffexpired = hasbuffexpired
 
 end
 
@@ -634,7 +648,7 @@ function BW_ResizeWindow()
             end
         end
 
-        for j=1,8 do
+        for j=1,16 do
             local curr_buff = getglobal("BW_Player" .. i .. "_Debuff" .. j)
 
             if curr_buff:IsVisible() and curr_buff:GetRight() then
@@ -815,6 +829,18 @@ function BW_SlashHandler(msg)
         end
         
         BuffWatchOptions_Init()
+    
+    elseif msg == "expiredwarning" then
+    
+        if BuffWatchConfig.ExpiredWarning == false then    
+            BuffWatchConfig.ExpiredWarning = true
+            BW_Print("BuffWatch warning message will be displayed.", 0.2, 0.9, 0.9 )
+        else    
+            BuffWatchConfig.ExpiredWarning = false
+            BW_Print("BuffWatch message will not be displayed.", 0.2, 0.9, 0.9 )
+        end
+        
+        BuffWatchOptions_Init()    	
 
     elseif msg == "options" then
     
@@ -907,11 +933,10 @@ end
 
 
 function BW_Name_Clicked(button)
-    local index, index2 = string.find(this:GetName(), "BW_Player")
-    local index3 = string.find(this:GetName(), "_Name")
-    local raid_buttonused = string.sub( this:GetName(), index2+1, index3-1 )
-    raid_buttonused = tonumber(raid_buttonused)
-    local playername = getglobal("BW_Player" .. raid_buttonused .. "_NameText"):GetText()
+
+    local id = this:GetParent():GetID()
+    
+    local playername = getglobal("BW_Player" .. id .. "_NameText"):GetText()
 
     if button == "LeftButton" then
     
@@ -956,18 +981,11 @@ end
 
 
 function BW_Buff_Clicked(button)
-    local index, index2 = string.find(this:GetName(), "BW_Player")
-    local index3 = string.find(this:GetName(), "_Buff")
 
-    if index3 == nil then
-        index3 = string.find(this:GetName(), "_Debuff")
-    end
-
-    local raid_buttonused = string.sub(this:GetName(), index2+1, index3-1)
-    raid_buttonused = tonumber(raid_buttonused)
-    local playername = getglobal("BW_Player" .. raid_buttonused .. "_NameText"):GetText()
-
-    local playerframe = string.sub(this:GetName(), 1, index3-1)
+    local buffid = this:GetID()
+    local playerid = this:GetParent():GetID()    
+    local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
+    local playerframe =  "BW_Player" .. playerid
 
     if button == "LeftButton" then
 
@@ -1007,7 +1025,24 @@ function BW_Buff_Clicked(button)
 
     elseif button == "RightButton" then
 
-        if not getglobal(playerframe .. "_Lock"):GetChecked() or not IsControlKeyDown() then
+        if getglobal(playerframe .. "_Lock"):GetChecked() and IsControlKeyDown() then
+
+            this:Hide()
+            BW_Player_AdjustBuffs(playerid)
+            BW_ResizeWindow()
+
+        elseif getglobal(playerframe .. "_Lock"):GetChecked() and IsAltKeyDown() then
+        
+            for i=1,16 do
+                if i ~= buffid then
+                    getglobal(playerframe .. "_Buff" .. i):Hide()
+                end
+            end
+            
+            BW_Player_AdjustBuffs(playerid)
+            BW_ResizeWindow()
+            
+        else
 
             if BuffWatchConfig.rightMouseSpell then
                 if UnitName("target") and not UnitIsEnemy("target","player") then
@@ -1033,12 +1068,6 @@ function BW_Buff_Clicked(button)
 
             end
 
-        elseif getglobal(playerframe .. "_Lock"):GetChecked() and IsControlKeyDown() then
-
-            this:Hide()
-            BW_Player_AdjustBuffs(raid_buttonused)
-            BW_ResizeWindow()
-
         end
 
     end
@@ -1047,14 +1076,8 @@ end
 
 
 function BW_BuffTooltip()
-
-    local index, index2 = string.find(this:GetName(), "BW_Player")
-    local index3 = string.find( this:GetName(), "_Buff" )
-    if index3 == nil then
-        index3 = string.find(this:GetName(), "_Debuff")
-    end
-    local id = string.sub(this:GetName(), index2+1, index3-1)
-    id = tonumber(id)
+ 
+    local id = this:GetParent():GetID()
 
     local buffbuttonid = nil
     local debuffbuttonid = nil
@@ -1068,7 +1091,7 @@ function BW_BuffTooltip()
     end
 
     if buffbuttonid == nil then
-        for i_2=1,8 do
+        for i_2=1,16 do
             if UnitDebuff( UNIT_IDs[id],i_2 ) == texture then
                 debuffbuttonid = i_2
                 break
@@ -1195,7 +1218,7 @@ function BW_ShowHelp()
     BW_HelpFrame_Text:SetText(
 
         [[
-        - BuffWatch Usage - v 0.620 -
+        - BuffWatch Usage - v 0.621 -
 
         Show/Hide the BuffWatch window:
              - Bind a keyboard button to show/hide the window
@@ -1218,6 +1241,7 @@ function BW_ShowHelp()
 
         Deleting buffs:
              - Lock the player's buffs (check the box). Then [ CTRL + Right Click ] on the buff
+             - Optionally, [ ALT + Right Click ] to delete all but the selected one.
 
         Slash Commands ( Use /buffwatch or /bw )
              - /bw alpha # : Set the background opacity (0.0 to 1.0)
@@ -1226,6 +1250,7 @@ function BW_ShowHelp()
              - /bw pets : toggle to show or hide pets in the buffwatch window
              - /bw debuffs : toggle to show or hide debuffs in the buffwatch window
              - /bw alignbuffs : toggle aligning of buff icons
+             - /bw expiredwarning : toggle expired buff warning message
              - /bw options : shows/hides the options window
              - /bw : shows this help menu :)
 
