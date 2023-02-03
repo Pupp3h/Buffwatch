@@ -1,11 +1,13 @@
 BW_TTIP_SORTORDER = "Specifies the sort order for the player list in the BuffWatch Window"
-BW_TTIP_SHOWONSTARTUP = "Toggle whether to show the BuffWatch window on startup"
-BW_TTIP_SHOWPETS = "Toggle whether to show pets in the player list"
-BW_TTIP_SHOWCASTABLEBUFFS = "Toggle whether to only show buffs you can cast"
-BW_TTIP_SHOWDEBUFFS = "Toggle whether to show debuffs"
-BW_TTIP_SHOWDISPELLDEBUFFS = "Toggle whether to only show debuffs you can dispell"
-BW_TTIP_ALIGNBUFFS = "Toggle aligning of the buff icons for all players"
+BW_TTIP_SHOWONSTARTUP = "Show the BuffWatch window on startup"
+BW_TTIP_SHOWPETS = "Show pets in the player list"
+BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast"
+BW_TTIP_SHOWDEBUFFS = "Show debuffs"
+BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell"
+BW_TTIP_DEBUFFSALWAYSVISIBLE = "Always show players with debuffs"
+BW_TTIP_ALIGNBUFFS = "Align buff icons for all players"
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire"
+BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire"
 BW_TTIP_HIGHLIGHTPVP = "Highlight players that are PvP Flagged"
 BW_TTIP_PREVENTPVPBUFF = "Prevent BuffWatch from buffing players that are PvP Flagged"
 BW_TTIP_BUFFTHRESHOLD = "Number of players missing the buff for it to cast group version"
@@ -24,8 +26,10 @@ function BW_Options_Init()
     BW_Options_ShowOnlyCastableBuffs:SetChecked(BuffWatchConfig.ShowCastableBuffs)
     BW_Options_ShowDebuffs:SetChecked(BuffWatchConfig.ShowDebuffs)
     BW_Options_ShowOnlyDispellDebuffs:SetChecked(BuffWatchConfig.ShowDispellableDebuffs)
+    BW_Options_DebuffsAlwaysVisible:SetChecked(BuffWatchConfig.DebuffsAlwaysVisible)
     BW_Options_AlignBuffs:SetChecked(BuffWatchConfig.AlignBuffs)
     BW_Options_ShowExpiredWarning:SetChecked(BuffWatchConfig.ExpiredWarning)
+    BW_Options_PlayExpiredSound:SetChecked(BuffWatchConfig.ExpiredSound)    
     BW_Options_HighlightPvP:SetChecked(BuffWatchConfig.HighlightPvP)
     BW_Options_PreventPvPBuff:SetChecked(BuffWatchConfig.PreventPvPBuff)
     BW_Options_BuffThreshold:SetValue(BuffWatchConfig.BuffThreshold)

@@ -49,15 +49,16 @@ Once setup :
   * To target a player, left click their name. To assist, right click.
   * To hide players for which you are not monitoring any buffs, toggle the
       'Showing Unmonitored' icon in the BuffWatch window.
-  * To hide players for which you do have monitored buffs (useful if you are
-      in a large raid), but having none expired, toggle the 'Showing 
-      Monitored' icon in the BuffWatch window. Player will re-appear when one 
-      of their buffs expires.
+  * To hide players for which you do have monitored buffs, but having none
+      expired, toggle the 'Showing Monitored' icon in the BuffWatch window.
+      Player will re-appear when one of their buffs expires.
   * Buffwatch will automatically cast the group version of a buff if you set
       the Buff Threshold setting in options to a value between 1 and 5.
       Buffwatch will check how many players are missing the buff (regardless
       of whether you are monitoring for it), and cast the group version if the
-      Threshold setting is less than or equal to this value. 
+      Threshold setting is less than or equal to this value. (This does not
+      work however for the Druid's Gift of the Wild, and Mark of the Wild will
+      always be cast)
   * If you have run out of reagents for a group buff, have not yet learnt the
       spell(s), or never want BuffWatch to cast them, set the Threshold
       setting to 0.
@@ -75,14 +76,24 @@ Known Issues
       (including new ranks) the spell id's can change, and buffwatch might 
       start to cast the wrong spell instead of the group buff. If this happens, 
       you will need to reload your UI or log out and back in again.
-
-  * The buffwatch window will sometimes keep expanding in size. The should be 
-      fixed in a future version.
       
+  * When 'Show Only Castable Buffs' is selected, Buffwatch doesn't show 
+      selfcast only buffs. (eg. Ice Armour. Paladin Auras). This is due to
+      what the WoW API considers a castable buff. To setup monitoring of these
+      types of buff (as with any buff that you cannot cast), you must deselect
+      this option before locking the relevant players.
+
 -------------------------------------------------------------------------------
 
 Version History
 ---------------
+
+1.14
+----
+
+Added Priest Shadow and Spirit Group Buffs
+Option to always show players with debuffs
+Added optional sound on expired buff
 
 1.13
 ----

@@ -18,11 +18,9 @@
 -- //
 -- // CHANGES:
 -- //
--- //     Shows class colours properly for non EN localisations
--- //     Added option to highlight players that are PvP Flagged
--- //     Added option to prevent BuffWatch from casting on players that are PvP Flagged
--- //     Added option to show only buffs player can cast
--- //     Added option to show only debuffs player can dispell
+-- //     Option to always show players with debuffs
+-- //     Added Shadow and Spirit Group Buffs
+-- //     Added optional sound on expired buff
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -32,8 +30,8 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.13"
-BW_RELEASE_DATE = "March 19, 2006"
+BW_VERSION = "1.14"
+BW_RELEASE_DATE = "May 03, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -41,8 +39,9 @@ BW_SORTORDER_DROPDOWN_LIST = {
 }
 
 BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup, ShowPets,
-    ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, AlignBuffs,
-    ExpiredWarning, SortOrder, BuffThreshold, HighlightPvP, PreventPvPBuff }
+    ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, DebuffsAlwaysVisible, 
+    AlignBuffs, ExpiredWarning, ExpiredSound, SortOrder, BuffThreshold, HighlightPvP, 
+    PreventPvPBuff }
 
 local lastspellcast
 local lastgrouptype
@@ -198,6 +197,10 @@ function BW_OnEvent()
         if BuffWatchConfig.ShowDispellableDebuffs == nil then
             BuffWatchConfig.ShowDispellableDebuffs = false
         end
+        
+        if BuffWatchConfig.DebuffsAlwaysVisible == nil then
+            BuffWatchConfig.DebuffsAlwaysVisible = true
+        end
 
         if BuffWatchConfig.AlignBuffs == nil then
             BuffWatchConfig.AlignBuffs = true
@@ -205,6 +208,10 @@ function BW_OnEvent()
 
         if BuffWatchConfig.ExpiredWarning == nil then
             BuffWatchConfig.ExpiredWarning = true
+        end
+
+        if BuffWatchConfig.ExpiredSound == nil then
+            BuffWatchConfig.ExpiredSound = false
         end
 
         if BuffWatchConfig.SortOrder == nil then
@@ -238,6 +245,26 @@ function BW_OnEvent()
         -- Prayer of Fortitude
         GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerOfFortitude"] = {
             ["Lesser"] = "Interface\\Icons\\Spell_Holy_WordFortitude",
+            ["Type"] = "SubGroup"
+        }
+        -- Divine Spirit
+        GroupBuffs["Interface\\Icons\\Spell_Holy_DivineSpirit"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_PrayerofSpirit",
+            ["Type"] = "SubGroup"
+        }
+        -- Prayer of Spirit
+        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerofSpirit"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_DivineSpirit",
+            ["Type"] = "SubGroup"
+        }
+        -- Shadow Protection
+        GroupBuffs["Interface\\Icons\\Spell_Shadow_AntiShadow"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_PrayerofShadowProtection",
+            ["Type"] = "SubGroup"
+        }
+        -- Prayer of Shadow Protection
+        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerofShadowProtection"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Shadow_AntiShadow",
             ["Type"] = "SubGroup"
         }
         -- Arcane Intellect
@@ -332,9 +359,12 @@ function BW_OnEvent()
 
         if event == "UNIT_AURA" then
 
+--BW_Print("UNIT_AURA for " .. arg1)
+
             for k, v in Player_Info do
 
                 if arg1 == v.UNIT_ID then
+--BW_Print(arg1 .. " found as " .. v.Name)
                     BW_Player_GetBuffs(v)
                     BW_Player_AdjustBuffs(v)
                     BW_ResizeWindow()
@@ -911,6 +941,7 @@ function BW_UpdateBuffStatus()
         local playerframe = getglobal(player)
         local playerbuffexpired = false
         local playerhasbuffs = false
+        local playerhasdebuffs = false
         local showframe = true
 
         if getglobal(player .. "_Lock"):GetChecked() then
@@ -976,6 +1007,10 @@ function BW_UpdateBuffStatus()
                             if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
                                 UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, UIERRORS_HOLD_TIME * 2)
                                 buffexpired = true
+                                
+                                if BuffWatchConfig.ExpiredSound then
+                                    PlaySound("igQuestFailed")
+                                end
 
                                 if minimized then
                                     BW_HeaderText:SetTextColor(1, 0, 0)
@@ -991,38 +1026,58 @@ function BW_UpdateBuffStatus()
                 end
 
             end
+            
+            if BuffWatchConfig.DebuffsAlwaysVisible == true then
+            
+                for j = 1, 8 do
 
+                    -- Check if there is a debuff in this slot
+                    if getglobal(player .. "_Debuff" .. j):IsShown() then
+                        playerhasdebuffs = true
+                        break
+                    end
+
+                end
+                
+            end
+            
             -- Determine whether we should show or hide this player
-            if HideMonitored == true then
-
-                if HideUnmonitored == false then
-
-                    if playerhasbuffs == true then
-                        showframe = playerbuffexpired
-                    else
-                        showframe = true
-                    end
-
-                else
-                    showframe = playerbuffexpired
-                end
-
+            if playerhasdebuffs == true then
+                showframe = true
             else
+            
+                if HideMonitored == true then
 
-                if HideUnmonitored == false then
-                    -- We are not hiding monitored or unmonitored, so show the playerframe
-                    showframe = true
+                    if HideUnmonitored == false then
+
+                        if playerhasbuffs == true then
+                            showframe = playerbuffexpired
+                        else
+                            showframe = true
+                        end
+
+                    else
+                        showframe = playerbuffexpired
+                    end
+
                 else
 
-                    -- Just hiding Unmonitored, so determine if any buffs are locked
-                    if playerhasbuffs == true then
+                    if HideUnmonitored == false then
+                        -- We are not hiding monitored or unmonitored, so show the playerframe
                         showframe = true
                     else
-                        showframe = false
+
+                        -- Just hiding Unmonitored, so determine if any buffs are locked
+                        if playerhasbuffs == true then
+                            showframe = true
+                        else
+                            showframe = false
+                        end
+
                     end
 
                 end
-
+                
             end
 
         else
@@ -1687,12 +1742,20 @@ end
 
 function BW_GetPetUnitID(unitid)
 
-    if unitid == "player" then
-        return "pet", 1
+--    if lastgrouptype == "party" then
+
+        if unitid == "player" then
+            return "pet", 1
+        end
+
+        return string.gsub(unitid, "([a-z]+)([0-9]+)", "%1pet%2")
+
+--[[        return "partypet" .. string.sub(unitid, -1)
+
+    else
+        return "raidpet" .. string.sub(unitid, 5)
     end
-
-    return string.gsub(unitid, "([a-z]+)([0-9]+)", "%1pet%2")
-
+]]--
 end
 
 

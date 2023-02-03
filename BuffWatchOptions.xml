@@ -6,7 +6,7 @@
     <Frame name="BW_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="350" y="490"/>
+            <AbsDimension x="350" y="520"/>
         </Size>
 
         <Anchors>
@@ -224,10 +224,12 @@
                     <OnClick>
                         if (this:GetChecked()) then
                             BuffWatchConfig.ShowDebuffs = true
-                            OptionsFrame_EnableCheckBox(BW_Options_ShowOnlyDispellDebuffs, BW_Options_ShowOnlyDispellDebuffs:GetChecked());
+                            OptionsFrame_EnableCheckBox(BW_Options_ShowOnlyDispellDebuffs, BW_Options_ShowOnlyDispellDebuffs:GetChecked())
+                            OptionsFrame_EnableCheckBox(BW_Options_DebuffsAlwaysVisible, BW_Options_DebuffsAlwaysVisible:GetChecked())
                         else
                             BuffWatchConfig.ShowDebuffs = false
                             OptionsFrame_DisableCheckBox(BW_Options_ShowOnlyDispellDebuffs)
+                            OptionsFrame_DisableCheckBox(BW_Options_DebuffsAlwaysVisible)
                         end
                         BW_GetAllBuffs()
                         BW_UpdateBuffStatus()
@@ -278,9 +280,44 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_AlignBuffs" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_DebuffsAlwaysVisible" inherits="OptionsCheckButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyDispellDebuffs" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Debuffs Always Visible");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.DebuffsAlwaysVisible = true
+                        else
+                            BuffWatchConfig.DebuffsAlwaysVisible = false
+                        end
+
+                        BW_UpdateBuffStatus()
+                        BW_ResizeWindow()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_DEBUFFSALWAYSVISIBLE)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
+
+            <CheckButton name="$parent_AlignBuffs" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_DebuffsAlwaysVisible" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="-10" y="0"/>
                         </Offset>
@@ -338,10 +375,39 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
+
+            <CheckButton name="$parent_PlayExpiredSound" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowExpiredWarning" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Play Expired Sound");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ExpiredSound = true
+                        else
+                            BuffWatchConfig.ExpiredSound = false
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_PLAYEXPIREDSOUND)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
             
             <CheckButton name="$parent_HighlightPvP" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowExpiredWarning" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_PlayExpiredSound" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="0" y="0"/>
                         </Offset>
