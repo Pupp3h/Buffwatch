@@ -1,10 +1,10 @@
-## Interface: 11200
-## Title: BuffWatch
+## Interface: 20000
+## Title: Buffwatch
 ## Author: Pup
-## Version: 1.17
-## Notes: Keeps track of buffs on party members in a small window and highlights them if they have run out
-## OptionalDeps: myAddOns
-## SavedVariables: BuffWatchConfig
-## SavedVariablesPerCharacter: BuffWatchPlayerBuffs
-BuffWatch.xml
-BuffWatchOptions.xml
+## Version: 2.00
+## SavedVariables: BuffwatchConfig
+Buffwatch.lua
+Buffwatch.xml
+BuffwatchOptions.lua
+BuffwatchOptions.xml
+

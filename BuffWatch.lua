@@ -1,438 +1,189 @@
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- // BuffWatch
--- //     by Pup
--- //
--- // TODO: (possibly)
--- //
--- //     Update ResizeWindow to run no more than once every 2 secs (check how often it actually is)
--- //     Base resize on num players visible/buffs vis (store and count when scanning)
--- //     Increase Buff Limit (Probably need recode for efficiency first)
--- //
--- //     Ignore dead / disconn in threshold count
--- //     Window doesnt always properly resize
--- //     Option to split into columns (previous changes might suffice)
--- //     Localisation for various bits of text
--- //     Keybinding to scan list and recast any expired buffs (probably not poss after TBC)
--- //     Show poisons and weapon buffs for player
--- //     Allow cleansing of debuffs
--- //     UI Scaling
--- //
--- // CHANGES:
--- //
--- //     Moved Option and toggle buttons to a right click menu off the Buffwatch Header text
--- //     Player frames now respond immediately to Monitored and Unmonitored toggles
--- //     
--- //////////////////////////////////////////////////////////////////////////////////////
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //                Variables
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
 
-BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.17"
-BW_RELEASE_DATE = "November 02, 2006"
+-- ** Buffwatch
+-- **
+-- ** TODO:
+-- **
+-- **   Add an InCombat icon next to Buffwatch header
+-- **
+
+-- ** Check playerframe positioning if SortOrder == "Raid Order" and player gets moved groups.
+-- ** Check / Fix / Improve Window Resizing code
+
+-- ** Warning message for buff expiring
+-- ** Debuffs
+-- ** Player targetting
+
+-- ****************************************************************************
+-- **                                                                        **
+-- **  Variables                                                             **
+-- **                                                                        **
+-- ****************************************************************************
+
+BW_VERSION = "2.0b1";
+BW_RELEASE_DATE = "2 January 2007";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
     "Name"
-}
+};
 
-BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup, ShowPets,
-    ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, DebuffsAlwaysVisible, 
-    AlignBuffs, ExpiredWarning, ExpiredSound, SortOrder, BuffThreshold, HighlightPvP, 
-    PreventPvPBuff, UpdPerSec, ShowUpdPerSec, debug }
-    
-BuffWatchPlayerBuffs = { }
+local grouptype;
+local maxnamewidth = 0;
+local maxnameid = 1;
+--local maxbuffs = 0;
+--local maxbuffid = 1;
+local buffexpired = 0;
 
-local lastspellcast
-local lastgrouptype
-local buttonalignposition = 0
-local buttonalignid
-local buffexpired
-local minimized = false
-local HideUnmonitored = false
-local HideMonitored = false
+local Player_Info = { };
+local Player_Left = { };
+local Player_Order = { };
+local UNIT_IDs = { };
+local InCombat_Events = { };
 
-local Player_Info = { }
-local Player_Left = { }
-local UNIT_IDs = { }
+BuffwatchConfig = { AlignBuffs, Alpha, ExpiredSound, ExpiredWarning,
+    ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, ShowPets,
+    SortOrder, debug };
 
-local GroupBuffs = { }
+BuffwatchPlayerBuffs = { };
 
-local BuffUpdateTime
-local LastBuffStatusUpdated
-local BuffUpdatePending = false
-local UpdPerSec = { }
-local CurrSec = 0
-local SAMPLE_SIZE = 10
-local UpdateInterval = 2.0
-local TimeSinceLastUpdate
+local debugchatframe = DEFAULT_CHAT_FRAME;
 
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //                Events
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
+-- BuffwatchConfig = { rightMouseSpell, show_on_startup, DebuffsAlwaysVisible
+--    HighlightPvP, UpdPerSec, ShowUpdPerSec };
 
-function BW_OnLoad()
+-- ****************************************************************************
+-- **                                                                        **
+-- **  Events & Related                                                      **
+-- **                                                                        **
+-- ****************************************************************************
 
-    this:RegisterEvent("PLAYER_LOGIN")
-    this:RegisterEvent("PARTY_MEMBERS_CHANGED")
-    this:RegisterEvent("RAID_ROSTER_UPDATE")
-    this:RegisterEvent("SPELLCAST_START")
-    this:RegisterEvent("UNIT_AURA")
-    this:RegisterEvent("UNIT_PET")
-    this:RegisterEvent("UNIT_FACTION")
-    this:RegisterEvent("VARIABLES_LOADED")
-    
-    TimeSinceLastUpdate = 0
-    
-    SlashCmdList["BUFFWATCH"] = BW_SlashHandler
-    SLASH_BUFFWATCH1 = "/buffwatch"
-    SLASH_BUFFWATCH2 = "/bw"
+function Buffwatch_OnLoad()
+
+    this:RegisterEvent("PLAYER_LOGIN");
+    this:RegisterEvent("PARTY_MEMBERS_CHANGED");
+    this:RegisterEvent("RAID_ROSTER_UPDATE");
+    this:RegisterEvent("UNIT_PET");
+--    this:RegisterEvent("UNIT_SPELLCAST_SENT");
+    this:RegisterEvent("UNIT_AURA");
+--    this:RegisterEvent("UNIT_FACTION");
+    this:RegisterEvent("VARIABLES_LOADED");
+    this:RegisterEvent("PLAYER_REGEN_ENABLED");
+    this:RegisterEvent("PLAYER_REGEN_DISABLED");
+
+    SlashCmdList["BUFFWATCH"] = Buffwatch_SlashHandler;
+    SLASH_BUFFWATCH1 = "/buffwatch";
+    SLASH_BUFFWATCH2 = "/bw";
 
 end
 
 
-function BW_OnEvent()
-
+function Buffwatch_OnEvent(event, ...)
+--[[
+Buffwatch_Debug("Event vars for "..event..":");
+for i = 1, select("#", ...) do
+    Buffwatch_Debug("i="..i..", v="..select(i, ...));
+end
+]]
     if event == "VARIABLES_LOADED" then
 
-        -----------------------
-        -- support for myAddons
-        -----------------------
-        if(myAddOnsFrame_Register) then
-            BuffWatchDetails = {
-                name = "BuffWatch",
-                description = "Keeps track of party/raid buffs",
-                version = BW_VERSION,
-                releaseDate = BW_RELEASE_DATE,
-                author = "Pup",
-                category = MYADDONS_CATEGORY_OTHERS,
-                frame = "BW",
-                optionsframe = "BW_Options"
-            }
-
-            BuffWatchHelp = { "              - BuffWatch Usage - v " .. BW_VERSION .. "-\n\n" ..
-                "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
-                "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
-                "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
-                "  Locking a player's watched buffs:\n    - If the checkbox to the left is unchecked, buffs will be added automatically whenever they gain a buff\n" ..
-                "    - If checked, buffs will not be added\n\n",
-                "  Rebuffing:\n    - Left click an icon (will auto-target)\n\n" ..
-                "  Right click spell:\n" ..
-                "    - Cast any spell with a cast time (not instant).\n        Then type \"/bw set\"\n    - To cast it, right click any icon (will auto-target)\n\n" ..
-                "  Deleting buffs:\n    - Lock the player's buffs (check the box).\n        Then [ CTRL + Right Click ] on the buff\n" ..
-                "    - Optionally, [ ALT + Right Click ] to delete all but the selected one.\n\n",
-                "  Slash Commands ( Use /buffwatch or /bw )\n" ..
-                "    - /bw toggle : shows/hides the window\n" ..
-                "    - /bw options : shows/hides the options window\n" ..
-                "    - /bw : shows this help menu :)\n\n" ..
-                "  Verbosity:\n" ..
-                "    - Hold [ Shift ] while left or right-clicking a buff icon to send a cast message to your party\n"
-            }
-
-            myAddOnsFrame_Register(BuffWatchDetails, BuffWatchHelp)
+        if BuffwatchConfig.AlignBuffs == nil then
+            BuffwatchConfig.AlignBuffs = true;
         end
 
-        ---------------------
-        -- support for Cosmos
-        ---------------------
-        if EarthFeature_AddButton then
-            EarthFeature_AddButton({
-                id = "BuffWatch";
-                name = "BuffWatch";
-                subtext = "Buff monitoring";
-                tooltip = "Monitor Party or Raid buffs";
-                icon = "Interface\\Icons\\INV_Misc_Spyglass_03";
-                callback = BW_OptionsToggle;
-                test = nil
-            })
-        elseif Cosmos_RegisterButton then
-            Cosmos_RegisterButton(
-                "BuffWatch",
-                "Buff monitoring",
-                "Monitor Party or Raid buffs",
-                "Interface\\Icons\\INV_Misc_Spyglass_03",
-                BW_OptionsToggle
-            )
+        if BuffwatchConfig.Alpha == nil then
+            BuffwatchConfig.Alpha = 0.5;
         end
 
-        --------------------
-        -- support for CTMod
-        --------------------
-        if CT_RegisterMod then
-            CT_RegisterMod(
-                "BuffWatch",
-                "Buff monitoring",
-                5,
-                "Interface\\Icons\\INV_Misc_Spyglass_03",
-                "Monitor Party or Raid buffs",
-                "switch",
-                "",
-                BW_OptionsToggle
-            )
+        BuffwatchFrame_Background:SetAlpha(BuffwatchConfig.Alpha);
+
+        if BuffwatchConfig.ExpiredSound == nil then
+            BuffwatchConfig.ExpiredSound = false;
         end
 
-        BW_Print("BuffWatch v " .. BW_VERSION .. " loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window. Right click the BuffWatch header text for more options.", 0.2, 0.9, 0.9 )
-
-        BW_HeaderText:SetText("BuffWatch")
-        BW_HeaderText:SetTextColor(0.2, 0.9, 0.9)
-        BW_Background:SetBackdropBorderColor(0, 0, 0)
-
-        if BuffWatchConfig.alpha == nil then
-            BuffWatchConfig.alpha = 0.5
+        if BuffwatchConfig.ExpiredWarning == nil then
+            BuffwatchConfig.ExpiredWarning = true;
         end
 
-        BW_Background:SetAlpha(BuffWatchConfig.alpha)
-
-        if BuffWatchConfig.show_on_startup == nil then
-            BuffWatchConfig.show_on_startup = true
-            BW:Show()
-        elseif BuffWatchConfig.show_on_startup == true then
-            BW:Show()
-        elseif BuffWatchConfig.show_on_startup == false then
-            BW:Hide()
+        if BuffwatchConfig.ShowCastableBuffs == nil then
+            BuffwatchConfig.ShowCastableBuffs = false;
         end
 
-        if BuffWatchConfig.ShowPets == nil then
-            BuffWatchConfig.ShowPets = true
+        if BuffwatchConfig.ShowDebuffs == nil then
+            BuffwatchConfig.ShowDebuffs = true;
         end
 
-        if BuffWatchConfig.ShowCastableBuffs == nil then
-            BuffWatchConfig.ShowCastableBuffs = false
+        if BuffwatchConfig.ShowDispellableDebuffs == nil then
+            BuffwatchConfig.ShowDispellableDebuffs = false;
         end
 
-        if BuffWatchConfig.ShowDebuffs == nil then
-            BuffWatchConfig.ShowDebuffs = true
+        if BuffwatchConfig.ShowPets == nil then
+            BuffwatchConfig.ShowPets = true;
         end
 
-        if BuffWatchConfig.ShowDispellableDebuffs == nil then
-            BuffWatchConfig.ShowDispellableDebuffs = false
-        end
-        
-        if BuffWatchConfig.DebuffsAlwaysVisible == nil then
-            BuffWatchConfig.DebuffsAlwaysVisible = true
+        if BuffwatchConfig.SortOrder == nil then
+            BuffwatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[1];
         end
 
-        if BuffWatchConfig.AlignBuffs == nil then
-            BuffWatchConfig.AlignBuffs = true
+        if BuffwatchConfig.debug == nil then
+            BuffwatchConfig.debug = false;
         end
 
-        if BuffWatchConfig.ExpiredWarning == nil then
-            BuffWatchConfig.ExpiredWarning = true
-        end
-
-        if BuffWatchConfig.ExpiredSound == nil then
-            BuffWatchConfig.ExpiredSound = false
-        end
-
-        if BuffWatchConfig.SortOrder == nil then
-            BuffWatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[1]
-        end
-
-        if BuffWatchConfig.BuffThreshold == nil then
-            BuffWatchConfig.BuffThreshold = 0
-        end
-
-        if BuffWatchConfig.HighlightPvP == nil then
-            BuffWatchConfig.HighlightPvP = false
-        end
-
-        if BuffWatchConfig.PreventPvPBuff == nil then
-            BuffWatchConfig.PreventPvPBuff = false
-        end
-
-        if BuffWatchConfig.UpdPerSec == nil then
-            BuffWatchConfig.UpdPerSec = 0
-        end
-
-        if BuffWatchConfig.ShowUpdPerSec == nil then
-            BuffWatchConfig.ShowUpdPerSec = false
-        end
-
---        if BuffWatchConfig.debug == nil then
---            BuffWatchConfig.debug = false
---        end
-
-        -- Mark of the Wild (Same icon as Gift of the Wild)
-        GroupBuffs["Interface\\Icons\\Spell_Nature_Regeneration"] = {
-            ["Greater"] = "Gift of the Wild",
-            ["Type"] = "SubGroup",
-            ["ByName"] = 1
-        }
-
-        -- Power Word Fortitude
-        GroupBuffs["Interface\\Icons\\Spell_Holy_WordFortitude"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_PrayerOfFortitude",
-            ["Type"] = "SubGroup"
-        }
-        -- Prayer of Fortitude
-        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerOfFortitude"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_WordFortitude",
-            ["Type"] = "SubGroup"
-        }
-        -- Divine Spirit
-        GroupBuffs["Interface\\Icons\\Spell_Holy_DivineSpirit"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_PrayerofSpirit",
-            ["Type"] = "SubGroup"
-        }
-        -- Prayer of Spirit
-        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerofSpirit"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_DivineSpirit",
-            ["Type"] = "SubGroup"
-        }
-        -- Shadow Protection
-        GroupBuffs["Interface\\Icons\\Spell_Shadow_AntiShadow"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_PrayerofShadowProtection",
-            ["Type"] = "SubGroup"
-        }
-        -- Prayer of Shadow Protection
-        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerofShadowProtection"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Shadow_AntiShadow",
-            ["Type"] = "SubGroup"
-        }
-        -- Arcane Intellect
-        GroupBuffs["Interface\\Icons\\Spell_Holy_MagicalSentry"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_ArcaneIntellect",
-            ["Type"] = "SubGroup"
-        }
-        -- Arcane Brilliance
-        GroupBuffs["Interface\\Icons\\Spell_Holy_ArcaneIntellect"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_MagicalSentry",
-            ["Type"] = "SubGroup"
-        }
-        -- Blessing of Might
-        GroupBuffs["Interface\\Icons\\Spell_Holy_FistOfJustice"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofKings",
-            ["Type"] = "Class"
-        }
-        -- Greater Blessing of Might
-        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofKings"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_FistOfJustice",
-            ["Type"] = "Class"
-        }
-        -- Blessing of Wisdom
-        GroupBuffs["Interface\\Icons\\Spell_Holy_SealOfWisdom"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofWisdom",
-            ["Type"] = "Class"
-        }
-        -- Greater Blessing of Wisdom
-        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofWisdom"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_SealOfWisdom",
-            ["Type"] = "Class"
-        }
-        -- Blessing of Salvation
-        GroupBuffs["Interface\\Icons\\Spell_Holy_SealOfSalvation"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofSalvation",
-            ["Type"] = "Class"
-        }
-        -- Greater Blessing of Salvation
-        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofSalvation"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_SealOfSalvation",
-            ["Type"] = "Class"
-        }
-        -- Blessing of Kings
-        GroupBuffs["Interface\\Icons\\Spell_Magic_MageArmor"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Magic_GreaterBlessingofKings",
-            ["Type"] = "Class"
-        }
-        -- Greater Blessing of Kings
-        GroupBuffs["Interface\\Icons\\Spell_Magic_GreaterBlessingofKings"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Magic_MageArmor",
-            ["Type"] = "Class"
-        }
-        -- Blessing of Light
-        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerOfHealing02"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofLight",
-            ["Type"] = "Class"
-        }
-        -- Greater Blessing of Light
-        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofLight"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Holy_PrayerOfHealing02",
-            ["Type"] = "Class"
-        }
-        -- Blessing of Sanctuary
-        GroupBuffs["Interface\\Icons\\Spell_Nature_LightningShield"] = {
-            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
-            ["Type"] = "Class"
-        }
-        -- Greater Blessing of Sanctuary
-        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary"] = {
-            ["Lesser"] = "Interface\\Icons\\Spell_Nature_LightningShield",
-            ["Type"] = "Class"
-        }
-
-        if LastBuffStatusUpdate == nil then
-            LastBuffStatusUpdate = math.floor(GetTime())
-            BuffUpdateTime = GetTime()
-        end
-
-        UpdPerSec = { }
-
-        for i = 0, SAMPLE_SIZE - 1 do
-            UpdPerSec[i] = 0
-        end
-    
-        BW_Options_Init()
-
-        BW_PlayersFrame:Show()
+        Buffwatch_Options_Init();
 
     end
 
-    if BW:IsVisible() then
+    if BuffwatchFrame_PlayerFrame:IsVisible() then
 
-        if event == "PLAYER_LOGIN" then
+        if event == "PLAYER_LOGIN" or event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE"
+            or (event == "UNIT_PET" and BuffwatchConfig.ShowPets == true) then
 
-            BW_Set_UNIT_IDs()
-            BW_GetAllBuffs()
-            BW_ResizeWindow()
-        end
 
-        if event == "SPELLCAST_START" then
-            lastspellcast = arg1
-        end
+            if event == "PLAYER_LOGIN" then
+                local windowname;
 
-        if event == "UNIT_AURA" then
-
---BW_Print("UNIT_AURA for " .. arg1)
-
-            for k, v in Player_Info do
-
-                if arg1 == v.UNIT_ID then
---BW_Print(arg1 .. " found as " .. v.Name)
-                    BW_Player_GetBuffs(v)
-                    BW_Player_AdjustBuffs(v)
-                    BW_ResizeWindow()
-                    break
+                for i = 1, 10 do
+                    windowname = GetChatWindowInfo(i);
+                    if windowname and windowname == "Debug" then
+                        debugchatframe = getglobal("ChatFrame"..i);
+                        break;
+                    end
                 end
 
             end
 
-            BW_UpdateBuffStatus()
+            Buffwatch_Set_UNIT_IDs();
+            Buffwatch_ResizeWindow();
 
-        end
+        elseif event == "UNIT_AURA" and select(1, ...) ~= "target" then
 
-        if event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE" or (event == "UNIT_PET" and BuffWatchConfig.ShowPets == true) then
+            for k, v in pairs(Player_Info) do
 
-            BW_Set_UNIT_IDs()
-            BW_GetAllBuffs()
-            BW_ResizeWindow()
-
-        end
-
-        if event == "UNIT_FACTION" then
-
-            local unitpet = BW_GetPetUnitID(arg1)
-
-            for k, v in Player_Info do
-
-                if arg1 == v.UNIT_ID or unitpet == v.UNIT_ID then
-                    BW_Player_ColourName(v)
+                if select(1, ...) == v.UNIT_ID then
+                    Buffwatch_Player_GetBuffs(v);
+                    Buffwatch_ResizeWindow();
+                    break;
                 end
 
+            end
+
+        elseif event == "PLAYER_REGEN_ENABLED" then
+
+            BuffwatchFrame_LockAll:Enable();
+
+            for k, v in pairs(Player_Info) do
+                local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
+                curr_lock:Enable();
+            end
+
+            Buffwatch_Process_InCombat_Events();
+
+        elseif event == "PLAYER_REGEN_DISABLED" then
+
+            BuffwatchFrame_LockAll:Disable();
+
+            for k, v in pairs(Player_Info) do
+                local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
+                curr_lock:Disable();
             end
 
         end
@@ -441,132 +192,291 @@ function BW_OnEvent()
 
 end
 
+function Buffwatch_Set_AllChecks(checked)
 
-function BW_OnUpdate(elapsed)
+    for k, v in pairs(Player_Info) do
 
-    TimeSinceLastUpdate = TimeSinceLastUpdate + elapsed;    
+        local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
 
-    if (TimeSinceLastUpdate > UpdateInterval) then
+        if curr_lock:GetChecked() ~= checked then
+            curr_lock:SetChecked(checked);
 
-        if BuffUpdatePending == true then
-            BW_UpdateBuffStatus()
+            if not checked then
+                Buffwatch_Player_GetBuffs(v);
+            end
+--            Buffwatch_Player_SaveBuffs(v.ID);
         end
 
-        TimeSinceLastUpdate = 0.0
+    end
 
+    if not checked then
+        Buffwatch_ResizeWindow();
     end
 
 end
 
-function BW_DropDown_OnLoad()
-    UIDropDownMenu_Initialize(this, BW_DropDown_Initialize, "MENU")
-    UIDropDownMenu_SetAnchor(0, 0, this, "TOPLEFT", "BW_Header", "CENTER")    
+
+function Buffwatch_Header_Clicked(button, down)
+
+    if button == "RightButton" then
+        ToggleDropDownMenu(1, nil, getglobal("BuffwatchFrame_DropDown"), "BuffwatchFrame_Header", 40, 0);
+    end
+
 end
 
-function BW_DropDown_Initialize()
 
-    info = {}
-    info.text = "Options"
-    info.func = BW_OptionsToggle
-    UIDropDownMenu_AddButton(info)
-    
-    info = {}
-    info.text = "Show Monitored"
-    info.func = BW_HideMonitored_Clicked
-    info.value = not HideMonitored
-    info.checked = not HideMonitored
-    info.keepShownOnClick = 1
-    UIDropDownMenu_AddButton(info)
-    
-    info = {}
-    info.text = "Show Unmonitored"
-    info.func = BW_HideUnmonitored_Clicked
-    info.value = not HideUnmonitored
-    info.checked = not HideUnmonitored
-    info.keepShownOnClick = 1
-    UIDropDownMenu_AddButton(info)
-    
-    info = {}
-    info.text = "Help"
-    info.func = BW_ShowHelp
-    UIDropDownMenu_AddButton(info)  
+function Buffwatch_DropDown_OnLoad()
+    UIDropDownMenu_Initialize(this, Buffwatch_DropDown_Initialize, "MENU");
+    UIDropDownMenu_SetAnchor(0, 0, this, "TOPLEFT", "BuffwatchFrame_Header", "CENTER");
+end
 
-    info = {}
-    info.text = "Close BuffWatch"
-    info.func = BW_Toggle
-    UIDropDownMenu_AddButton(info)    
-    
-    info = {}
-    info.disabled = 1
-    UIDropDownMenu_AddButton(info)
 
-    info = {}
-    info.text = "Hide"
+function Buffwatch_DropDown_Initialize()
+
+    info = {};
+    info.text = "Refresh";
     info.func = function()
-        BW_DropDown:Hide()
+        Buffwatch_GetPlayerInfo();
+        Buffwatch_GetAllBuffs();
     end
-    UIDropDownMenu_AddButton(info)    
-    
+    UIDropDownMenu_AddButton(info);
 
-        
+    info = {};
+    info.text = "Options";
+    info.func = Buffwatch_OptionsToggle;
+    UIDropDownMenu_AddButton(info);
+
+    info = {};
+    info.text = "Help";
+    info.func = Buffwatch_ShowHelp;
+    UIDropDownMenu_AddButton(info);
+
+    info = {};
+    info.text = "Close Buffwatch";
+    info.func = Buffwatch_Toggle;
+    UIDropDownMenu_AddButton(info);
+
+    info = {};
+    info.disabled = 1;
+    UIDropDownMenu_AddButton(info);
+
+    info = {};
+    info.text = "Hide";
+    info.func = function()
+        BuffwatchFrame_DropDown:Hide();
+    end
+    UIDropDownMenu_AddButton(info);
+
 end
 
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //                Main Functions
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
+
+function Buffwatch_Check_Clicked(button, down)
+
+    local playerid = this:GetParent():GetID();
+    local playername = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText();
+    local checked = this:GetChecked();
+
+    if checked then
+
+        for k, v in pairs(Player_Info) do
+
+            local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock");
+
+            if not curr_lock:GetChecked() then
+                checked = nil;
+                break;
+            end
+
+        end
+
+        if checked then
+            BuffwatchFrame_LockAll:SetChecked(true);
+        end
+
+    else
+        BuffwatchFrame_LockAll:SetChecked(false);
+        Buffwatch_Player_GetBuffs(Player_Info[playername]);
+        Buffwatch_ResizeWindow();
+    end
+
+--    BW_Player_SaveBuffs(this:GetParent():GetID());
+
+end
+
+
+function Buffwatch_Name_Clicked(button, down)
+
+end
+
+
+function Buffwatch_Buff_Clicked(button, down)
+
+    local playerid = this:GetParent():GetID();
+    local playerframe = "BuffwatchFrame_PlayerFrame"..playerid;
+
+    if getglobal(playerframe.."_Lock"):GetChecked() and IsAltKeyDown() then
+
+        if InCombatLockdown() then
+
+            Buffwatch_Print("Cannot hide buffs while in combat.");
+
+        else
+
+            local buffid = this:GetID();
+            local playername = getglobal(playerframe.."_NameText"):GetText();
+
+            if button == "LeftButton" then
+
+                for i = 1, 32 do
+                    if getglobal(playerframe.."_Buff"..i) then
+                        if i ~= buffid then
+                            getglobal(playerframe.."_Buff"..i):Hide();
+                            BuffwatchPlayerBuffs[playername]["Buffs"][i] = nil;
+                        else
+                            this:SetPoint("TOPLEFT", playerframe.."_Name", "TOPRIGHT", 5, 4);
+                        end
+                    else
+                        break;
+                    end
+                end
+
+                Buffwatch_ResizeWindow();
+--                Buffwatch_Player_SaveBuffs(playerid)
+
+            elseif button == "RightButton" then
+
+                local nextbuffid = next(BuffwatchPlayerBuffs[playername]["Buffs"], buffid);
+
+                this:Hide();
+                BuffwatchPlayerBuffs[playername]["Buffs"][buffid] = nil;
+
+                if nextbuffid then
+                    getglobal(playerframe.."_Buff"..nextbuffid):ClearAllPoints();
+                    getglobal(playerframe.."_Buff"..nextbuffid):SetPoint(this:GetPoint());
+                end
+
+                Buffwatch_ResizeWindow();
+--                Buffwatch_Player_SaveBuffs(playerid)
+
+            end
+
+        end
+
+    end
+
+end
+
+
+function Buffwatch_Buff_Tooltip()
+
+    local playername = getglobal("BuffwatchFrame_PlayerFrame"..this:GetParent():GetID().."_NameText"):GetText();
+    local unit = Player_Info[playername]["UNIT_ID"];
+    local buff = BuffwatchPlayerBuffs[playername]["Buffs"][this:GetID()]["Buff"];
+    local rank = BuffwatchPlayerBuffs[playername]["Buffs"][this:GetID()]["Rank"];
+    local buffbuttonid = nil;
+    local debuffbuttonid = nil;
+
+    buffbuttonid = UnitHasBuff(unit, buff, rank);
+
+    if buffbuttonid == 0 then
+        debuffbuttonid = UnitHasDebuff(unit, buff, rank);
+    end
+
+
+    if buffbuttonid then
+        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
+        GameTooltip:SetUnitBuff(unit, buffbuttonid);
+    elseif debuffbuttonid then
+        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
+        GameTooltip:SetUnitDebuff(unit, debuffbuttonid);
+    end
+
+end
+
+
+-- ****************************************************************************
+-- **                                                                        **
+-- **  Main Functions                                                        **
+-- **                                                                        **
+-- ****************************************************************************
+
+function Buffwatch_SlashHandler(msg)
+
+    msg = string.lower(msg);
+
+    if msg == "toggle" then
+
+        Buffwatch_Toggle();
+
+    elseif msg == "debug" then
+
+        BuffwatchConfig.debug = not BuffwatchConfig.debug;
+
+        if BuffwatchConfig.debug == true then
+            Buffwatch_Print("Buffwatch debugging ON");
+        else
+            Buffwatch_Print("Buffwatch debugging OFF");
+        end
+
+    else
+
+        Buffwatch_Print("Buffwatch commands (/buffwatch or /bw):");
+        Buffwatch_Print("/bw toggle - Toggle the Buffwatch window on or off");
+
+    end
+
+end
+
 
 -- Setup basic list of possible UNIT_IDs
-function BW_Set_UNIT_IDs(forced)
+function Buffwatch_Set_UNIT_IDs(forced)
 
-    local numRaidMembers = GetNumRaidMembers()
+    if GetNumRaidMembers() > 0 then
 
-    if numRaidMembers > 0 then
+        if grouptype ~= "raid" or forced == true then
 
-        if lastgrouptype ~= "raid" or forced == true then
-
-            UNIT_IDs = { }
+            UNIT_IDs = { };
 
             for i = 1, 40 do
-                UNIT_IDs[i] = "raid" .. i
+                UNIT_IDs[i] = "raid"..i;
             end
 
-            if BuffWatchConfig.ShowPets == true then
+            if BuffwatchConfig.ShowPets == true then
                 for i = 1, 40 do
-                    UNIT_IDs[i+40] = "raidpet" ..    i
+                    UNIT_IDs[i+40] = "raidpet"..i;
                 end
             end
 
-            lastgrouptype = "raid"
+            grouptype = "raid";
 
         end
 
-    elseif lastgrouptype ~= "party" or forced == true then
+    elseif grouptype ~= "party" or forced == true then
 
-        UNIT_IDs = { }
+        UNIT_IDs = { };
 
-        UNIT_IDs[1] = "player"
-        UNIT_IDs[2] = "party1"
-        UNIT_IDs[3] = "party2"
-        UNIT_IDs[4] = "party3"
-        UNIT_IDs[5] = "party4"
+        UNIT_IDs[1] = "player";
+        UNIT_IDs[2] = "party1";
+        UNIT_IDs[3] = "party2";
+        UNIT_IDs[4] = "party3";
+        UNIT_IDs[5] = "party4";
 
-        if BuffWatchConfig.ShowPets == true then
-            UNIT_IDs[6] = "pet"
-            UNIT_IDs[7] = "partypet1"
-            UNIT_IDs[8] = "partypet2"
-            UNIT_IDs[9] = "partypet3"
-            UNIT_IDs[10] = "partypet4"
+        if BuffwatchConfig.ShowPets == true then
+            UNIT_IDs[6] = "pet";
+            UNIT_IDs[7] = "partypet1";
+            UNIT_IDs[8] = "partypet2";
+            UNIT_IDs[9] = "partypet3";
+            UNIT_IDs[10] = "partypet4";
         end
 
-        lastgrouptype = "party"
+        grouptype = "party";
 
     end
 
-    BW_GetPlayerInfo()
+    Buffwatch_GetPlayerInfo();
 
 end
+
 
 --[[ Get details of each player we find in the UNIT_IDs list
 
@@ -575,221 +485,159 @@ end
     ID - Unique number for this player, determines which playerframe to use
     UNIT_ID - UNIT_ID of this player
     Name - Players name (same as key, but useful if we are just looping array)
-    Class - Players Class (for colouring name)
+    Class - Players Class (for colouring name and sorting)
     IsPet - true if a pet (pets are sorted last, and can be hidden)
     SubGroup - 1 if in party, or 1-8 if in raid (Used for sorting)
     Checked - Used only in this function to determine players that are no longer present
-]] --
-function BW_GetPlayerInfo()
+]]--
+function Buffwatch_GetPlayerInfo()
 
-    local getnewalignpos = false
+    if InCombatLockdown() then
 
-    for i = 1, table.getn(UNIT_IDs) do
+        Buffwatch_Add_InCombat_Events({"GetPlayerInfo"});
 
-        local unitname = UnitName(UNIT_IDs[i])
+    else
 
-        if unitname ~= nil and unitname ~= "Unknown Entity" then
+        local getnewalignpos = false;
+        local positionframe;
 
-            -- Check if we know about this person already, if not capture basic details
-            if not Player_Info[unitname] then
+        for i = 1, #UNIT_IDs do
 
-                local id = BW_GetNextID(unitname)
-                local namebutton = getglobal("BW_Player" .. id .. "_Name")
-                local nametext = getglobal("BW_Player" .. id .. "_NameText")
+            local unitname = UnitName(UNIT_IDs[i]);
 
-                Player_Info[unitname] = { }
-                Player_Info[unitname]["ID"] = id
-                Player_Info[unitname]["Name"] = unitname
+            positionframe = false;
 
-                local _, classname = UnitClass(UNIT_IDs[i])
+--            if unitname ~= nil and unitname ~= "Unknown Entity" then
+            if unitname ~= nil and unitname ~= "Unknown" then
 
-                if classname then
-                    Player_Info[unitname]["Class"] = classname
+                -- Check if we know about this person already, if not capture basic details
+                if not Player_Info[unitname] then
+
+                    local id = Buffwatch_GetNextID(unitname);
+
+                    -- Check if frame has been created
+                    if not getglobal("BuffwatchFrame_PlayerFrame"..id) then
+
+                        local f = CreateFrame("Frame", "BuffwatchFrame_PlayerFrame"..id,
+                            BuffwatchFrame_PlayerFrame, "Buffwatch_Player_Template");
+                        f:SetID(id);
+
+                    end
+
+                    local namebutton = getglobal("BuffwatchFrame_PlayerFrame"..id.."_Name");
+                    local nametext = getglobal("BuffwatchFrame_PlayerFrame"..id.."_NameText");
+
+                    Player_Info[unitname] = { };
+                    Player_Info[unitname]["ID"] = id;
+                    Player_Info[unitname]["Name"] = unitname;
+
+                    local _, classname = UnitClass(UNIT_IDs[i]);
+
+                    if classname then
+                        Player_Info[unitname]["Class"] = classname;
+                    else
+                        Player_Info[unitname]["Class"] = "";
+                    end
+
+                    if (grouptype == "party" and i > 5) or (grouptype == "raid" and i > 40) then
+                        Player_Info[unitname]["IsPet"] = 1;
+                        Player_Info[unitname]["Class"] = "";
+                    else
+                        Player_Info[unitname]["IsPet"] = 0;
+                    end
+
+                    nametext:SetText(unitname);
+                    namebutton:SetWidth(nametext:GetStringWidth());
+
+                    if maxnamewidth < nametext:GetStringWidth() then
+                        maxnamewidth = nametext:GetStringWidth();
+                        maxnameid = id;
+                    end
+
+                    Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
+                    Buffwatch_Player_ColourName(Player_Info[unitname]);
+
+                    if not BuffwatchPlayerBuffs[unitname] then
+                        BuffwatchPlayerBuffs[unitname] = { };
+                        BuffwatchPlayerBuffs[unitname]["Buffs"] = { };
+                    end
+Buffwatch_Player_GetBuffs(Player_Info[unitname]); -- Temp until Buffwatch_Player_LoadBuffs() below is done
+
+--                    Buffwatch_Player_LoadBuffs(id);
+
+                    positionframe = true;
+
+                end
+
+                -- Update any information that may have changed about this person,
+                --    whether we captured before, or are taking for first time
+                Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
+
+                if grouptype == "raid" then
+                    local subgroup;
+--                    local lastsubgroup = Player_Info[unitname]["SubGroup"];
+                    local j = math.fmod(i, 40);
+                    if j == 0 then j = 40 end;
+                    _, _, subgroup = GetRaidRosterInfo(j);
+
+--                    if not lastsubgroup or subgroup ~= lastsubgroup then -- ***** Check logic or if needed
+                    if subgroup ~= Player_Info[unitname]["SubGroup"] then
+                        Player_Info[unitname]["SubGroup"] = subgroup;
+                        if sort == "Raid Order" then
+                            positionframe = true;
+                        end
+                    end
                 else
-                    Player_Info[unitname]["Class"] = ""
+                    Player_Info[unitname]["SubGroup"] = 1;
                 end
 
-                if (lastgrouptype == "party" and i > 5) or (lastgrouptype == "raid" and i > 40) then
-                    Player_Info[unitname]["IsPet"] = 1
-                    Player_Info[unitname]["Class"] = ""
-                else
-                    Player_Info[unitname]["IsPet"] = 0
-                end
-
-                nametext:SetText(unitname)
-                namebutton:SetWidth(nametext:GetStringWidth())
-
-                if buttonalignposition < nametext:GetStringWidth() then
-                    buttonalignposition = nametext:GetStringWidth()
-                    buttonalignid = id
-                end
-
-                Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i]
-                BW_Player_ColourName(Player_Info[unitname])
-                
-                BW_Player_LoadBuffs(id)
+                Player_Info[unitname]["Checked"] = 1;
 
             end
 
-            -- Update any information that may have changed about this person,
-            --    if we captured before, or take for first time
-            Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i]
+            if positionframe == true then
+Buffwatch_Debug("Showing player frame "..Player_Info[unitname].ID.." for "..unitname);
+                Buffwatch_PositionPlayerFrame(Player_Info[unitname].ID);
+            end
 
-            if lastgrouptype == "raid" then
-                local j = math.mod(i, 40)
-                if j == 0 then j = 40 end
-                _, _, Player_Info[unitname]["SubGroup"] = GetRaidRosterInfo(j)
+        end
+
+        -- Remove players that are no longer in the group
+        for k, v in pairs(Player_Info) do
+
+            if v.Checked == 1 then
+                v.Checked = 0;
             else
-                Player_Info[unitname]["SubGroup"] = 1
-            end
 
-            Player_Info[unitname]["Checked"] = 1
+                if v.ID == maxnameid then
+                    getnewalignpos = true;
+                end
 
-        end
+                -- Add ID to temp array in case they come back
+                -- (useful for dismissed or dead pets, or if a player leaves group briefly)
+                Player_Left[v.Name] = v.ID;
 
-    end
+                Player_Info[k] = nil;
+--                BuffwatchPlayerBuffs[k] = nil;
 
-    -- Remove players that are no longer in the group
-    for k, v in Player_Info do
+Buffwatch_Debug("Hiding player frame "..v.ID.." for "..v.Name);
+                Buffwatch_PositionPlayerFrame(v.ID);
 
-        if v.Checked == 1 then
-            v.Checked = 0
-        else
-            getglobal("BW_Player" .. v.ID):Hide()
-            getglobal("BW_Player" .. v.ID .. "_NameText"):SetText(nil)
-
-            if v.ID == buttonalignid then
-                getnewalignpos = true
-            end
-
-            -- Add ID to temp array in case they come back
-            -- (useful for dismissed or dead pets, or if a player leaves group briefly)
-            Player_Left[v.Name] = v.ID
-
-            Player_Info[k] = nil
-        end
-
-    end
-
-    if getnewalignpos == true then
-
-        buttonalignposition = 0
-
-        for k, v in Player_Info do
-
-            local nametext = getglobal("BW_Player" .. v.ID .. "_NameText")
-
-            if buttonalignposition < nametext:GetStringWidth() then
-                buttonalignposition = nametext:GetStringWidth()
-                buttonalignid = v.ID
             end
 
         end
 
-    end
+        if getnewalignpos == true then
 
-end
+            maxnamewidth = 0;
 
-function BW_GetAllBuffs()
+            for k, v in pairs(Player_Info) do
 
-    -- Setup temp array for sorting, and get buffs for all players
-    for k, v in Player_Info do
-        BW_Player_GetBuffs(v)
-    end
+                local nametext = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_NameText");
 
--- ***** Does this need to be called here?
-    BW_Player_AdjustFrames()
-
-    -- Adjust buff icon positions
-    for k, v in Player_Info do
-        BW_Player_AdjustBuffs(v)
-    end
-
-end
-
-
-function BW_Player_AdjustFrames()
-
-    -- Only bother to sort player frames if we can see them
-    if not minimized then
-
-        local firstplayer = true
-        local previousplayer
-        local Player_Copy = { }
-
-        for k, v in Player_Info do
-            table.insert(Player_Copy, v)
-        end
-
-        -- Sort the player list in temp array
-        if BuffWatchConfig.SortOrder == "Class" then
-
-            table.sort(Player_Copy,
-            function(a,b)
-
-                if a.IsPet == b.IsPet then
-
-                    if a.Class == b.Class then
-                        return a.Name < b.Name
-                    else
-                        return a.Class < b.Class
-                    end
-
-                else
-                    return a.IsPet < b.IsPet
-                end
-
-            end)
-
-        elseif BuffWatchConfig.SortOrder == "Name" then
-
-            table.sort(Player_Copy,
-            function(a,b)
-
-                if a.IsPet == b.IsPet then
-                    return a.Name < b.Name
-                else
-                    return a.IsPet < b.IsPet
-                end
-
-            end)
-
-        else -- Default
-
-            table.sort(Player_Copy,
-            function(a,b)
-
-                if a.IsPet == b.IsPet then
-
-                    if a.SubGroup == b.SubGroup then
-                        return a.UNIT_ID < b.UNIT_ID
-                    else
-                        return a.SubGroup < b.SubGroup
-                    end
-
-                else
-                    return a.IsPet < b.IsPet
-                end
-
-            end)
-        end
-
-        -- Position the player frames
-        for k, v in Player_Copy do
-
-            local playerframe = getglobal("BW_Player" .. v.ID)
-
-            playerframe:ClearAllPoints()
-
-            if playerframe:IsVisible() then
-
-                if firstplayer then
-                    playerframe:SetPoint("TOPLEFT", "BW_Background", "TOPLEFT", 1, -16)
-                    previousplayer = v.ID
-                    firstplayer = false
-                else
-                    playerframe:SetPoint("TOPLEFT", "BW_Player" .. previousplayer, "BOTTOMLEFT", 0, 0)
-                    previousplayer = v.ID
+                if maxnamewidth < nametext:GetStringWidth() then
+                    maxnamewidth = nametext:GetStringWidth();
+                    maxnameid = v.ID;
                 end
 
             end
@@ -801,1270 +649,697 @@ function BW_Player_AdjustFrames()
 end
 
 
-function BW_Player_GetBuffs(v)
+function Buffwatch_PositionPlayerFrame(playerid)
 
-    local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
+    local playerframe = getglobal("BuffwatchFrame_PlayerFrame"..playerid);
+    local arraypos;
+
+    -- Find playerframe in current order
+    for k, v in ipairs(Player_Order) do
+
+        if playerid == v.ID then
+            arraypos = k;
+            break;
+        end
+
+    end
+
+    if arraypos and Player_Order[arraypos+1] then
+
+        -- Remove frame from order
+        local nextplayer = getglobal("BuffwatchFrame_PlayerFrame"..Player_Order[arraypos+1].ID);
+
+        if nextplayer then
+            nextplayer:ClearAllPoints();
+            nextplayer:SetPoint(playerframe:GetPoint());
+        end
+
+    end
+
+    playerframe:ClearAllPoints();
+
+    Buffwatch_GetPlayerSortOrder();
+
+    arraypos = nil;
+
+    -- Insert frame into new order
+    for k, v in ipairs(Player_Order) do
+
+        if playerid == v.ID then
+
+            arraypos = k;
+
+            if k == 1 then
+
+                playerframe:SetPoint("TOPLEFT", BuffwatchFrame_PlayerFrame);
+
+            else
+
+                playerframe:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..Player_Order[k-1].ID, "BOTTOMLEFT");
+
+            end
+
+            if Player_Order[k+1] then
+
+                local nextplayer = getglobal("BuffwatchFrame_PlayerFrame"..Player_Order[k+1].ID);
+
+                if nextplayer then
+                    nextplayer:ClearAllPoints();
+                    nextplayer:SetPoint("TOPLEFT", playerframe, "BOTTOMLEFT");
+                end
+
+            end
+
+            break;
+
+        end
+
+    end
+
+    if arraypos then
+        playerframe:Show();
+    else
+        playerframe:Hide();
+--        getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):SetText(nil);
+    end
+
+end
+
+function Buffwatch_GetPlayerSortOrder()
+
+    Player_Order = { };
+
+    for k, v in pairs(Player_Info) do
+        table.insert(Player_Order, v);
+    end
+
+    -- Sort the player list in temp array
+    if BuffwatchConfig.SortOrder == "Class" then
+
+        table.sort(Player_Order,
+        function(a,b)
+
+            if a.IsPet == b.IsPet then
+
+                if a.Class == b.Class then
+                    return a.Name < b.Name;
+                else
+                    return a.Class < b.Class;
+                end
+
+            else
+                return a.IsPet < b.IsPet;
+            end
+
+        end);
+
+    elseif BuffwatchConfig.SortOrder == "Name" then
+
+        table.sort(Player_Order,
+        function(a,b)
+
+            if a.IsPet == b.IsPet then
+                return a.Name < b.Name;
+            else
+                return a.IsPet < b.IsPet;
+            end
+
+        end);
+
+    else -- Default
+
+        table.sort(Player_Order,
+        function(a,b)
+
+            if a.IsPet == b.IsPet then
+
+                if a.SubGroup == b.SubGroup then
+                    return a.UNIT_ID < b.UNIT_ID;
+                else
+                    return a.SubGroup < b.SubGroup;
+                end
+
+            else
+                return a.IsPet < b.IsPet;
+            end
+
+        end);
+    end
+
+end
+
+
+function Buffwatch_GetAllBuffs()
+
+    for k, v in pairs(Player_Info) do
+        Buffwatch_Player_GetBuffs(v);
+    end
+
+    Buffwatch_ResizeWindow();
+
+end
+
+
+function Buffwatch_Player_GetBuffs(v)
+
+    local curr_lock = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock");
 
     if not curr_lock:GetChecked() then
 
-        for j = 1, 16 do
+        if InCombatLockdown() then
 
-            local texture = UnitBuff(v.UNIT_ID, j, BuffWatchConfig.ShowCastableBuffs)
-            local curr_buff = getglobal("BW_Player" .. v.ID .. "_Buff" .. j)
-            local curr_buff_icon = getglobal("BW_Player" .. v.ID .. "_Buff" .. j .. "Icon")
-
-            if texture == nil then
-
-                curr_buff:Hide()
-                curr_buff_icon:SetTexture(nil)
-
-            elseif texture then
-
-                curr_buff:Show()
-                curr_buff_icon:SetTexture(texture)
-
-            end
-
-        end
-
-    end
-
-    for j = 1, 8 do
-
-        local curr_buff = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j)
-
-        if BuffWatchConfig.ShowDebuffs == false then
-
-            curr_buff:Hide()
+            Buffwatch_Add_InCombat_Events({"GetBuffs", v});
 
         else
 
-            local texture = UnitDebuff(v.UNIT_ID, j, BuffWatchConfig.ShowDispellableDebuffs)
-            local curr_buff_icon = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j .. "Icon")
+            BuffwatchPlayerBuffs[v.Name]["Buffs"] = { };
 
-            if texture == nil then
+            for i = 1, 32 do
 
-                curr_buff:Hide()
+                local buff, rank, icon = UnitBuff(v.UNIT_ID, i, BuffwatchConfig.ShowCastableBuffs);
+                local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
 
-            elseif texture then
+--[[if buff then
+    Buffwatch_Debug(i.." : buff="..buff);
+end]]
 
-                curr_buff:Show()
-                curr_buff_icon:SetTexture(texture)
+                if buff then
 
-            end
+                    -- Check if buff button has been created
+                    if curr_buff == nil then
 
-        end
+                        curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i,
+                            getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
+                        curr_buff:SetID(i);
 
-    end
+                    end
 
-end
+                    if i == 1 then
+                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPRIGHT", 5, 4);
+                    else
+                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1),
+                            "TOPRIGHT");
+                    end
 
 
-function BW_Player_AdjustBuffs(v)
+                    local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
 
-    local firstbutton = true
-    local previousbutton
+                    curr_buff_icon:SetVertexColor(1,1,1);
+                    curr_buff:Show();
+                    curr_buff_icon:SetTexture(icon);
+                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i] = { };
+                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Buff"] = buff;
+                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Rank"] = rank;
+                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Icon"] = icon;
 
-    for j = 1, 16 do
+                    curr_buff:SetAttribute("type", "spell");
+                    curr_buff:SetAttribute("unit1", v.UNIT_ID);
+                    curr_buff:SetAttribute("spell1", buff.."("..rank..")");
 
-        local curr_buff = getglobal("BW_Player" .. v.ID .. "_Buff" .. j)
-
-        if curr_buff:IsVisible() then
-
--- ***** Add code to sort this when buffs get hidden/shown, rather than refreshing all each time?
-            curr_buff:ClearAllPoints()
-
-            if firstbutton then
-                if BuffWatchConfig.AlignBuffs == false then
-                    curr_buff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_NameText", "TOPRIGHT", 5, 2)
                 else
-                    curr_buff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_NameText", "TOPLEFT", buttonalignposition + 5, 2)
+
+                    if curr_buff then
+
+                        local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+
+                        curr_buff:Hide();
+                        curr_buff_icon:SetTexture(nil);
+
+                    end
+
                 end
-                firstbutton = false
-                previousbutton = j
-            else
-                curr_buff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_Buff" .. previousbutton, "TOPRIGHT", 0, 0)
-                previousbutton = j
-            end
-
-        end
-
-    end
-
-    local firstdebuff = true
-    local previousdebuff
-
-    for j = 1, 8 do
-
-        local curr_debuff = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j)
-
-        if curr_debuff:IsVisible() then
-
--- ***** Add code to sort this when buffs get hidden/shown, rather than refreshing all each time?
-            curr_debuff:ClearAllPoints()
-
-            if firstbutton then
-
-                if BuffWatchConfig.AlignBuffs == false then
-                    curr_debuff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_NameText", "TOPRIGHT", 5, 2)
-                else
-                    curr_debuff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_NameText", "TOPLEFT", buttonalignposition + 5, 2)
-                end
-                firstbutton = false
-                previousbutton = j
-                firstdebuff = false
-                previousdebuff = j
-
-            elseif firstdebuff then
-
-                curr_debuff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_Buff" .. previousbutton, "TOPRIGHT", 0, 0)
-                firstdebuff = false
-                previousdebuff = j
-
-            else
-
-                curr_debuff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_Debuff" .. previousdebuff, "TOPRIGHT", 0, 0)
-                previousdebuff = j
 
             end
 
         end
-
-    end
-
-end
-
-
-function BW_ColourAllNames()
-
-    for k, v in Player_Info do
-        BW_Player_ColourName(v)
-    end
-
-end
-
-
-function BW_Player_ColourName(v)
-
-    local nametext = getglobal("BW_Player" .. v.ID .. "_NameText")
-
-    if BuffWatchConfig.HighlightPvP and UnitIsPVP(v.UNIT_ID) then
-
-        nametext:SetTextColor(0.0, 1.0, 0.0)
 
     else
+
+        for i = 1, 32 do
+
+            local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
+
+            if curr_buff and curr_buff:IsShown() then
+
+                if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == nil then
+
+                    getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"):SetVertexColor(0.4,0.4,0.4);
+
+                else
+
+                    local buff = BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Buff"];
+                    local rank = BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Rank"];
+                    local buffbuttonid;
+
+                    buffbuttonid = UnitHasBuff(v.UNIT_ID, buff, rank);
+
+                    if buffbuttonid ~= 0 then
+                        getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"):SetVertexColor(1,1,1);
+                    else
+                        getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"):SetVertexColor(1,0,0);
+--[[                        buffexpired = buffexpired + 1;
+
+                        if BuffwatchConfig.ExpiredWarning and buffexpired == 1 then
+                            UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, 2.0);
+
+                            if BuffwatchConfig.ExpiredSound then
+                                PlaySound("igQuestFailed");
+                            end
+
+--                            if minimized then
+--                                BW_HeaderText:SetTextColor(1, 0, 0);
+--                            end
+
+                        end
+]]
+                    end
+
+                end
+
+            end
+
+        end
+
+    end
+
+--[[
+    for i = 1, 8 do
+
+        local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i);
+
+        if BuffwatchConfig.ShowDebuffs == false then
+
+            if curr_buff then curr_buff:Hide(); end
+
+        else
+
+            local _, _, icon = UnitDebuff(v.UNIT_ID, i, BuffwatchConfig.ShowDispellableDebuffs);
+
+            if icon then
+
+                -- Check if buff button has been created
+                if not curr_buff then
+
+                    curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i,
+                        getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
+
+                end
+
+                local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i.."Icon");
+
+                curr_buff:Show();
+                curr_buff_icon:SetTexture(icon);
+
+            else
+
+                if curr_buff then curr_buff:Hide(); end
+
+            end
+
+        end
+
+    end
+]]
+end
+
+
+function Buffwatch_ResizeWindow()
+
+    BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
+
+    local maxbuffs = 0;
+-- ***** may need to move this to only check when buffs actually get hidden or shown
+    for k, v in pairs(BuffwatchPlayerBuffs) do
+
+        if maxbuffs < #v.Buffs then
+            maxbuffs = #v.Buffs;
+--            maxbuffid = v.ID;
+        end
+
+    end
+
+    BuffwatchFrame:SetWidth(math.max(32 + maxnamewidth + (maxbuffs * 18), 100));
+
+end
+
+
+function Buffwatch_Add_InCombat_Events(value)
+
+    local found;
+
+    for k, v in pairs(InCombat_Events) do
+
+        if value[1] == v[1] then
+
+            if value[1] == "GetBuffs" then
+
+                if value[2].ID == v[2].ID then
+                    found = true;
+--Buffwatch_Debug("InCombat_Event GetBuffs for ID "..value[2].ID.." found");
+                    break;
+                end
+
+            elseif value[1] == "GetPlayerInfo" then
+                found = true;
+--Buffwatch_Debug("InCombat_Event GetPlayerInfo found");
+                break;
+
+            end
+
+        end
+
+    end
+
+    if not found then
+Buffwatch_Debug("Adding InCombat_Event "..value[1]);
+        table.insert(InCombat_Events, value);
+    end
+
+end
+
+
+function Buffwatch_Process_InCombat_Events()
+
+    local t = table.remove(InCombat_Events, 1);
+
+    local eventfired;
+
+    while t do
+
+        if t[1] == "GetPlayerInfo" then
+
+            Buffwatch_GetPlayerInfo();
+
+        elseif t[1] == "GetBuffs" then
+
+            Buffwatch_Player_GetBuffs(t[2]);
+
+        end
+
+        t = table.remove(InCombat_Events, 1);
+
+        eventfired = true;
+
+    end
+
+    if eventfired then
+        Buffwatch_ResizeWindow();
+    end
+
+end
+
+
+function Buffwatch_ShowHelp()
+
+end
+
+
+function Buffwatch_Toggle()
+
+    if InCombatLockdown() then
+
+        Buffwatch_Print("Cannot hide Buffwatch while in combat.");
+
+    else
+
+        if BuffwatchFrame:IsVisible() then
+            BuffwatchFrame:Hide();
+        else
+            Buffwatch_Set_UNIT_IDs();
+            BuffwatchFrame:Show();
+        end
+
+    end
+
+end
+
+
+function Buffwatch_OptionsToggle()
+
+    if not Buffwatch_Options:IsVisible() then
+        ShowUIPanel(Buffwatch_Options);
+    else
+        HideUIPanel(Buffwatch_Options);
+    end
+
+end
+
+
+-- ****************************************************************************
+-- **                                                                        **
+-- **  Misc Functions                                                        **
+-- **                                                                        **
+-- ****************************************************************************
+
+-- Get's a Unique ID for a new player, also to be used as the player's frame ID
+--   If player was recently in the group, and their ID has not yet been replaced
+--   then we resupply it.
+function Buffwatch_GetNextID(unitname)
+
+    local i = 1;
+
+    if GetLen(Player_Info) == 0 then
+
+        return i;
+
+    else
+
+        local oldID = Player_Left[unitname];
+
+        -- Player was here before, check if id is still free
+        if oldID then
+
+            local found = false;
+
+            for k, v in pairs(Player_Info) do
+                if v.ID == oldID then
+                    -- Someone else has this id now :(
+                    found = true;
+                    break;
+                end
+            end
+
+            Player_Left[unitname] = nil;
+
+            if found == false then
+--                getglobal("BW_Player"..oldID):Show();
+                return oldID;
+            end
+
+        end
+
+        local Player_Copy = { };
+
+        for k, v in pairs(Player_Info) do
+            table.insert(Player_Copy, v);
+        end
+
+        table.sort(Player_Copy, function(a,b)
+            return a.ID < b.ID;
+            end)
+
+        for k, v in pairs(Player_Copy) do
+
+            if i ~= v.ID then
+                break;
+            end
+
+            i = i + 1;
+
+        end
+
+        Player_Copy = nil;
+
+    end
+
+    if getglobal("BuffwatchFrame_PlayerFrame"..i.."_Lock") then
+        getglobal("BuffwatchFrame_PlayerFrame"..i.."_Lock"):SetChecked(false);
+    end
+
+    BuffwatchFrame_LockAll:SetChecked(false);
+
+    return i;
+
+end
+
+
+function UnitHasBuff(unit, buff, rank)
+
+  local thisbuff, thisrank;
+
+  for i = 1, 32 do
+
+    thisbuff, thisrank = UnitBuff(unit, i);
+
+    if not thisbuff then break; end
+
+    if thisbuff == buff then
+
+      if rank then
+        if thisrank == rank then
+          return i;
+        else
+          return 0;
+        end
+      else
+        return i;
+      end
+
+      break;
+    end
+
+  end
+
+  return 0;
+
+end
+
+
+function UnitHasDebuff(unit, buff, rank)
+
+  local thisbuff, thisrank;
+
+  for i = 1, 16 do
+
+    thisbuff, thisrank = UnitDebuff(unit, i);
+
+    if not thisbuff then break; end
+
+    if thisbuff == buff then
+
+      if rank then
+        if thisrank == rank then
+          return i;
+        else
+          return 0;
+        end
+      else
+        return i;
+      end
+
+      break;
+    end
+
+  end
+
+  return 0;
+
+end
+
+
+function Buffwatch_ColourAllNames()
+
+    for k, v in pairs(Player_Info) do
+        Buffwatch_Player_ColourName(v);
+    end
+
+end
+
+
+function Buffwatch_Player_ColourName(v)
+
+    local nametext = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_NameText");
+
+--    if BuffwatchConfig.HighlightPvP and UnitIsPVP(v.UNIT_ID) then
+
+--        nametext:SetTextColor(0.0, 1.0, 0.0);
+
+--    else
 
         if v.Class ~= "" then
 
-            local color = RAID_CLASS_COLORS[v.Class]
+            local color = RAID_CLASS_COLORS[v.Class];
 
             if color then
-                nametext:SetTextColor(color.r, color.g, color.b)
+                nametext:SetTextColor(color.r, color.g, color.b);
             else
-                nametext:SetTextColor(1.0, 0.9, 0.8)
+                nametext:SetTextColor(1.0, 0.9, 0.8);
             end
 
         else
-            nametext:SetTextColor(1.0, 0.9, 0.8)
+            nametext:SetTextColor(1.0, 0.9, 0.8);
         end
 
-    end
-
-end
-
-
-function BW_ResizeWindow()
-
-    local bottomcoord = 0
-    local height = 0
-    local rightcoord = 0
-    local width = 0
-
-    for k, v in Player_Info do
-
-        if not minimized then
-            local playerframe = getglobal("BW_Player" .. v.ID)
-
-            if playerframe:GetBottom() ~= nil and playerframe:IsVisible() then
-                if bottomcoord > playerframe:GetBottom() or bottomcoord == 0 then
-                    bottomcoord = playerframe:GetBottom()
-                end
-            end
-        end
-
-        for j = 1, 16 do
-            local curr_buff = getglobal("BW_Player" .. v.ID .. "_Buff" .. j)
-
-            if curr_buff:IsShown() and curr_buff:GetRight() then
-                if curr_buff:GetRight() > rightcoord then
-                    rightcoord = curr_buff:GetRight()
-                end
-            end
-        end
-
-        for j = 1, 8 do
-            local curr_buff = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j)
-
-            if curr_buff:IsShown() and curr_buff:GetRight() then
-                if curr_buff:GetRight() > rightcoord then
-                    rightcoord = curr_buff:GetRight()
-                end
-            end
-        end
-
-    end
-
-    if minimized then
-        height = 20
-    else
-        if bottomcoord and bottomcoord ~= 0 then
-            if BuffWatchConfig.ShowUpdPerSec == true then
-                height = BW_Background:GetTop() - bottomcoord + 25
-            else
-                height = BW_Background:GetTop() - bottomcoord + 15
-            end
-            if height < 65 then height = 65 end
-        else
-            height = 65
-        end
-    end
-
-    if rightcoord and rightcoord ~= 0 then
-        width = rightcoord - BW_Background:GetLeft() + 20
-        if width < 100 then width = 100 end
-    else
-        width = 100
-    end
-
-    BW_Background:SetHeight(height)
-    BW:SetHeight(height)  
-
-    BW_Background:SetWidth(width)
-    BW:SetWidth(width)
-
-end
-
-function BW_UpdateUPS()
-
-    local TimeDiff = math.floor(GetTime() - LastBuffStatusUpdate)
-
-    if TimeDiff == 0 then
-        UpdPerSec[CurrSec] = UpdPerSec[CurrSec] + 1
-    elseif TimeDiff < SAMPLE_SIZE then
-
-        for i = 0, TimeDiff - 2 do
-
-            CurrSec = math.mod(CurrSec + 1, SAMPLE_SIZE)
-
-            UpdPerSec[CurrSec] = 0
-
-        end
-
-        CurrSec = math.mod(CurrSec + 1, SAMPLE_SIZE)
-
-        UpdPerSec[CurrSec] = 1
-
-    else
-
-        for i = 0, SAMPLE_SIZE - 1 do
-            UpdPerSec[i] = 0
-        end
-
-        CurrSec = math.mod(CurrSec + TimeDiff, SAMPLE_SIZE)
-
-        UpdPerSec[CurrSec] = 1
-
-    end
-
-    LastBuffStatusUpdate = math.floor(GetTime())
-    
-    if BuffWatchConfig.ShowUpdPerSec == true then
-
-        local UPS = 0
-
-        for i = 0, SAMPLE_SIZE - 1 do
-
-            UPS = UPS + UpdPerSec[i]
-
-        end
-
-        UPS = UPS / SAMPLE_SIZE
-
-        BW_UPS:SetText("UPS = " .. format("%4.1f", UPS))
-    
-    end
-
-end
-
-
-function BW_UpdateBuffStatus(forced)
-
-    if BuffWatchConfig.UpdPerSec > 0 then
-
-        if (BuffUpdateTime + (1.0 / BuffWatchConfig.UpdPerSec) < GetTime()) or forced == true then
-            BuffUpdateTime = GetTime()
-            BuffUpdatePending = false
-        else
-            if BuffUpdatePending == false then 
-                BuffUpdatePending = true
-                TimeSinceLastUpdate = 0
-            end
-            return
-        end
-    
-    end
-    
-    local hasbuffexpired = false
-    local playerframechanges = false
-    
-    BW_UpdateUPS()
-
-    for k, v in Player_Info do
-
-        local player = "BW_Player" .. v.ID
-        local playerframe = getglobal(player)
-        local playerbuffexpired = false
-        local playerhasbuffs = false
-        local playerhasdebuffs = false
-        local showframe = true
-
-        if getglobal(player .. "_Lock"):GetChecked() then
-
-            for j = 1, 16 do
-
-                -- Check if there is a buff in this slot
-                if getglobal(player .. "_Buff" .. j):IsShown() then
-
-                    playerhasbuffs = true
-
-                    -- If player is linkdead or dead in game, grey buffs out so user doesnt try to buff them
-                    if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == nil then
-
-                        getglobal(player .. "_Buff" .. j .. "Icon"):SetVertexColor(0.4,0.4,0.4)
-
-                    else
-
-                        local Flag_BuffFound = false
-                        local texture = getglobal(player .. "_Buff" .. j .. "Icon"):GetTexture()
-
-                        -- See if we can find this buff on the player still
-                        for j_2 = 1, 16 do
-                            if UnitBuff(v.UNIT_ID, j_2) == texture then
-                                Flag_BuffFound = true
-                                break
-                            end
-                        end
-
-                        -- If not found, check if lesser or greater exists instead
-                        if Flag_BuffFound == false then
-
-                            if GroupBuffs[texture] and not GroupBuffs[texture].ByName then
-
-                                if GroupBuffs[texture].Lesser then
-
-                                    texture = GroupBuffs[texture].Lesser
-
-                                elseif GroupBuffs[texture].Greater then
-
-                                    texture = GroupBuffs[texture].Greater
-
-                                end
-
-                                for j_2 = 1, 16 do
-                                    if UnitBuff(v.UNIT_ID, j_2) == texture then
-                                        Flag_BuffFound = true
-                                        getglobal(player .. "_Buff" .. j .. "Icon"):SetTexture(texture)
-                                        break
-                                    end
-                                end
-
-                            end
-
-                        end
-
-                        -- If buff has expired, highlight it red
-                        if Flag_BuffFound then
-                            getglobal(player .. "_Buff" .. j .. "Icon"):SetVertexColor(1,1,1)
-                        else
-                            getglobal(player .. "_Buff" .. j .. "Icon"):SetVertexColor(1,0,0)
-
-                            if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
-                                UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, 2.0)
-                                buffexpired = true
-                                
-                                if BuffWatchConfig.ExpiredSound then
-                                    PlaySound("igQuestFailed")
-                                end
-
-                                if minimized then
-                                    BW_HeaderText:SetTextColor(1, 0, 0)
-                                end
-
-                            end
-                            hasbuffexpired = true
-                            playerbuffexpired = true
-                        end
-
-                    end
-
-                end
-
-            end
-            
-            if BuffWatchConfig.DebuffsAlwaysVisible == true then
-            
-                for j = 1, 8 do
-
-                    -- Check if there is a debuff in this slot
-                    if getglobal(player .. "_Debuff" .. j):IsShown() then
-                        playerhasdebuffs = true
-                        break
-                    end
-
-                end
-                
-            end
-            
-            -- Determine whether we should show or hide this player
-            if playerhasdebuffs == true then
-                showframe = true
-            else
-            
-                if HideMonitored == true then
-
-                    if HideUnmonitored == false then
-
-                        if playerhasbuffs == true then
-                            showframe = playerbuffexpired
-                        else
-                            showframe = true
-                        end
-
-                    else
-                        showframe = playerbuffexpired
-                    end
-
-                else
-
-                    if HideUnmonitored == false then
-                        -- We are not hiding monitored or unmonitored, so show the playerframe
-                        showframe = true
-                    else
-
-                        -- Just hiding Unmonitored, so determine if any buffs are locked
-                        if playerhasbuffs == true then
-                            showframe = true
-                        else
-                            showframe = false
-                        end
-
-                    end
-
-                end
-                
-            end
-
-        else
-            -- Player is unchecked, so show
-            showframe = true
-
-            -- Make sure buffs are not highlighted
-            for j = 1, 16 do
-
-                -- Check if there is a buff in this slot
-                if getglobal(player .. "_Buff" .. j):IsShown() then
-                    getglobal(player .. "_Buff" .. j .. "Icon"):SetVertexColor(1,1,1)
-                end
-
-            end
-
-        end
-
-        if showframe == true then
-            if not playerframe:IsShown() then
-                playerframe:Show()
-                playerframechanges = true
-            end
-        else
-            if playerframe:IsShown() then
-                playerframe:Hide()
-                playerframechanges = true
-            end
-        end
-
-    end
-
-    buffexpired = hasbuffexpired
-
-    if buffexpired == false then
-        BW_HeaderText:SetTextColor(0.2, 0.9, 0.9)
-    end
-
-    if playerframechanges == true then
-        BW_Player_AdjustFrames()
-    end
-
-end
-
-function BW_Player_SaveBuffs(playerid)
-
-    local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
-    local i
-    
-    if getglobal("BW_Player" .. playerid .. "_Lock"):GetChecked() then
-    
-        i = 0
-        BuffWatchPlayerBuffs[playername] = { }
-        BuffWatchPlayerBuffs[playername]["Buffs"] = { }
-        
-        for j = 1, 16 do
-
-            if getglobal("BW_Player" .. playerid .. "_Buff" .. j):IsShown() then
-            
-                i = i + 1
-                BuffWatchPlayerBuffs[playername]["Buffs"][i] = { }
-                BuffWatchPlayerBuffs[playername]["Buffs"][i]["texture"] = getglobal("BW_Player" .. playerid .. "_Buff" .. j .. "Icon"):GetTexture()
-            end
-            
-        end        
-    
-    else
-    
-        BuffWatchPlayerBuffs[playername] = nil
-    
-    end
-
-
-end
-
-function BW_Player_LoadBuffs(playerid)
-
-    local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
-
-    if BuffWatchPlayerBuffs[playername] then 
-
-        for j = 1, 16 do
-        
-            if BuffWatchPlayerBuffs[playername]["Buffs"][j] then
-
-                getglobal("BW_Player" .. playerid .. "_Buff" .. j):Show()
-                getglobal("BW_Player" .. playerid .. "_Buff" .. j .. "Icon"):SetTexture(BuffWatchPlayerBuffs[playername]["Buffs"][j]["texture"])
-            
-            else
-            
-                getglobal("BW_Player" .. playerid .. "_Buff" .. j):Hide()
-                getglobal("BW_Player" .. playerid .. "_Buff" .. j .. "Icon"):SetTexture(nil)
-            
-            end
-
-        end
-        
-        getglobal("BW_Player" .. playerid .. "_Lock"):SetChecked(true)
-             
-     end
-     
-     BW_Check_Clicked(getglobal("BW_Player" .. playerid .. "_Lock"))
-
-end
-
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //                Slash Commands
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
-
-function BW_SlashHandler(msg)
-
-    msg = string.lower(msg)
-
-    if msg == "toggle" then
-
-        BW_Toggle()
-
-    elseif msg == "set" then
-
-        BW_SetRightMouse()
-
-    elseif msg == "options" then
-
-        BW_OptionsToggle()
-
-    elseif msg == "" or msg == "help" then
-
-        BW_ShowHelp()
-    
---    elseif msg == "debug" then
-    
---        BuffWatchConfig.debug = not BuffWatchConfig.debug
-        
---        if BuffWatchConfig.debug == true then
---            BW_Print("Buffwatch debugging ON")
---        else
---            BW_Print("Buffwatch debugging OFF")
---        end
-
-    else
-
-        BW_Print("BuffWatch: Invalid Command or Parameter")
-
-    end
-
-end
-
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //                Mouse Events
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
-
-function BW_OnMouseDown(arg1)
-    if arg1 == "LeftButton" then
-        BW:StartMoving()
-    end
-end
-
-
-function BW_OnMouseUp(arg1)
-    if arg1 == "LeftButton" then
-        BW:StopMovingOrSizing()
-    end
-end
-
-
-function BW_MouseIsOverFrame()
-
-    if MouseIsOver(BW) then
-
-        BW_MinimizeButton:Show()
-
-        if not minimized then
-
-            BW_Lock_All:Show()
-
-            for k, v in Player_Info do
-                getglobal("BW_Player" .. v.ID .. "_Lock"):Show()
-            end
-
-        else
-            BW_Lock_All:Hide()
-        end
-
-    else
-
-        if not minimized then
-
-            BW_MinimizeButton:Hide()
-
-            for k, v in Player_Info do
-                getglobal("BW_Player" .. v.ID .. "_Lock"):Hide()
-            end
-        end
-
-        BW_Lock_All:Hide()
-
-    end
-
-end
-
-
-function BW_Check_Clicked(obj)
-
-    local checked 
-    
-    if obj then 
-        checked = obj:GetChecked()
-    else
-        checked = this:GetChecked()
-    end
-
-    if checked then
-            
-        for k, v in Player_Info do
-
-            local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
-
-            if not curr_lock:GetChecked() then
-                checked = nil
-                break
-            end
-
-        end
-
-        if checked then
-            BW_Lock_All:SetChecked(true)
-        end
-
-    else
-        BW_Lock_All:SetChecked(false)
-    end
-
-    if not obj then
-        BW_Player_SaveBuffs(this:GetParent():GetID())
-    end
-
-end
-
-
-function BW_Name_Clicked(button)
-
-    local playername = getglobal("BW_Player" .. this:GetParent():GetID() .. "_NameText"):GetText()
-
-    if button == "LeftButton" then
-        TargetByName(playername)
-    elseif button == "RightButton" then
-        AssistByName(playername)
-    end
-
-end
-
-
-function BW_Buff_Clicked(button)
-
-    local buffid = this:GetID()
-    local playerid = this:GetParent():GetID()
-    local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
-    local playerframe =  "BW_Player" .. playerid
-
-    if button == "LeftButton" then
-
-        local spellid = nil
-        local spelltexture = getglobal(this:GetName() .. "Icon"):GetTexture()
-
-        for i = 1, 300 do
-            if GetSpellTexture(i, 1) == spelltexture then
-                spellid = i
-            end
-        end
-
-        if spellid then
-
-            if BuffWatchConfig.PreventPvPBuff and UnitIsPVP(Player_Info[playername].UNIT_ID) then
-
-                BW_Print(playername .. " is PvP Flagged, aborted casting.")
-
-            elseif UnitIsVisible(Player_Info[playername].UNIT_ID) then
-
-                if UnitName("target") and not UnitIsEnemy("target","player") then
-                    if UnitName("target") ~= playername then
-                        TargetByName(playername)
-                    end
-                end
-
-                if IsShiftKeyDown() then
-                    SendChatMessage(format("BW: Casting %s on %s", GetSpellName(spellid,1), playername), "PARTY")
-                end
-
-                -- Check if it's a group buff or a lesser version.
-                if GroupBuffs[spelltexture] and BuffWatchConfig.BuffThreshold > 0 then
-
-                    local castgreater = false
-                    local newspelltexture = nil
-
-                    -- Check Buff Threshold for whether to cast single or group
-                    if (GetNumPartyMembers() >= (BuffWatchConfig.BuffThreshold - 1) or GetNumRaidMembers() >= BuffWatchConfig.BuffThreshold) then
-
-                        local castcount = 0
-                        local otherspelltexture
-                        local pvpflagfound
-
-                        if GroupBuffs[spelltexture].Greater then
-                            otherspelltexture = GroupBuffs[spelltexture].Greater
-                        else
-                            otherspelltexture = GroupBuffs[spelltexture].Lesser
-                        end
-
-                        -- Check if we have other spell, and save OtherSpellID
-                        if not GroupBuffs[spelltexture].OtherSpellID then
-
-                            if GroupBuffs[spelltexture].ByName then
-
-                                for i = 1, 300 do
-                                    local spellName, _ = GetSpellName(i, 1)
-                                    if spellName == otherspelltexture then
-                                        GroupBuffs[spelltexture].OtherSpellID = i
-                                    end
-                                end
-
-                            else
-
-                                for i = 1, 300 do
-                                    if GetSpellTexture(i, 1) == otherspelltexture then
-                                        GroupBuffs[spelltexture].OtherSpellID = i
-                                    end
-                                end
-
-                            end
-
-                            if not GroupBuffs[spelltexture].OtherSpellID then
-                                -- Player doesnt have greater spell
-                                GroupBuffs[spelltexture].OtherSpellID = 0
-                            end
-
-                        end
-
-                        -- Check whether to cast greater or lesser. If we dont have greater, then skip.
-                        if GroupBuffs[spelltexture].OtherSpellID ~= 0 then
-
-                            for k, v in Player_Info do
-
-                                local Flag_BuffFound = false
-
-                                -- Find players with same SubGroup/Class
-                                if Player_Info[v.Name].IsPet == 0 and v[GroupBuffs[spelltexture].Type] == Player_Info[playername][GroupBuffs[spelltexture].Type] then
-
-                                    if BuffWatchConfig.PreventPvPBuff then
-
-                                        if UnitIsPVP(v.UNIT_ID) then
-                                            pvpflagfound = v.Name -- Enforce a single buff to be cast
-                                        end
-
-                                    end
-
-                                    -- Check for missing buff
-                                    for j = 1, 16 do
-                                        if UnitBuff(v.UNIT_ID, j) == spelltexture or UnitBuff(v.UNIT_ID, j) == otherspelltexture then
-                                            Flag_BuffFound = true
-                                            break
-                                        end
-                                    end
-
-                                    if Flag_BuffFound == false then
-                                        castcount = castcount + 1
-                                    end
-
-                                end
-
-                            end
-
-                            if castcount >= BuffWatchConfig.BuffThreshold then
-                                if pvpflagfound then
-                                    BW_Print(pvpflagfound .. " is PvP Flagged, casting single version buff.")
-                                else
-                                    castgreater = true
-                                end
-                            end
-
-                        end
-
-                    end
-
-                    if castgreater then
-                        newspelltexture = GroupBuffs[spelltexture].Greater
-                    else
-                        newspelltexture = GroupBuffs[spelltexture].Lesser
-                    end
-
-                    if newspelltexture then
-
-                        if GroupBuffs[spelltexture].OtherSpellID then
-
-                            spellid = GroupBuffs[spelltexture].OtherSpellID
-
-                        else
-
-                            for i = 1, 300 do
-                                if GetSpellTexture(i, 1) == newspelltexture then
-                                    spellid = i
-                                    GroupBuffs[spelltexture].OtherSpellID = i
-                                end
-                            end
-
-                        end
-
-                    end
-
-                end
-
-                CastSpell(spellid, 1)
-
-                if SpellIsTargeting() then
-                    TargetByName(playername)
-                end
-
-            else
-
-                BW_Print(playername .. " is out of range or not visible.")
-
-            end
-
-        end
-
-    elseif button == "RightButton" then
-
-        if getglobal(playerframe .. "_Lock"):GetChecked() and IsControlKeyDown() then
-
-            this:Hide()
-            BW_Player_AdjustBuffs(Player_Info[playername])
-            BW_ResizeWindow()
-            BW_Player_SaveBuffs(playerid)
-
-        elseif getglobal(playerframe .. "_Lock"):GetChecked() and IsAltKeyDown() then
-
-            for i = 1, 16 do
-                if i ~= buffid then
-                    getglobal(playerframe .. "_Buff" .. i):Hide()
-                end
-            end
-
-            BW_Player_AdjustBuffs(Player_Info[playername])
-            BW_ResizeWindow()
-            BW_Player_SaveBuffs(playerid)
-
-        else
-
-            if BuffWatchConfig.rightMouseSpell then
-                if UnitName("target") and not UnitIsEnemy("target","player") then
-                    if UnitName("target") ~= playername then
-                        TargetByName(playername)
-                    end
-                end
-
-                if IsShiftKeyDown() then
-                    SendChatMessage(format("BW: Casting %s on %s", GetSpellName(BuffWatchConfig.rightMouseSpell,1), playername), "PARTY")
-                end
-
-                CastSpell(BuffWatchConfig.rightMouseSpell,1)
-
-                if SpellIsTargeting() then
-                    TargetByName(playername)
-                end
-
-            else
-
-                BW_Print("     BuffWatch: Right mouse button spell has not yet been set.")
-                BW_Print("                Cast any spell with a duration. Then type \"/bw set\"")
-
-            end
-
-        end
-
-    end
-
-end
-
-
-function BW_Buff_Tooltip()
-
-    local playername = getglobal("BW_Player" .. this:GetParent():GetID() .. "_NameText"):GetText()
-    local buffbuttonid = nil
-    local debuffbuttonid = nil
-    local texture = getglobal(this:GetName() .. "Icon"):GetTexture()
-
-    for i = 1, 16 do
-        if UnitBuff(Player_Info[playername]["UNIT_ID"], i) == texture then
-            buffbuttonid = i
-            break
-        end
-    end
-
-    if buffbuttonid == nil then
-        for i_2 = 1, 8 do
-            if UnitDebuff(Player_Info[playername]["UNIT_ID"], i_2) == texture then
-                debuffbuttonid = i_2
-                break
-            end
-        end
-    end
-
-    if buffbuttonid then
-        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT")
-        GameTooltip:SetUnitBuff(Player_Info[playername]["UNIT_ID"], buffbuttonid)
-    elseif debuffbuttonid then
-        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT")
-        GameTooltip:SetUnitDebuff(Player_Info[playername]["UNIT_ID"], debuffbuttonid)
-    end
-
-end
-
-
-function BW_Set_AllChecks(checked)
-
-    for k, v in Player_Info do
-    
-        local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
-
-        if curr_lock:GetChecked() ~= checked then 
-            curr_lock:SetChecked(checked)
-            BW_Player_SaveBuffs(v.ID)
-        end
-        
-    end
-
-end
-
-
-function BW_Header_Clicked(button)
-
-    if button == "LeftButton" then
-        BW_Set_UNIT_IDs()
-        BW_GetAllBuffs()
-        BW_UpdateBuffStatus()
-        BW_ResizeWindow()
-    end
-
-    if button == "RightButton" then
-        ToggleDropDownMenu(1, nil, getglobal("BW_DropDown"), "BW_Header", 40, 0);
-    end
-
-end
-
-
-function BW_MinimizeButton_Clicked()
-
-    minimized = not minimized
-
-    if minimized == true then
-        BW_PlayersFrame:Hide()
-    else
-        BW_PlayersFrame:Show()
-    end
-
-    BW_ResizeWindow()
-    BW_MouseIsOverFrame()
-
-end
-
-function BW_HideUnmonitored_Clicked()
-
-    HideUnmonitored = not HideUnmonitored
-
-    BW_UpdateBuffStatus(true)
-    BW_ResizeWindow()
-    
-end
-
-function BW_HideMonitored_Clicked()
-
-    HideMonitored = not HideMonitored
-
-    BW_UpdateBuffStatus(true)
-    BW_ResizeWindow()
-
-end
-
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //                Miscellaneous
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
-
-function BW_Toggle()
-
-    if BW:IsVisible() then
-        HideUIPanel(BW)
-    else
-        ShowUIPanel(BW)
-    end
-
-end
-
-
-function BW_OptionsToggle()
-
-    if not BW_Options:IsVisible() then
-        ShowUIPanel(BW_Options)
-    else
-        HideUIPanel(BW_Options)
-    end
-
-end
-
-
-function BW_SetRightMouse()
-
-    if lastspellcast == nil then
-
-        BW_Print("     BuffWatch: You have not cast any timed spells yet:")
-        BW_Print("                        Cast one, and then try \"/bw set\" again")
-
-    else
-
-        for i = 1, 300 do
-            if GetSpellName(i,1) == lastspellcast then
-                BuffWatchConfig.rightMouseSpell = i
---                    break
-            end
-        end
-
-        if BuffWatchConfig.rightMouseSpell then
-            BW_Print( format("BuffWatch: Right mouse button set to %s (%s)",
-              GetSpellName(BuffWatchConfig.rightMouseSpell,1) ), 0.2, 0.9, 0.9 )
-        end
-
-    end
+--    end
 
 end
 
 
 function GetLen(arr)
 
-    local len = 0
+    local len = 0;
 
     if arr ~= nil then
 
-        for k, v in arr do
-            len = len + 1
+        for k, v in pairs(arr) do
+            len = len + 1;
         end
 
     end
 
-    return len
+    return len;
 end
 
+function Buffwatch_Print(msg, R, G, B)
 
-function BW_GetNextID(unitname)
-
-    local i = 1
-
-    if GetLen(Player_Info) == 0 then
-
-        return i
-
-    else
-
-        local oldID = Player_Left[unitname]
-
-        if oldID then
-
-            local found = false
-
-            for k, v in Player_Info do
-                if v.ID == oldID then
-                    found = true
-                    break
-                end
-            end
-
-            Player_Left[unitname] = nil
-
-            if found == false then
---                getglobal("BW_Player" .. oldID):Show()
-                return oldID
-            end
-
-        end
-
-        local Player_Copy = { }
-
-        for k, v in Player_Info do
-            table.insert(Player_Copy, v)
-        end
-
-        table.sort(Player_Copy, function(a,b)
-            return a.ID < b.ID
-            end)
-
-        for k, v in Player_Copy do
-
-            if i ~= v.ID then
-                break
-            end
-
-            i = i + 1
-
-        end
-
-        Player_Copy = nil
-
+    if R == nil then
+        R, G, B = 0.2, 0.9, 0.9;
     end
-
-    getglobal("BW_Player" .. i .. "_Lock"):SetChecked(false)
-    BW_Lock_All:SetChecked(false)
-
-    return i
-
-end
-
-
-function BW_GetPetUnitID(unitid)
-
---    if lastgrouptype == "party" then
-
-        if unitid == "player" then
-            return "pet", 1
-        end
-
-        return string.gsub(unitid, "([a-z]+)([0-9]+)", "%1pet%2")
-
---[[        return "partypet" .. string.sub(unitid, -1)
-
-    else
-        return "raidpet" .. string.sub(unitid, 5)
-    end
-]]--
-end
-
-function BW_SetBuffUpdatePending(value)
-    BuffUpdatePending = value
-end
-
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //    BuffWatch Print Function
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
-
-function BW_Print(msg, R, G, B)
 
     DEFAULT_CHAT_FRAME:AddMessage(msg, R, G, B);
 
 end
 
---function BW_Debug(msg, R, G, B)
 
---    ChatFrame7:AddMessage(msg, R, G, B);
+function Buffwatch_Debug(msg, R, G, B)
 
---end
-
-
--- //////////////////////////////////////////////////////////////////////////////////////
--- //
--- //    BuffWatch Help
--- //
--- //////////////////////////////////////////////////////////////////////////////////////
-
-function BW_ShowHelp()
-
-    BW_HelpFrame:Show()
-    BW_HelpFrame:ClearAllPoints()
-    BW_HelpFrame:SetPoint("CENTER","UIParent","CENTER",0,-32)
-
-    BW_HelpFrameText:SetText(
-
-"        - BuffWatch Usage - v " .. BW_VERSION .. " - " .. [[
-
-        Showing Buffs:
-             - Left click the BuffWatch label to refresh all buffs
-             - Also occurs automatically whenever your gain/lose a party or raid member
-
-        Locking a player's watched buffs:
-             - If the checkbox to the left is unchecked, buffs will be added automatically whenever they gain a buff
-             - If checked, buffs will not be added, or removed and will show when expired
-
-        Deleting buffs:
-             - Lock the player's buffs (check the box). Then [ CTRL + Right Click ] on the buff
-             - Optionally, [ ALT + Right Click ] to delete all but the selected one.
-
-        Hiding players to minimise window:
-             - Toggle 'Show Monitored' and/or 'Show Unmonitored' in the right click menu (off the header text)
-                 which will hide locked players which have buffs set or players with no buffs set respectively
-
-        Rebuffing:
-             - Left click an icon (will auto-target)
-
-        Right click spell:
-             - Cast any spell with a cast time (not instant). Then type "/bw set"
-             - To cast it, right click any icon (will auto-target)
-
-        Slash Commands ( Use /buffwatch or /bw )
-             - /bw toggle : shows/hides the window
-             - /bw options : shows/hides the options window
-             - /bw : shows this help menu :)
-
-        Verbosity:
-             - Hold [ Shift ] while left or right-clicking a buff icon to send a cast message to your party
-        ]] )
+    if BuffwatchConfig.debug == true then
+        debugchatframe:AddMessage(msg, R, G, B);
+    end
 
 end
 
--- //////////////////////////////////////////////////////////////////////////////////////
+-- for debugging
+function GetUNIT_IDs()
+
+    return UNIT_IDs;
+
+end
+
+function GetPlayer_Info()
+
+    return Player_Info;
+
+end
+
+function GetPlayer_Left()
+
+    return Player_Left;
+
+end
+
+function GetPlayer_Order()
+
+    return Player_Order;
+
+end
+
+function GetBuffwatchConfig()
+
+    return BuffwatchConfig;
+
+end
+
+function GetBuffwatchPlayerBuffs()
+
+    return BuffwatchPlayerBuffs;
+
+end
+
+function GetInCombat_Events()
+
+    return InCombat_Events;
+
+end
+
+
