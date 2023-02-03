@@ -1,9 +1,13 @@
 BW_TTIP_SORTORDER = "Specifies the sort order for the player list in the BuffWatch Window"
 BW_TTIP_SHOWONSTARTUP = "Toggle whether to show the BuffWatch window on startup"
 BW_TTIP_SHOWPETS = "Toggle whether to show pets in the player list"
+BW_TTIP_SHOWCASTABLEBUFFS = "Toggle whether to only show buffs you can cast"
 BW_TTIP_SHOWDEBUFFS = "Toggle whether to show debuffs"
+BW_TTIP_SHOWDISPELLDEBUFFS = "Toggle whether to only show debuffs you can dispell"
 BW_TTIP_ALIGNBUFFS = "Toggle aligning of the buff icons for all players"
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire"
+BW_TTIP_HIGHLIGHTPVP = "Highlight players that are PvP Flagged"
+BW_TTIP_PREVENTPVPBUFF = "Prevent BuffWatch from buffing players that are PvP Flagged"
 BW_TTIP_BUFFTHRESHOLD = "Number of players missing the buff for it to cast group version"
 BW_TTIP_ALPHA = "Sets the transparency of the BuffWatch window"
 
@@ -17,11 +21,15 @@ end
 function BW_Options_Init()
     BW_Options_ShowOnStartup:SetChecked(BuffWatchConfig.show_on_startup)
     BW_Options_ShowPets:SetChecked(BuffWatchConfig.ShowPets)
+    BW_Options_ShowOnlyCastableBuffs:SetChecked(BuffWatchConfig.ShowCastableBuffs)
     BW_Options_ShowDebuffs:SetChecked(BuffWatchConfig.ShowDebuffs)
-    BW_Options_Alpha:SetValue(BuffWatchConfig.alpha)
+    BW_Options_ShowOnlyDispellDebuffs:SetChecked(BuffWatchConfig.ShowDispellableDebuffs)
     BW_Options_AlignBuffs:SetChecked(BuffWatchConfig.AlignBuffs)
     BW_Options_ShowExpiredWarning:SetChecked(BuffWatchConfig.ExpiredWarning)
+    BW_Options_HighlightPvP:SetChecked(BuffWatchConfig.HighlightPvP)
+    BW_Options_PreventPvPBuff:SetChecked(BuffWatchConfig.PreventPvPBuff)
     BW_Options_BuffThreshold:SetValue(BuffWatchConfig.BuffThreshold)
+    BW_Options_Alpha:SetValue(BuffWatchConfig.alpha)
 end
 
 function BW_Options_SortOrder_OnClick()
@@ -45,7 +53,11 @@ function BW_Options_SortOrder_Initialize()
 end
 
 function BW_Options_SortOrder_OnLoad()
-   UIDropDownMenu_Initialize(this, BW_Options_SortOrder_Initialize)
-   UIDropDownMenu_SetText(BuffWatchConfig.SortOrder, this)
-   UIDropDownMenu_SetWidth(90, BW_Options_SortOrder)
+    UIDropDownMenu_Initialize(this, BW_Options_SortOrder_Initialize)
+    UIDropDownMenu_SetText(BuffWatchConfig.SortOrder, this)
+    UIDropDownMenu_SetWidth(90, BW_Options_SortOrder)
+end
+
+function BW_Options_HighlightPvP_Clicked()
+    BW_ColourAllNames()
 end

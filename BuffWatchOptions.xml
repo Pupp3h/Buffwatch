@@ -6,7 +6,7 @@
     <Frame name="BW_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="350" y="330"/>
+            <AbsDimension x="350" y="490"/>
         </Size>
 
         <Anchors>
@@ -92,7 +92,7 @@
 
             <Frame name="$parent_SortOrder" inherits="UIDropDownMenuTemplate" enableMouse="true">
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="BW_Options_SortOrderLabel" relativePoint="RIGHT">
+                    <Anchor point="LEFT" relativeTo="$parent_SortOrderLabel" relativePoint="RIGHT">
                         <Offset>
                             <AbsDimension x="-10" y="-2" />
                         </Offset>
@@ -117,9 +117,9 @@
 
             <CheckButton name="$parent_ShowOnStartup" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_SortOrderLabel" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-70"/>
+                            <AbsDimension x="-5" y="-10"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -146,9 +146,9 @@
 
             <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnStartup" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-100"/>
+                            <AbsDimension x="0" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -177,11 +177,43 @@
                 </Scripts>
             </CheckButton>
 
+            <CheckButton name="$parent_ShowOnlyCastableBuffs" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowPets" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Only Castable Buffs");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ShowCastableBuffs = true
+                        else
+                            BuffWatchConfig.ShowCastableBuffs = false
+                        end
+                        BW_GetAllBuffs()
+                        BW_UpdateBuffStatus()
+                        BW_ResizeWindow()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWCASTABLEBUFFS)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
+            
             <CheckButton name="$parent_ShowDebuffs" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyCastableBuffs" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-130"/>
+                            <AbsDimension x="0" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -192,8 +224,10 @@
                     <OnClick>
                         if (this:GetChecked()) then
                             BuffWatchConfig.ShowDebuffs = true
+                            OptionsFrame_EnableCheckBox(BW_Options_ShowOnlyDispellDebuffs, BW_Options_ShowOnlyDispellDebuffs:GetChecked());
                         else
                             BuffWatchConfig.ShowDebuffs = false
+                            OptionsFrame_DisableCheckBox(BW_Options_ShowOnlyDispellDebuffs)
                         end
                         BW_GetAllBuffs()
                         BW_UpdateBuffStatus()
@@ -209,11 +243,46 @@
                 </Scripts>
             </CheckButton>
 
+            <CheckButton name="$parent_ShowOnlyDispellDebuffs" inherits="OptionsCheckButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowDebuffs" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Only Dispellable Debuffs");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.ShowDispellableDebuffs = true
+                        else
+                            BuffWatchConfig.ShowDispellableDebuffs = false
+                        end
+                        BW_GetAllBuffs()
+                        BW_UpdateBuffStatus()
+                        BW_ResizeWindow()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWDISPELLDEBUFFS)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
+
             <CheckButton name="$parent_AlignBuffs" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyDispellDebuffs" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-160"/>
+                            <AbsDimension x="-10" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -243,9 +312,9 @@
 
             <CheckButton name="$parent_ShowExpiredWarning" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_AlignBuffs" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-190"/>
+                            <AbsDimension x="0" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -269,15 +338,74 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
+            
+            <CheckButton name="$parent_HighlightPvP" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowExpiredWarning" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Highlight PvP Flagged");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.HighlightPvP = true
+                        else
+                            BuffWatchConfig.HighlightPvP = false
+                        end
+                        BW_Options_HighlightPvP_Clicked()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_HIGHLIGHTPVP)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>            
+            
+            <CheckButton name="$parent_PreventPvPBuff" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_HighlightPvP" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Prevent PvP Buffing");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffWatchConfig.PreventPvPBuff = true
+                        else
+                            BuffWatchConfig.PreventPvPBuff = false
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_PREVENTPVPBUFF)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>            
 
             <Slider name="$parent_BuffThreshold" inherits="OptionsSliderTemplate">
                 <Size>
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOP">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_PreventPvPBuff" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="0" y="-230" />
+                            <AbsDimension x="25" y="-20" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -309,9 +437,9 @@
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOP">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_BuffThreshold" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="0" y="-270" />
+                            <AbsDimension x="0" y="-20" />
                         </Offset>
                     </Anchor>
                 </Anchors>

@@ -3,28 +3,26 @@
 -- // BuffWatch
 -- //     by Pup
 -- //
--- // TODO:
+-- // TODO: (possibly)
 -- //
+-- //     Ignore dead / disconn in threshold count
 -- //     Window doesnt always properly resize
--- //
 -- //     Update ResizeWindow to run no more than once every 2 secs
--- //
 -- //     Option to split into columns (previous changes might suffice)
--- //
--- //     Localisation for various buts of text
--- //     Only show castable buffs (key combination to override this for a player?)
--- //     Keybinding to scan list and recast any expired buffs (probably need to tie in with above)
+-- //     Localisation for various bits of text
+-- //     Keybinding to scan list and recast any expired buffs
 -- //     Show poisons and weapon buffs for player
 -- //     Lower spell rank support
 -- //     Allow cleansing of debuffs
--- //     Option to only show debuffs I can cleanse
 -- //     UI Scaling
 -- //
 -- // CHANGES:
 -- //
--- //     Ignores pets for GroupBuff Threshold count
--- //     Added current Threshold value to slider label
--- //     Added casting of druids group buff GOTW based on Threshold
+-- //     Shows class colours properly for non EN localisations
+-- //     Added option to highlight players that are PvP Flagged
+-- //     Added option to prevent BuffWatch from casting on players that are PvP Flagged
+-- //     Added option to show only buffs player can cast
+-- //     Added option to show only debuffs player can dispell
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -34,16 +32,17 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
-BW_VERSION = "1.12"
-BW_RELEASE_DATE = "February 15, 2006"
+BW_VERSION = "1.13"
+BW_RELEASE_DATE = "March 19, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
     "Name"
 }
 
-BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup,
-    ShowPets, ShowDebuffs, AlignBuffs, ExpiredWarning, SortOrder, BuffThreshold}
+BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup, ShowPets,
+    ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, AlignBuffs,
+    ExpiredWarning, SortOrder, BuffThreshold, HighlightPvP, PreventPvPBuff }
 
 local lastspellcast
 local lastgrouptype
@@ -73,6 +72,7 @@ function BW_OnLoad()
     this:RegisterEvent("SPELLCAST_START")
     this:RegisterEvent("UNIT_AURA")
     this:RegisterEvent("UNIT_PET")
+    this:RegisterEvent("UNIT_PVP_UPDATE")
     this:RegisterEvent("VARIABLES_LOADED")
 
     SlashCmdList["BUFFWATCH"] = BW_SlashHandler
@@ -187,8 +187,16 @@ function BW_OnEvent()
             BuffWatchConfig.ShowPets = true
         end
 
+        if BuffWatchConfig.ShowCastableBuffs == nil then
+            BuffWatchConfig.ShowCastableBuffs = false
+        end
+
         if BuffWatchConfig.ShowDebuffs == nil then
             BuffWatchConfig.ShowDebuffs = true
+        end
+
+        if BuffWatchConfig.ShowDispellableDebuffs == nil then
+            BuffWatchConfig.ShowDispellableDebuffs = false
         end
 
         if BuffWatchConfig.AlignBuffs == nil then
@@ -205,6 +213,14 @@ function BW_OnEvent()
 
         if BuffWatchConfig.BuffThreshold == nil then
             BuffWatchConfig.BuffThreshold = 0
+        end
+
+        if BuffWatchConfig.HighlightPvP == nil then
+            BuffWatchConfig.HighlightPvP = false
+        end
+
+        if BuffWatchConfig.PreventPvPBuff == nil then
+            BuffWatchConfig.PreventPvPBuff = false
         end
 
         -- Mark of the Wild (Same icon as Gift of the Wild)
@@ -339,9 +355,24 @@ function BW_OnEvent()
 
         end
 
+        if event == "UNIT_PVP_UPDATE" then
+
+            local unitpet = BW_GetPetUnitID(arg1)
+
+            for k, v in Player_Info do
+
+                if arg1 == v.UNIT_ID or unitpet == v.UNIT_ID then
+                    BW_Player_ColourName(v)
+                end
+
+            end
+
+        end
+
     end
 
 end
+
 
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
@@ -433,10 +464,10 @@ function BW_GetPlayerInfo()
                 Player_Info[unitname]["ID"] = id
                 Player_Info[unitname]["Name"] = unitname
 
-                local classname = UnitClass(UNIT_IDs[i])
+                local _, classname = UnitClass(UNIT_IDs[i])
 
                 if classname then
-                    Player_Info[unitname]["Class"] = string.upper(classname)
+                    Player_Info[unitname]["Class"] = classname
                 else
                     Player_Info[unitname]["Class"] = ""
                 end
@@ -456,19 +487,8 @@ function BW_GetPlayerInfo()
                     buttonalignid = id
                 end
 
-                if Player_Info[unitname]["Class"] ~= "" then
-
-                    local color = RAID_CLASS_COLORS[Player_Info[unitname]["Class"]]
-
-                    if color then
-                        nametext:SetTextColor(color.r, color.g, color.b)
-                    else
-                        nametext:SetTextColor(1.0, 0.9, 0.8)
-                    end
-
-                else
-                    nametext:SetTextColor(1.0, 0.9, 0.8)
-                end
+                Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i]
+                BW_Player_ColourName(Player_Info[unitname])
 
             end
 
@@ -650,7 +670,7 @@ function BW_Player_GetBuffs(v)
 
         for j = 1, 16 do
 
-            local texture = UnitBuff(v.UNIT_ID, j)
+            local texture = UnitBuff(v.UNIT_ID, j, BuffWatchConfig.ShowCastableBuffs)
             local curr_buff = getglobal("BW_Player" .. v.ID .. "_Buff" .. j)
             local curr_buff_icon = getglobal("BW_Player" .. v.ID .. "_Buff" .. j .. "Icon")
 
@@ -680,7 +700,7 @@ function BW_Player_GetBuffs(v)
 
         else
 
-            local texture = UnitDebuff(v.UNIT_ID, j)
+            local texture = UnitDebuff(v.UNIT_ID, j, BuffWatchConfig.ShowDispellableDebuffs)
             local curr_buff_icon = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j .. "Icon")
 
             if texture == nil then
@@ -767,6 +787,44 @@ function BW_Player_AdjustBuffs(v)
 
             end
 
+        end
+
+    end
+
+end
+
+
+function BW_ColourAllNames()
+
+    for k, v in Player_Info do
+        BW_Player_ColourName(v)
+    end
+
+end
+
+
+function BW_Player_ColourName(v)
+
+    local nametext = getglobal("BW_Player" .. v.ID .. "_NameText")
+
+    if BuffWatchConfig.HighlightPvP and UnitIsPVP(v.UNIT_ID) then
+
+        nametext:SetTextColor(0.0, 1.0, 0.0)
+
+    else
+
+        if v.Class ~= "" then
+
+            local color = RAID_CLASS_COLORS[v.Class]
+
+            if color then
+                nametext:SetTextColor(color.r, color.g, color.b)
+            else
+                nametext:SetTextColor(1.0, 0.9, 0.8)
+            end
+
+        else
+            nametext:SetTextColor(1.0, 0.9, 0.8)
         end
 
     end
@@ -1170,7 +1228,11 @@ function BW_Buff_Clicked(button)
 
         if spellid then
 
-            if UnitIsVisible(Player_Info[playername].UNIT_ID) then
+            if BuffWatchConfig.PreventPvPBuff and UnitIsPVP(Player_Info[playername].UNIT_ID) then
+
+                BW_Print(playername .. " is PvP Flagged, aborted casting.")
+
+            elseif UnitIsVisible(Player_Info[playername].UNIT_ID) then
 
                 if UnitName("target") and not UnitIsEnemy("target","player") then
                     if UnitName("target") ~= playername then
@@ -1194,6 +1256,7 @@ function BW_Buff_Clicked(button)
 
                         local castcount = 0
                         local otherspelltexture
+                        local pvpflagfound
 
                         if GroupBuffs[spelltexture].Greater then
                             otherspelltexture = GroupBuffs[spelltexture].Greater
@@ -1205,14 +1268,14 @@ function BW_Buff_Clicked(button)
                         if not GroupBuffs[spelltexture].OtherSpellID then
 
                             if GroupBuffs[spelltexture].ByName then
-                            
+
                                 for i = 1, 300 do
                                     local spellName, _ = GetSpellName(i, 1)
                                     if spellName == otherspelltexture then
                                         GroupBuffs[spelltexture].OtherSpellID = i
                                     end
                                 end
-                            
+
                             else
 
                                 for i = 1, 300 do
@@ -1220,7 +1283,7 @@ function BW_Buff_Clicked(button)
                                         GroupBuffs[spelltexture].OtherSpellID = i
                                     end
                                 end
-                            
+
                             end
 
                             if not GroupBuffs[spelltexture].OtherSpellID then
@@ -1240,6 +1303,14 @@ function BW_Buff_Clicked(button)
                                 -- Find players with same SubGroup/Class
                                 if Player_Info[v.Name].IsPet == 0 and v[GroupBuffs[spelltexture].Type] == Player_Info[playername][GroupBuffs[spelltexture].Type] then
 
+                                    if BuffWatchConfig.PreventPvPBuff then
+
+                                        if UnitIsPVP(v.UNIT_ID) then
+                                            pvpflagfound = v.Name -- Enforce a single buff to be cast
+                                        end
+
+                                    end
+
                                     -- Check for missing buff
                                     for j = 1, 16 do
                                         if UnitBuff(v.UNIT_ID, j) == spelltexture or UnitBuff(v.UNIT_ID, j) == otherspelltexture then
@@ -1257,7 +1328,11 @@ function BW_Buff_Clicked(button)
                             end
 
                             if castcount >= BuffWatchConfig.BuffThreshold then
-                                castgreater = true
+                                if pvpflagfound then
+                                    BW_Print(pvpflagfound .. " is PvP Flagged, casting single version buff.")
+                                else
+                                    castgreater = true
+                                end
                             end
 
                         end
@@ -1573,6 +1648,7 @@ function BW_GetNextID(unitname)
             Player_Left[unitname] = nil
 
             if found == false then
+--                getglobal("BW_Player" .. oldID):Show()
                 return oldID
             end
 
@@ -1605,6 +1681,17 @@ function BW_GetNextID(unitname)
     getglobal("BW_Player" .. i .. "_Lock"):SetChecked(false)
 
     return i
+
+end
+
+
+function BW_GetPetUnitID(unitid)
+
+    if unitid == "player" then
+        return "pet", 1
+    end
+
+    return string.gsub(unitid, "([a-z]+)([0-9]+)", "%1pet%2")
 
 end
 
