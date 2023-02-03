@@ -3,13 +3,16 @@
 
     <Script file="BuffWatchOptions.lua"/>
     
-    <Frame name="BuffWatchOptionsFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
+    <Frame name="BW_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
+    
         <Size>
-            <AbsDimension x="350" y="320"/>
+            <AbsDimension x="350" y="300"/>
         </Size>
+
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
+
         <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
             <BackgroundInsets>
                 <AbsInset left="11" right="12" top="12" bottom="11"/>
@@ -21,11 +24,14 @@
                 <AbsValue val="32"/>
             </EdgeSize>
         </Backdrop>
+
         <Layers>
+
             <Layer level="ARTWORK">
-                <Texture name="BuffWatchOptionsFrameHeader" file="Interface\DialogFrame\UI-DialogBox-Header">
+
+                <Texture name="$parent_Header" file="Interface\DialogFrame\UI-DialogBox-Header">
                     <Size>
-                        <AbsDimension x="300" y="64"/>
+                        <AbsDimension x="350" y="64"/>
                     </Size>
                     <Anchors>
                         <Anchor point="TOP">
@@ -35,19 +41,34 @@
                         </Anchor>
                     </Anchors>
                 </Texture>
+
                 <FontString inherits="GameFontNormal" text="BuffWatch Options">
                     <Anchors>
-                        <Anchor point="TOP" relativeTo="BuffWatchOptionsFrameHeader">
+                        <Anchor point="TOP" relativeTo="BW_Options_Header">
                             <Offset>
                                 <AbsDimension x="0" y="-14"/>
                             </Offset>
                         </Anchor>
                     </Anchors>
                 </FontString>
+
+                <FontString name="$parent_SortOrderLabel" inherits="GameFontNormalSmall" text="Sort Order">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="45" y="-50" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            
             </Layer>
+
         </Layers>
+
         <Frames>
-            <Button name="BuffWatchToggle" inherits="OptionsButtonTemplate" text="Toggle">
+
+            <Button name="$parent_BWToggle" inherits="OptionsButtonTemplate" text="Toggle">
                 <Size>
                     <AbsDimension x="60" y="20"/>
                 </Size>
@@ -60,19 +81,38 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        if BuffWatchFrame:IsVisible() then
-                            BuffWatchFrame:Hide()
+                        if BW:IsVisible() then
+                            BW:Hide()
                         else
-                            BuffWatchFrame:Show()
+                            BW:Show()
                         end
                     </OnClick>
                 </Scripts>
             </Button>
-            <CheckButton name="BuffWatchShowOnStartup" inherits="OptionsCheckButtonTemplate">
+
+            <Frame name="$parent_SortOrder" inherits="UIDropDownMenuTemplate" enableMouse="true">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="BW_Options_SortOrderLabel" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-10" y="-2" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        BW_Options_SortOrder_OnLoad()
+                    </OnLoad>
+                    <OnShow>
+                        BW_Options_SortOrder_OnLoad()
+                    </OnShow>
+                </Scripts>
+            </Frame>
+
+            <CheckButton name="$parent_ShowOnStartup" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-40"/>
+                            <AbsDimension x="40" y="-70"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -89,11 +129,12 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>        
-            <CheckButton name="BuffWatchShowPets" inherits="OptionsCheckButtonTemplate">
+
+            <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-80"/>
+                            <AbsDimension x="40" y="-100"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -114,11 +155,12 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="BuffWatchShowDebuffs" inherits="OptionsCheckButtonTemplate">
+
+            <CheckButton name="$parent_ShowDebuffs" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-120"/>
+                            <AbsDimension x="40" y="-130"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -132,14 +174,14 @@
                         else
                             BuffWatchConfig.ShowDebuffs = false
                         end
-                        BW_Set_UNIT_IDs(true)
             		BW_GetAllBuffs()
 		      	BW_UpdateBuffStatus()
             		BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="BuffWatchAlignBuffs" inherits="OptionsCheckButtonTemplate">
+
+            <CheckButton name="$parent_AlignBuffs" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
@@ -157,18 +199,18 @@
                         else
                             BuffWatchConfig.AlignBuffs = false
                         end
-                        BW_Set_UNIT_IDs(true)
             		BW_GetAllBuffs()
 		      	BW_UpdateBuffStatus()
             		BW_ResizeWindow()
                     </OnClick>
                 </Scripts>
             </CheckButton> 
-            <CheckButton name="BuffWatchShowExpiredWarning" inherits="OptionsCheckButtonTemplate">
+
+            <CheckButton name="$parent_ShowExpiredWarning" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="40" y="-200"/>
+                            <AbsDimension x="40" y="-190"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -185,14 +227,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>             
-            <Slider name="BuffWatchAlpha" inherits="OptionsSliderTemplate">
+
+            <Slider name="$parent_Alpha" inherits="OptionsSliderTemplate">
                 <Size>
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
                     <Anchor point="TOP">
                         <Offset>
-                            <AbsDimension x="0" y="-240" />
+                            <AbsDimension x="0" y="-230" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -201,16 +244,17 @@
                         getglobal(this:GetName().."Text"):SetText("Transparency")
                         getglobal(this:GetName().."High"):SetText()
                         getglobal(this:GetName().."Low"):SetText()
-                        BuffWatchAlpha:SetMinMaxValues(0.0,1.0)
-                        BuffWatchAlpha:SetValueStep(0.01)
+                        this:SetMinMaxValues(0.0,1.0)
+                        this:SetValueStep(0.01)
                     </OnLoad>
                     <OnValueChanged>
-                        BuffWatchConfig.alpha = BuffWatchAlpha:GetValue()
-                        BuffWatchBackdropFrame:SetAlpha( BuffWatchConfig.alpha )
+                        BuffWatchConfig.alpha = this:GetValue()
+                        BW_Background:SetAlpha( BuffWatchConfig.alpha )
                     </OnValueChanged>
                 </Scripts>
-            </Slider>            
-            <Button name="BuffWatchOptionsFrameOkay" inherits="OptionsButtonTemplate" text="Okay">
+            </Slider>
+            
+            <Button name="$parent_Okay" inherits="OptionsButtonTemplate" text="Okay">
                 <Anchors>
                     <Anchor point="BOTTOMRIGHT">
                         <Offset>
@@ -221,15 +265,19 @@
                 <Scripts>
                     <OnClick>
                         PlaySound("gsTitleOptionOK")
-                        HideUIPanel(BuffWatchOptionsFrame)
+                        HideUIPanel(BW_Options)
                     </OnClick>
                 </Scripts>
             </Button>
+
         </Frames>
+
         <Scripts>
             <OnLoad>
-                BuffWatchOptionsFrame_OnLoad()
+                BW_Options_OnLoad()
             </OnLoad>
         </Scripts>
+
     </Frame>
+
 </Ui>

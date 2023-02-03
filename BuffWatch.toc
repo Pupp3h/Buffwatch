@@ -1,9 +1,9 @@
 ## Interface: 1800
 ## Title: BuffWatch
-## Version: 0.622
-## Author: Tyrrael aka Paul2200
-## Notes: Keeps track of buffs on party members in a small window and colors them appropriately whether they are active or not!
+## Version: 1.00
+## Author: Pup
+## Notes: Keeps track of buffs on party members in a small window and highlights them if they have run out
 ## SavedVariables: BuffWatchConfig
-## OptionalDeps: myAddOns, Cosmos
+## OptionalDeps: myAddOns
 BuffWatch.xml
 BuffWatchOptions.xml
