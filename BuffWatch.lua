@@ -20,9 +20,6 @@
 -- // 
 -- // CHANGES:
 -- //
--- //     Maintains locked buff settings when raid/party is adjusted
--- //     Option button and CheckAll box now properly dissapear when minimised
--- //     Allows sorting of player list
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -48,6 +45,7 @@ local buffexpired
 local minimized
 
 local Player_Info = { }
+local Player_Left = { }
 local UNIT_IDs = { }
 
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -84,15 +82,15 @@ function BW_OnEvent()
             BuffWatchDetails = {
                 name = "BuffWatch",
                 description = "Keeps track of party/raid buffs",
-                version = "1.00",
-                releaseDate = "September 14, 2005",
+                version = "1.01",
+                releaseDate = "October 30, 2005",
                 author = "Tyrrael & Pup",
                 category = MYADDONS_CATEGORY_OTHERS,
                 frame = "BW",
                 optionsframe = "BW_Options"
             }
 
-            BuffWatchHelp = { "              - BuffWatch Usage - v 1.00 -\n\n" ..
+            BuffWatchHelp = { "              - BuffWatch Usage - v 1.01 -\n\n" ..
                 "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
                 "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
                 "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
@@ -309,7 +307,7 @@ function BW_GetPlayerInfo()
 
             if not Player_Info[unitname] then
 
-                local id = BW_GetNextID()
+                local id = BW_GetNextID(unitname)
                 
                 Player_Info[unitname] = { }
                 Player_Info[unitname]["ID"] = id
@@ -354,7 +352,9 @@ function BW_GetPlayerInfo()
         else
             getglobal("BW_Player" .. v.ID):Hide()
             getglobal("BW_Player" .. v.ID .. "_NameText"):SetText(nil)
-            getglobal("BW_Player" .. v.ID .. "_Lock"):SetChecked(false)
+            
+            Player_Left[v.Name] = v.ID
+            
             Player_Info[k] = nil
         end
 
@@ -1136,7 +1136,7 @@ function GetLen(arr)
 end
 
 
-function BW_GetNextID()
+function BW_GetNextID(unitname)
     
     local i = 1
 
@@ -1145,6 +1145,27 @@ function BW_GetNextID()
         return i
     
     else
+    
+        local oldID = Player_Left[unitname]
+    
+        if oldID then
+        
+            local found = false
+        
+            for k, v in Player_Info do
+                if v.ID == oldID then
+                    found = true
+                    break
+                end
+            end
+            
+            Player_Left[unitname] = nil
+            
+            if found == false then
+                return oldID
+            end
+        
+        end
     
         local Player_Copy = { }
 
@@ -1169,6 +1190,8 @@ function BW_GetNextID()
         Player_Copy = nil
         
     end
+    
+    getglobal("BW_Player" .. i .. "_Lock"):SetChecked(false)
     
     return i
         
@@ -1202,7 +1225,7 @@ function BW_ShowHelp()
     BW_HelpFrameText:SetText(
 
         [[            
-        - BuffWatch Usage - v 1.00 -
+        - BuffWatch Usage - v 1.01 -
 
         Show/Hide the BuffWatch window:
              - Bind a keyboard button to show/hide the window

@@ -18,13 +18,18 @@ here : http://www.curse-gaming.com/mod.php?addid=2003
 Version History
 ---------------
 
+1.01
+----
+
+Fixed problem where locked buffs were lost if pet died or was dismissed briefly
+
 1.00
 ----
 
 Largely recoded to allow new features and a bug fix
 Maintains locked buff settings when raid/party is adjusted
 Option button and CheckAll box now properly dissapear when minimised
-Allows sorting of player list
+Allows sorting of player list by Raid Order, Class or Name
 
 0.622
 -----
