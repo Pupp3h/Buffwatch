@@ -2,11 +2,11 @@
 ..\FrameXML\UI.xsd">
 
     <Script file="BuffWatchOptions.lua"/>
-    
+
     <Frame name="BW_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
-    
+
         <Size>
-            <AbsDimension x="350" y="360"/>
+            <AbsDimension x="350" y="330"/>
         </Size>
 
         <Anchors>
@@ -61,7 +61,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-            
+
             </Layer>
 
         </Layers>
@@ -105,6 +105,13 @@
                     <OnShow>
                         BW_Options_SortOrder_OnLoad()
                     </OnShow>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SORTORDER)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
             </Frame>
 
@@ -127,8 +134,15 @@
                             BuffWatchConfig.show_on_startup = false
                         end
                     </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWONSTARTUP)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
-            </CheckButton>        
+            </CheckButton>
 
             <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
@@ -153,6 +167,13 @@
                         BW_UpdateBuffStatus()
                         BW_ResizeWindow()
                     </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWPETS)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
             </CheckButton>
 
@@ -178,6 +199,13 @@
                         BW_UpdateBuffStatus()
                         BW_ResizeWindow()
                     </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWDEBUFFS)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
             </CheckButton>
 
@@ -203,8 +231,15 @@
                         BW_UpdateBuffStatus()
                         BW_ResizeWindow()
                     </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_ALIGNBUFFS)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
-            </CheckButton> 
+            </CheckButton>
 
             <CheckButton name="$parent_ShowExpiredWarning" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
@@ -225,8 +260,48 @@
                             BuffWatchConfig.ExpiredWarning = false
                         end
                     </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_SHOWEXPIREDWARNING)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
-            </CheckButton>             
+            </CheckButton>
+
+            <Slider name="$parent_BuffThreshold" inherits="OptionsSliderTemplate">
+                <Size>
+                    <AbsDimension x="220" y="16"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOP">
+                        <Offset>
+                            <AbsDimension x="0" y="-230" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("GroupBuff Threshold")
+                        getglobal(this:GetName().."High"):SetText("5+")
+                        getglobal(this:GetName().."Low"):SetText("0 (off)")
+                        this:SetMinMaxValues(0,5)
+                        this:SetValueStep(1)
+                    </OnLoad>
+                    <OnValueChanged>
+                        BuffWatchConfig.BuffThreshold = this:GetValue()
+                    </OnValueChanged>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_BUFFTHRESHOLD)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Slider>
+
 
             <Slider name="$parent_Alpha" inherits="OptionsSliderTemplate">
                 <Size>
@@ -235,7 +310,7 @@
                 <Anchors>
                     <Anchor point="TOP">
                         <Offset>
-                            <AbsDimension x="0" y="-230" />
+                            <AbsDimension x="0" y="-270" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -251,9 +326,16 @@
                         BuffWatchConfig.alpha = this:GetValue()
                         BW_Background:SetAlpha( BuffWatchConfig.alpha )
                     </OnValueChanged>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(BW_TTIP_ALPHA)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
                 </Scripts>
             </Slider>
-            
+
             <Button name="$parent_Okay" inherits="OptionsButtonTemplate" text="Okay">
                 <Anchors>
                     <Anchor point="BOTTOMRIGHT">

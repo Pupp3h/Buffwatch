@@ -71,7 +71,7 @@
     <Frame name="BW_Player_Template" hidden="true" virtual="true">
         <Size>
             <AbsDimension x="100" y="18"/>
-        </Size>  
+        </Size>
         <Frames>
             <CheckButton name="$parent_Lock" inherits="BW_LockButton_Template">
                 <Anchors>
@@ -169,7 +169,7 @@
 
                 <Size>
                     <AbsDimension x="16" y="16"/>
-                </Size>                
+                </Size>
 
                 <Anchors>
                     <Anchor point="TOPLEFT">
@@ -185,7 +185,7 @@
                     </OnClick>
                     <OnLeave>
                         BW_MouseIsOverFrame()
-                    </OnLeave>                    
+                    </OnLeave>
                 </Scripts>
 
             </CheckButton>
@@ -255,7 +255,7 @@
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide()
-                        BW_MouseIsOverFrame()                        
+                        BW_MouseIsOverFrame()
                     </OnLeave>
                 </Scripts>
             </Button>
@@ -284,7 +284,7 @@
                                     <AbsDimension x="-1" y="0"/>
                                 </Offset>
                             </Anchor>
-                        </Anchors>                
+                        </Anchors>
 
                         <NormalTexture file="Interface\Icons\INV_Misc_QuestionMark"/>
 
@@ -299,7 +299,7 @@
                             <OnLeave>
                                 GameTooltip:Hide()
                                 BW_MouseIsOverFrame()
-                            </OnLeave>                    
+                            </OnLeave>
                         </Scripts>
 
                     </Button>
@@ -312,7 +312,7 @@
 
                         <Anchors>
                             <Anchor point="TOPRIGHT" relativeTo="BW_OptionsButton" relativePoint="BOTTOMRIGHT"/>
-                        </Anchors>                
+                        </Anchors>
 
                         <NormalTexture file="Interface\Icons\Ability_Hibernation"/>
 
@@ -339,7 +339,7 @@
 
                         <Anchors>
                             <Anchor point="TOPRIGHT" relativeTo="BW_HideUnmonitoredButton" relativePoint="BOTTOMRIGHT"/>
-                        </Anchors>                
+                        </Anchors>
 
                         <NormalTexture file="Interface\Icons\Ability_Warrior_Revenge"/>
 
@@ -445,7 +445,7 @@
                     <Frame name="BW_Player78" inherits="BW_Player_Template" id="78"/>
                     <Frame name="BW_Player79" inherits="BW_Player_Template" id="79"/>
                     <Frame name="BW_Player80" inherits="BW_Player_Template" id="80"/>
-                    
+
                 </Frames>
 
             </Frame>

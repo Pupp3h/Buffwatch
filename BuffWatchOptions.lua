@@ -1,5 +1,14 @@
+BW_TTIP_SORTORDER = "Specifies the sort order for the player list in the BuffWatch Window"
+BW_TTIP_SHOWONSTARTUP = "Toggle whether to show the BuffWatch window on startup"
+BW_TTIP_SHOWPETS = "Toggle whether to show pets in the player list"
+BW_TTIP_SHOWDEBUFFS = "Toggle whether to show debuffs"
+BW_TTIP_ALIGNBUFFS = "Toggle aligning of the buff icons for all players"
+BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire"
+BW_TTIP_BUFFTHRESHOLD = "Number of players missing the buff for it to cast group version"
+BW_TTIP_ALPHA = "Sets the transparency of the BuffWatch window"
+
 function BW_Options_OnLoad()
-    
+
     -- Add BW_Options to the UIPanelWindows list
     UIPanelWindows["BW_Options"] = {area = "center", pushable = 0}
 
@@ -12,6 +21,7 @@ function BW_Options_Init()
     BW_Options_Alpha:SetValue(BuffWatchConfig.alpha)
     BW_Options_AlignBuffs:SetChecked(BuffWatchConfig.AlignBuffs)
     BW_Options_ShowExpiredWarning:SetChecked(BuffWatchConfig.ExpiredWarning)
+    BW_Options_BuffThreshold:SetValue(BuffWatchConfig.BuffThreshold)
 end
 
 function BW_Options_SortOrder_OnClick()
@@ -20,7 +30,7 @@ function BW_Options_SortOrder_OnClick()
     BuffWatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[i]
     BW_GetAllBuffs()
     BW_UpdateBuffStatus()
-    BW_ResizeWindow()   
+    BW_ResizeWindow()
 end
 
 function BW_Options_SortOrder_Initialize()

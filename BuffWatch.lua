@@ -6,12 +6,12 @@
 -- // TODO:
 -- //
 -- //     Window doesnt always properly resize
--- // 
--- //     Cast standard buffs for Group buffs
+-- //
 -- //     Update ResizeWindow to run no more than once every 2 secs
--- // 
+-- //
 -- //     Option to split into columns (previous changes might suffice)
 -- //
+-- //     Localisation for various buts of text
 -- //     Only show castable buffs (key combination to override this for a player?)
 -- //     Keybinding to scan list and recast any expired buffs (probably need to tie in with above)
 -- //     Show poisons and weapon buffs for player
@@ -19,17 +19,13 @@
 -- //     Allow cleansing of debuffs
 -- //     Option to only show debuffs I can cleanse
 -- //     UI Scaling
--- // 
+-- //
 -- // CHANGES:
 -- //
--- //     Updated Interface number for 1.9
--- //     Changed LockButton template to default to hidden
--- //     Set checkbox anchor to player frame 
--- //     Using playerframe to move players checkbox and name about 
--- //     Reset debuffs back to 8
--- //     Option to hide players with no locked buffs
--- //     Option to hide players with locked buffs until they expire
--- //     Header text is now highlighted if a buff expires while minimised
+-- //     Switches buff icon between lesser and greater type buffs
+-- //     Added Buff Threshold option to determine version to cast for 
+-- //       Group buffs and their lesser versions (except Druid GOTW)
+-- //     Added tooltips to options panel
 -- //
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -39,14 +35,16 @@
 -- //////////////////////////////////////////////////////////////////////////////////////
 
 BINDING_HEADER_BUFFWATCHHEADER = "BuffWatch"
+BW_VERSION = "1.11"
+BW_RELEASE_DATE = "January 13, 2006"
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
     "Name"
 }
 
-BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup, 
-    ShowPets, ShowDebuffs, AlignBuffs, ExpiredWarning, SortOrder}
+BuffWatchConfig = { alpha, rightMouseSpell, show_on_startup,
+    ShowPets, ShowDebuffs, AlignBuffs, ExpiredWarning, SortOrder, BuffThreshold}
 
 local lastspellcast
 local lastgrouptype
@@ -61,6 +59,7 @@ local Player_Info = { }
 local Player_Left = { }
 local UNIT_IDs = { }
 
+local GroupBuffs = { }
 -- //////////////////////////////////////////////////////////////////////////////////////
 -- //
 -- //                Events
@@ -85,7 +84,7 @@ end
 
 
 function BW_OnEvent()
-    
+
     if event == "VARIABLES_LOADED" then
 
         -----------------------
@@ -95,15 +94,15 @@ function BW_OnEvent()
             BuffWatchDetails = {
                 name = "BuffWatch",
                 description = "Keeps track of party/raid buffs",
-                version = "1.10",
-                releaseDate = "January 04, 2006",
+                version = BW_VERSION,
+                releaseDate = BW_RELEASE_DATE,
                 author = "Pup",
                 category = MYADDONS_CATEGORY_OTHERS,
                 frame = "BW",
                 optionsframe = "BW_Options"
             }
 
-            BuffWatchHelp = { "              - BuffWatch Usage - v 1.10 -\n\n" ..
+            BuffWatchHelp = { "              - BuffWatch Usage - v " .. BW_VERSION .. "-\n\n" ..
                 "  Show/Hide the BuffWatch window:\n    - Bind a keyboard button to show/hide the window\n" ..
                 "    - You can also close it by right clicking the \"BuffWatch\" label (appears on mouseover)\n\n" ..
                 "  Showing Buffs:\n    - Left click the BuffWatch label\n    - Also occurs automatically whenever your gain/lose a party or raid member\n\n" ..
@@ -147,7 +146,7 @@ function BW_OnEvent()
                 BW_OptionsToggle
             )
         end
-        
+
         --------------------
         -- support for CTMod
         --------------------
@@ -162,10 +161,10 @@ function BW_OnEvent()
                 "",
                 BW_OptionsToggle
             )
-        end             
-        
+        end
+
         BW_Print("BuffWatch loaded. Please type \"/buffwatch\" or \"/bw\" for usage. Use \"/bw toggle\" to show window.", 0.2, 0.9, 0.9 )
-        
+
         BW_HeaderText:SetText("BuffWatch")
         BW_HeaderText:SetTextColor(0.2, 0.9, 0.9)
         BW_Background:SetBackdropBorderColor(0, 0, 0)
@@ -173,7 +172,7 @@ function BW_OnEvent()
         if BuffWatchConfig.alpha == nil then
             BuffWatchConfig.alpha = 0.5
         end
-        
+
         BW_Background:SetAlpha(BuffWatchConfig.alpha)
 
         if BuffWatchConfig.show_on_startup == nil then
@@ -184,15 +183,15 @@ function BW_OnEvent()
         elseif BuffWatchConfig.show_on_startup == false then
             BW:Hide()
         end
-        
+
         if BuffWatchConfig.ShowPets == nil then
             BuffWatchConfig.ShowPets = true
         end
-        
+
         if BuffWatchConfig.ShowDebuffs == nil then
             BuffWatchConfig.ShowDebuffs = true
         end
-        
+
         if BuffWatchConfig.AlignBuffs == nil then
             BuffWatchConfig.AlignBuffs = true
         end
@@ -200,15 +199,100 @@ function BW_OnEvent()
         if BuffWatchConfig.ExpiredWarning == nil then
             BuffWatchConfig.ExpiredWarning = true
         end
-        
+
         if BuffWatchConfig.SortOrder == nil then
             BuffWatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[1]
         end
 
+        if BuffWatchConfig.BuffThreshold == nil then
+            BuffWatchConfig.BuffThreshold = 0
+        end
+
+        -- Power Word Fortitude
+        GroupBuffs["Interface\\Icons\\Spell_Holy_WordFortitude"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_PrayerOfFortitude",
+            ["Type"] = "SubGroup"
+        }
+        -- Prayer of Fortitude
+        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerOfFortitude"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_WordFortitude",
+            ["Type"] = "SubGroup"
+        }
+        -- Arcane Intellect
+        GroupBuffs["Interface\\Icons\\Spell_Holy_MagicalSentry"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_ArcaneIntellect",
+            ["Type"] = "SubGroup"
+        }
+        -- Arcane Brilliance
+        GroupBuffs["Interface\\Icons\\Spell_Holy_ArcaneIntellect"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_MagicalSentry",
+            ["Type"] = "SubGroup"
+        }
+        -- Blessing of Might
+        GroupBuffs["Interface\\Icons\\Spell_Holy_FistOfJustice"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofKings",
+            ["Type"] = "Class"
+        }
+        -- Greater Blessing of Might
+        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofKings"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_FistOfJustice",
+            ["Type"] = "Class"
+        }
+        -- Blessing of Wisdom
+        GroupBuffs["Interface\\Icons\\Spell_Holy_SealOfWisdom"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofWisdom",
+            ["Type"] = "Class"
+        }
+        -- Greater Blessing of Wisdom
+        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofWisdom"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_SealOfWisdom",
+            ["Type"] = "Class"
+        }
+        -- Blessing of Salvation
+        GroupBuffs["Interface\\Icons\\Spell_Holy_SealOfSalvation"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofSalvation",
+            ["Type"] = "Class"
+        }
+        -- Greater Blessing of Salvation
+        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofSalvation"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_SealOfSalvation",
+            ["Type"] = "Class"
+        }
+        -- Blessing of Kings
+        GroupBuffs["Interface\\Icons\\Spell_Magic_MageArmor"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Magic_GreaterBlessingofKings",
+            ["Type"] = "Class"
+        }
+        -- Greater Blessing of Kings
+        GroupBuffs["Interface\\Icons\\Spell_Magic_GreaterBlessingofKings"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Magic_MageArmor",
+            ["Type"] = "Class"
+        }
+        -- Blessing of Light
+        GroupBuffs["Interface\\Icons\\Spell_Holy_PrayerOfHealing02"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofLight",
+            ["Type"] = "Class"
+        }
+        -- Greater Blessing of Light
+        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofLight"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Holy_PrayerOfHealing02",
+            ["Type"] = "Class"
+        }
+        -- Blessing of Sanctuary
+        GroupBuffs["Interface\\Icons\\Spell_Nature_LightningShield"] = {
+            ["Greater"] = "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+            ["Type"] = "Class"
+        }
+        -- Greater Blessing of Sanctuary
+        GroupBuffs["Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary"] = {
+            ["Lesser"] = "Interface\\Icons\\Spell_Nature_LightningShield",
+            ["Type"] = "Class"
+        }
+
         BW_Options_Init()
-       
+
         BW_PlayersFrame:Show()
-        
+
     end
 
     if BW:IsVisible() then
@@ -227,18 +311,18 @@ function BW_OnEvent()
         if event == "UNIT_AURA" then
 
             for k, v in Player_Info do
-            
+
                 if arg1 == v.UNIT_ID then
                     BW_Player_GetBuffs(v)
-                    BW_Player_AdjustBuffs(v)                 
+                    BW_Player_AdjustBuffs(v)
                     BW_ResizeWindow()
                     break
                 end
-                
+
             end
-            
+
             BW_UpdateBuffStatus()
-            
+
         end
 
         if event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE" or (event == "UNIT_PET" and BuffWatchConfig.ShowPets == true) then
@@ -246,11 +330,11 @@ function BW_OnEvent()
             BW_Set_UNIT_IDs()
             BW_GetAllBuffs()
             BW_ResizeWindow()
-            
+
         end
-                
+
     end
-    
+
 end
 
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -269,11 +353,11 @@ function BW_Set_UNIT_IDs(forced)
         if lastgrouptype ~= "raid" or forced == true then
 
             UNIT_IDs = { }
-            
+
             for i = 1, 40 do
                 UNIT_IDs[i] = "raid" .. i
             end
-            
+
             if BuffWatchConfig.ShowPets == true then
                 for i = 1, 40 do
                     UNIT_IDs[i+40] = "raidpet" ..    i
@@ -281,19 +365,19 @@ function BW_Set_UNIT_IDs(forced)
             end
 
             lastgrouptype = "raid"
-           
+
         end
 
     elseif lastgrouptype ~= "party" or forced == true then
 
         UNIT_IDs = { }
-        
+
         UNIT_IDs[1] = "player"
         UNIT_IDs[2] = "party1"
         UNIT_IDs[3] = "party2"
         UNIT_IDs[4] = "party3"
         UNIT_IDs[5] = "party4"
-        
+
         if BuffWatchConfig.ShowPets == true then
             UNIT_IDs[6] = "pet"
             UNIT_IDs[7] = "partypet1"
@@ -305,9 +389,9 @@ function BW_Set_UNIT_IDs(forced)
         lastgrouptype = "party"
 
     end
-    
+
     BW_GetPlayerInfo()
-    
+
 end
 
 --[[ Get details of each player we find in the UNIT_IDs list
@@ -338,19 +422,19 @@ function BW_GetPlayerInfo()
                 local id = BW_GetNextID(unitname)
                 local namebutton = getglobal("BW_Player" .. id .. "_Name")
                 local nametext = getglobal("BW_Player" .. id .. "_NameText")
-                
+
                 Player_Info[unitname] = { }
                 Player_Info[unitname]["ID"] = id
                 Player_Info[unitname]["Name"] = unitname
-                
+
                 local classname = UnitClass(UNIT_IDs[i])
-                
+
                 if classname then
                     Player_Info[unitname]["Class"] = string.upper(classname)
                 else
                     Player_Info[unitname]["Class"] = ""
                 end
-                
+
                 if (lastgrouptype == "party" and i > 5) or (lastgrouptype == "raid" and i > 40) then
                     Player_Info[unitname]["IsPet"] = 1
                 else
@@ -358,14 +442,14 @@ function BW_GetPlayerInfo()
                 end
 
                 nametext:SetText(unitname)
-                namebutton:SetWidth(nametext:GetStringWidth())                        
+                namebutton:SetWidth(nametext:GetStringWidth())
 
                 if buttonalignposition < nametext:GetStringWidth() then
                     buttonalignposition = nametext:GetStringWidth()
                     buttonalignid = id
                 end
 
-                if Player_Info[unitname]["Class"] ~= "" then 
+                if Player_Info[unitname]["Class"] ~= "" then
 
                     local color = RAID_CLASS_COLORS[Player_Info[unitname]["Class"]]
 
@@ -381,10 +465,10 @@ function BW_GetPlayerInfo()
 
             end
 
-            -- Update any information that may have changed about this person, 
+            -- Update any information that may have changed about this person,
             --    if we captured before, or take for first time
             Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i]
-            
+
             if lastgrouptype == "raid" then
                 local j = math.mod(i, 40)
                 if j == 0 then j = 40 end
@@ -392,7 +476,7 @@ function BW_GetPlayerInfo()
             else
                 Player_Info[unitname]["SubGroup"] = 1
             end
-            
+
             Player_Info[unitname]["Checked"] = 1
 
         end
@@ -407,37 +491,37 @@ function BW_GetPlayerInfo()
         else
             getglobal("BW_Player" .. v.ID):Hide()
             getglobal("BW_Player" .. v.ID .. "_NameText"):SetText(nil)
-            
-            if v.ID == buttonalignid then 
+
+            if v.ID == buttonalignid then
                 getnewalignpos = true
             end
-            
-            -- Add ID to temp array in case they come back 
+
+            -- Add ID to temp array in case they come back
             -- (useful for dismissed or dead pets, or if a player leaves group briefly)
             Player_Left[v.Name] = v.ID
-            
+
             Player_Info[k] = nil
         end
 
     end
-    
+
     if getnewalignpos == true then
-    
+
         buttonalignposition = 0
-    
+
         for k, v in Player_Info do
 
             local nametext = getglobal("BW_Player" .. v.ID .. "_NameText")
-            
+
             if buttonalignposition < nametext:GetStringWidth() then
                 buttonalignposition = nametext:GetStringWidth()
                 buttonalignid = v.ID
             end
-            
+
         end
-    
+
     end
-    
+
 end
 
 
@@ -449,12 +533,12 @@ function BW_GetAllBuffs()
     end
 
     BW_Player_AdjustFrames()
-  
+
     -- Adjust buff icon positions
     for k, v in Player_Info do
         BW_Player_AdjustBuffs(v)
     end
-    
+
 end
 
 
@@ -462,7 +546,7 @@ function BW_Player_AdjustFrames()
 
     -- Only bother to sort player frames if we can see them
     if not minimized then
-    
+
         local firstplayer = true
         local previousplayer
         local Player_Copy = { }
@@ -474,12 +558,12 @@ function BW_Player_AdjustFrames()
         -- Sort the player list in temp array
         if BuffWatchConfig.SortOrder == "Class" then
 
-            table.sort(Player_Copy, 
-            function(a,b) 
+            table.sort(Player_Copy,
+            function(a,b)
 
                 if a.IsPet == b.IsPet then
 
-                    if a.Class == b.Class then 
+                    if a.Class == b.Class then
                         return a.Name < b.Name
                     else
                         return a.Class < b.Class
@@ -494,7 +578,7 @@ function BW_Player_AdjustFrames()
         elseif BuffWatchConfig.SortOrder == "Name" then
 
             table.sort(Player_Copy,
-            function(a,b) 
+            function(a,b)
 
                 if a.IsPet == b.IsPet then
                     return a.Name < b.Name
@@ -507,7 +591,7 @@ function BW_Player_AdjustFrames()
         else -- Default
 
             table.sort(Player_Copy,
-            function(a,b) 
+            function(a,b)
 
                 if a.IsPet == b.IsPet then
 
@@ -517,11 +601,11 @@ function BW_Player_AdjustFrames()
                         return a.SubGroup < b.SubGroup
                     end
 
-                else        
+                else
                     return a.IsPet < b.IsPet
                 end
 
-            end)   
+            end)
         end
 
         -- Position the player frames
@@ -530,7 +614,7 @@ function BW_Player_AdjustFrames()
             local playerframe = getglobal("BW_Player" .. v.ID)
 
             playerframe:ClearAllPoints()
-            
+
             if playerframe:IsVisible() then
 
                 if firstplayer then
@@ -552,7 +636,7 @@ end
 
 
 function BW_Player_GetBuffs(v)
-    
+
     local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
 
     if not curr_lock:GetChecked() then
@@ -567,12 +651,12 @@ function BW_Player_GetBuffs(v)
 
                 curr_buff:Hide()
                 curr_buff_icon:SetTexture(nil)
-                
+
             elseif texture then
 
                 curr_buff:Show()
                 curr_buff_icon:SetTexture(texture)
-                
+
             end
 
         end
@@ -581,19 +665,28 @@ function BW_Player_GetBuffs(v)
 
     for j = 1, 8 do
 
-        local texture = UnitDebuff(v.UNIT_ID, j)
         local curr_buff = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j)
-        local curr_buff_icon = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j .. "Icon")
-        
-        if texture == nil or BuffWatchConfig.ShowDebuffs == false then
+
+        if BuffWatchConfig.ShowDebuffs == false then
 
             curr_buff:Hide()
-            
-        elseif texture then
 
-            curr_buff:Show()
-            curr_buff_icon:SetTexture(texture)
-            
+        else
+
+            local texture = UnitDebuff(v.UNIT_ID, j)
+            local curr_buff_icon = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j .. "Icon")
+
+            if texture == nil then
+
+                curr_buff:Hide()
+
+            elseif texture then
+
+                curr_buff:Show()
+                curr_buff_icon:SetTexture(texture)
+
+            end
+
         end
 
     end
@@ -619,16 +712,16 @@ function BW_Player_AdjustBuffs(v)
                     curr_buff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_NameText", "TOPRIGHT", 5, 2)
                 else
                     curr_buff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_NameText", "TOPLEFT", buttonalignposition + 5, 2)
-                end                    
+                end
                 firstbutton = false
                 previousbutton = j
             else
                 curr_buff:SetPoint("TOPLEFT", "BW_Player" .. v.ID .. "_Buff" .. previousbutton, "TOPRIGHT", 0, 0)
                 previousbutton = j
             end
-            
+
         end
-        
+
     end
 
     local firstdebuff = true
@@ -666,9 +759,9 @@ function BW_Player_AdjustBuffs(v)
                 previousdebuff = j
 
             end
-            
+
         end
-        
+
     end
 
 end
@@ -686,7 +779,7 @@ function BW_ResizeWindow()
         if not minimized then
             local playerframe = getglobal("BW_Player" .. v.ID)
 
-            if playerframe:GetBottom() ~= nil then                        
+            if playerframe:GetBottom() ~= nil then
                 if bottomcoord > playerframe:GetBottom() or bottomcoord == 0 then
                     bottomcoord = playerframe:GetBottom()
                 end
@@ -695,7 +788,7 @@ function BW_ResizeWindow()
 
         for j = 1, 16 do
             local curr_buff = getglobal("BW_Player" .. v.ID .. "_Buff" .. j)
-            
+
             if curr_buff:IsShown() and curr_buff:GetRight() then
                 if curr_buff:GetRight() > rightcoord then
                     rightcoord = curr_buff:GetRight()
@@ -705,15 +798,15 @@ function BW_ResizeWindow()
 
         for j = 1, 8 do
             local curr_buff = getglobal("BW_Player" .. v.ID .. "_Debuff" .. j)
-            
-            if curr_buff:IsShown() and curr_buff:GetRight() then            
+
+            if curr_buff:IsShown() and curr_buff:GetRight() then
                 if curr_buff:GetRight() > rightcoord then
                     rightcoord = curr_buff:GetRight()
                 end
             end
         end
 
-    end 
+    end
 
     if minimized then
         height = 20
@@ -731,14 +824,14 @@ function BW_ResizeWindow()
         if width < 100 then width = 100 end
     else
         width = 100
-    end 
+    end
 
     BW_Background:SetHeight(height)
     BW:SetHeight(height)
-    
+
     BW_Background:SetWidth(width)
     BW:SetWidth(width)
-    
+
 end
 
 
@@ -748,7 +841,7 @@ function BW_UpdateBuffStatus()
     local playerframechanges = false
 
     for k, v in Player_Info do
-    
+
         local player = "BW_Player" .. v.ID
         local playerframe = getglobal(player)
         local playerbuffexpired = false
@@ -758,12 +851,12 @@ function BW_UpdateBuffStatus()
         if getglobal(player .. "_Lock"):GetChecked() then
 
             for j = 1, 16 do
-                
+
                 -- Check if there is a buff in this slot
                 if getglobal(player .. "_Buff" .. j):IsShown() then
-                
+
                     playerhasbuffs = true
-                    
+
                     -- If player is linkdead or dead in game, grey buffs out so user doesnt try to buff them
                     if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == nil then
 
@@ -772,13 +865,41 @@ function BW_UpdateBuffStatus()
                     else
 
                         local Flag_BuffFound = false
+                        local texture = getglobal(player .. "_Buff" .. j .. "Icon"):GetTexture()
 
                         -- See if we can find this buff on the player still
                         for j_2 = 1, 16 do
-                            if UnitBuff(v.UNIT_ID, j_2) == getglobal(player .. "_Buff" .. j .. "Icon"):GetTexture() then                        
+                            if UnitBuff(v.UNIT_ID, j_2) == texture then
                                 Flag_BuffFound = true
                                 break
                             end
+                        end
+
+                        -- If not found, check if lesser or greater exists instead
+                        if Flag_BuffFound == false then
+
+                            if GroupBuffs[texture] then
+
+                                if GroupBuffs[texture].Lesser then
+
+                                    texture = GroupBuffs[texture].Lesser
+
+                                elseif GroupBuffs[texture].Greater then
+
+                                    texture = GroupBuffs[texture].Greater
+
+                                end
+
+                                for j_2 = 1, 16 do
+                                    if UnitBuff(v.UNIT_ID, j_2) == texture then
+                                        Flag_BuffFound = true
+                                        getglobal(player .. "_Buff" .. j .. "Icon"):SetTexture(texture)
+                                        break
+                                    end
+                                end
+
+                            end
+
                         end
 
                         -- If buff has expired, highlight it red
@@ -790,11 +911,11 @@ function BW_UpdateBuffStatus()
                             if BuffWatchConfig.ExpiredWarning and buffexpired ~= true then
                                 UIErrorsFrame:AddMessage("A buffwatch monitored buff has expired!", 0.2, 0.9, 0.9, 1.0, UIERRORS_HOLD_TIME * 2)
                                 buffexpired = true
-                                
+
                                 if minimized then
                                     BW_HeaderText:SetTextColor(1, 0, 0)
                                 end
-                                
+
                             end
                             hasbuffexpired = true
                             playerbuffexpired = true
@@ -808,15 +929,15 @@ function BW_UpdateBuffStatus()
 
             -- Determine whether we should show or hide this player
             if HideMonitored == true then
-            
+
                 if HideUnmonitored == false then
-                
-                    if playerhasbuffs == true then 
+
+                    if playerhasbuffs == true then
                         showframe = playerbuffexpired
                     else
                         showframe = true
                     end
-                    
+
                 else
                     showframe = playerbuffexpired
                 end
@@ -829,7 +950,7 @@ function BW_UpdateBuffStatus()
                 else
 
                     -- Just hiding Unmonitored, so determine if any buffs are locked
-                    if playerhasbuffs == true then 
+                    if playerhasbuffs == true then
                         showframe = true
                     else
                         showframe = false
@@ -840,19 +961,19 @@ function BW_UpdateBuffStatus()
             end
 
         else
-            -- Player is unchecked, so show 
+            -- Player is unchecked, so show
             showframe = true
 
             -- Make sure buffs are not highlighted
             for j = 1, 16 do
-                
+
                 -- Check if there is a buff in this slot
                 if getglobal(player .. "_Buff" .. j):IsShown() then
                     getglobal(player .. "_Buff" .. j .. "Icon"):SetVertexColor(1,1,1)
                 end
-                
+
             end
-            
+
         end
 
         if showframe == true then
@@ -870,11 +991,11 @@ function BW_UpdateBuffStatus()
     end
 
     buffexpired = hasbuffexpired
-    
+
     if buffexpired == false then
         BW_HeaderText:SetTextColor(0.2, 0.9, 0.9)
     end
-    
+
     if playerframechanges == true then
         BW_Player_AdjustFrames()
     end
@@ -900,9 +1021,9 @@ function BW_SlashHandler(msg)
         BW_SetRightMouse()
 
     elseif msg == "options" then
-    
+
         BW_OptionsToggle()
-    
+
     elseif msg == "" or msg == "help" then
 
         BW_ShowHelp()
@@ -939,12 +1060,10 @@ function BW_MouseIsOverFrame()
 
     if MouseIsOver(BW) then
 
---        BW_Header:Show()
---        BW_HeaderText:Show()
         BW_MinimizeButton:Show()
 
-        if not minimized then 
-        
+        if not minimized then
+
             BW_OptionsButton:Show()
             BW_HideUnmonitoredButton:Show()
             BW_HideMonitoredButton:Show()
@@ -953,16 +1072,15 @@ function BW_MouseIsOverFrame()
             for k, v in Player_Info do
                 getglobal("BW_Player" .. v.ID .. "_Lock"):Show()
             end
-            
+
         else
-            BW_Lock_All:Hide()        
+            BW_Lock_All:Hide()
         end
 
     else
 
-        if not minimized then 
---            BW_Header:Hide()
---            BW_HeaderText:Hide()
+        if not minimized then
+
             BW_MinimizeButton:Hide()
             BW_OptionsButton:Hide()
             BW_HideUnmonitoredButton:Hide()
@@ -971,10 +1089,10 @@ function BW_MouseIsOverFrame()
             for k, v in Player_Info do
                 getglobal("BW_Player" .. v.ID .. "_Lock"):Hide()
             end
-        end        
+        end
 
         BW_Lock_All:Hide()
-        
+
     end
 
 end
@@ -990,21 +1108,21 @@ function BW_Check_Clicked()
 
             local curr_lock = getglobal("BW_Player" .. v.ID .. "_Lock")
 
---            if curr_lock:IsVisible() then            
+--            if curr_lock:IsVisible() then
                 if not curr_lock:GetChecked() then
                     checked = nil
                     break
-                end                                
+                end
 --            end
 
-        end 
-        
+        end
+
         if checked then
             BW_Lock_All:SetChecked(true)
         end
-    
+
     else
-        BW_Lock_All:SetChecked(false)    
+        BW_Lock_All:SetChecked(false)
     end
 
 end
@@ -1013,7 +1131,7 @@ end
 function BW_Name_Clicked(button)
 
     local id = this:GetParent():GetID()
-    
+
     local playername = getglobal("BW_Player" .. id .. "_NameText"):GetText()
 
     if button == "LeftButton" then
@@ -1021,27 +1139,28 @@ function BW_Name_Clicked(button)
     elseif button == "RightButton" then
         AssistByName(playername)
     end
-    
+
 end
 
 
 function BW_Buff_Clicked(button)
 
     local buffid = this:GetID()
-    local playerid = this:GetParent():GetID()    
+    local playerid = this:GetParent():GetID()
     local playername = getglobal("BW_Player" .. playerid .. "_NameText"):GetText()
     local playerframe =  "BW_Player" .. playerid
 
     if button == "LeftButton" then
 
         local spellid = nil
+        local spelltexture = getglobal(this:GetName() .. "Icon"):GetTexture()
 
         for i = 1, 300 do
-            if GetSpellTexture(i, 1) == getglobal(this:GetName() .. "Icon"):GetTexture() then
+            if GetSpellTexture(i, 1) == spelltexture then
                 spellid = i
             end
         end
-        
+
         if spellid then
 
             if UnitIsVisible(Player_Info[playername].UNIT_ID) then
@@ -1056,7 +1175,103 @@ function BW_Buff_Clicked(button)
                     SendChatMessage(format("BW: Casting %s on %s", GetSpellName(spellid,1), playername), "PARTY")
                 end
 
-                if spellid then CastSpell(spellid, 1) end
+                -- Check if it's a group buff or a lesser version.
+                if GroupBuffs[spelltexture] then
+
+                    local castgreater = false
+                    local newspelltexture = nil
+
+                    -- Check Buff Threshold for whether to cast single or group
+                    if BuffWatchConfig.BuffThreshold > 0 and
+                        (GetNumPartyMembers() >= (BuffWatchConfig.BuffThreshold - 1) or GetNumRaidMembers() >= BuffWatchConfig.BuffThreshold) then
+
+                        local castcount = 0
+                        local otherspelltexture
+
+                        if GroupBuffs[spelltexture].Greater then
+                            otherspelltexture = GroupBuffs[spelltexture].Greater
+                        else
+                            otherspelltexture = GroupBuffs[spelltexture].Lesser
+                        end
+
+                        -- Check they have other spell, and save OtherSpellID
+                        if not GroupBuffs[spelltexture].OtherSpellID then
+
+                            for i = 1, 300 do
+                                if GetSpellTexture(i, 1) == otherspelltexture then
+                                    GroupBuffs[spelltexture].OtherSpellID = i
+                                end
+                            end
+
+                            if not GroupBuffs[spelltexture].OtherSpellID then
+                                -- Player doesnt have greater spell
+                                GroupBuffs[spelltexture].OtherSpellID = 0
+                            end
+
+                        end
+
+                        -- Check whether to cast greater or lesser. If they dont have greater, then skip.
+                        if GroupBuffs[spelltexture].OtherSpellID ~= 0 then
+
+                            for k, v in Player_Info do
+
+                                local Flag_BuffFound = false
+
+                                -- Find players with same SubGroup/Class
+                                if v[GroupBuffs[spelltexture].Type] == Player_Info[playername][GroupBuffs[spelltexture].Type] then
+
+                                    -- Check for missing buff
+                                    for j = 1, 16 do
+                                        if UnitBuff(v.UNIT_ID, j) == spelltexture or UnitBuff(v.UNIT_ID, j) == otherspelltexture then
+                                            Flag_BuffFound = true
+                                            break
+                                        end
+                                    end
+
+                                    if Flag_BuffFound == false then
+                                        castcount = castcount + 1
+                                    end
+
+                                end
+
+                            end
+
+                            if castcount >= BuffWatchConfig.BuffThreshold then
+                                castgreater = true
+                            end
+
+                        end
+
+                    end
+
+                    if castgreater then
+                        newspelltexture = GroupBuffs[spelltexture].Greater
+                    else
+                        newspelltexture = GroupBuffs[spelltexture].Lesser
+                    end
+
+                    if newspelltexture then
+
+                        if GroupBuffs[spelltexture].OtherSpellID then
+
+                            spellid = GroupBuffs[spelltexture].OtherSpellID
+
+                        else
+
+                            for i = 1, 300 do
+                                if GetSpellTexture(i, 1) == newspelltexture then
+                                    spellid = i
+                                    GroupBuffs[spelltexture].OtherSpellID = i
+                                end
+                            end
+
+                        end
+
+                    end
+
+                end
+
+                CastSpell(spellid, 1)
 
                 if SpellIsTargeting() then
                     TargetByName(playername)
@@ -1067,7 +1282,7 @@ function BW_Buff_Clicked(button)
                 BW_Print(playername .. " is out of range or not visible.")
 
             end
-           
+
         end
 
     elseif button == "RightButton" then
@@ -1075,20 +1290,20 @@ function BW_Buff_Clicked(button)
         if getglobal(playerframe .. "_Lock"):GetChecked() and IsControlKeyDown() then
 
             this:Hide()
-            BW_Player_AdjustBuffs(Player_Info[playername])          
+            BW_Player_AdjustBuffs(Player_Info[playername])
             BW_ResizeWindow()
 
         elseif getglobal(playerframe .. "_Lock"):GetChecked() and IsAltKeyDown() then
-        
+
             for i = 1, 16 do
                 if i ~= buffid then
                     getglobal(playerframe .. "_Buff" .. i):Hide()
                 end
             end
-            
-            BW_Player_AdjustBuffs(Player_Info[playername])         
+
+            BW_Player_AdjustBuffs(Player_Info[playername])
             BW_ResizeWindow()
-            
+
         else
 
             if BuffWatchConfig.rightMouseSpell then
@@ -1136,7 +1351,6 @@ function BW_Buff_Tooltip()
         end
     end
 
-
     if buffbuttonid == nil then
         for i_2 = 1, 8 do
             if UnitDebuff(Player_Info[playername]["UNIT_ID"], i_2) == texture then
@@ -1153,32 +1367,32 @@ function BW_Buff_Tooltip()
         GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT")
         GameTooltip:SetUnitDebuff(Player_Info[playername]["UNIT_ID"], debuffbuttonid)
     end
-    
+
 end
 
 
 function BW_Set_AllChecks(checked)
 
-    for k, v in Player_Info do    
-        getglobal("BW_Player" .. v.ID .. "_Lock"):SetChecked(checked)            
+    for k, v in Player_Info do
+        getglobal("BW_Player" .. v.ID .. "_Lock"):SetChecked(checked)
     end
 
 end
 
 
 function BW_Header_Clicked(button)
-    
+
     if button == "LeftButton" then
         BW_Set_UNIT_IDs()
         BW_GetAllBuffs()
         BW_UpdateBuffStatus()
         BW_ResizeWindow()
     end
-    
+
     if button == "RightButton" then
         BW_Toggle()
     end
-    
+
 end
 
 
@@ -1194,7 +1408,7 @@ function BW_MinimizeButton_Clicked()
 
     BW_ResizeWindow()
     BW_MouseIsOverFrame()
-    
+
 end
 
 function BW_HideUnmonitored_Clicked()
@@ -1205,42 +1419,42 @@ function BW_HideUnmonitored_Clicked()
     BW_ResizeWindow()
 
     BW_HideUnmonitored_OnEnter()
-    
+
 end
 
 function BW_HideUnmonitored_OnEnter()
 
     GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-    
+
     if HideUnmonitored == true then
         GameTooltip:SetText("Hiding Unmonitored")
     else
         GameTooltip:SetText("Showing Unmonitored")
     end
-    
+
 end
 
 function BW_HideMonitored_Clicked()
 
     HideMonitored = not HideMonitored
 
-    BW_Player_AdjustFrames()    
+    BW_Player_AdjustFrames()
     BW_ResizeWindow()
 
     BW_HideMonitored_OnEnter()
-    
+
 end
 
 function BW_HideMonitored_OnEnter()
 
     GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-    
+
     if HideMonitored == true then
         GameTooltip:SetText("Hiding Monitored")
     else
         GameTooltip:SetText("Showing Monitored")
     end
-    
+
 end
 
 -- //////////////////////////////////////////////////////////////////////////////////////
@@ -1300,13 +1514,13 @@ end
 function GetLen(arr)
 
     local len = 0
-    
-    if arr ~= nil then 
-    
+
+    if arr ~= nil then
+
         for k, v in arr do
             len = len + 1
         end
-        
+
     end
 
     return len
@@ -1314,64 +1528,64 @@ end
 
 
 function BW_GetNextID(unitname)
-    
+
     local i = 1
 
     if GetLen(Player_Info) == 0 then
-    
+
         return i
-    
+
     else
-    
+
         local oldID = Player_Left[unitname]
-    
+
         if oldID then
-        
+
             local found = false
-        
+
             for k, v in Player_Info do
                 if v.ID == oldID then
                     found = true
                     break
                 end
             end
-            
+
             Player_Left[unitname] = nil
-            
+
             if found == false then
                 return oldID
             end
-        
+
         end
-    
+
         local Player_Copy = { }
 
         for k, v in Player_Info do
             table.insert(Player_Copy, v)
         end
-        
-        table.sort(Player_Copy, function(a,b) 
-            return a.ID < b.ID 
+
+        table.sort(Player_Copy, function(a,b)
+            return a.ID < b.ID
             end)
-    
+
         for k, v in Player_Copy do
-       
+
             if i ~= v.ID then
                 break
             end
-        
+
             i = i + 1
-    
+
         end
 
         Player_Copy = nil
-        
+
     end
-    
+
     getglobal("BW_Player" .. i .. "_Lock"):SetChecked(false)
-    
+
     return i
-        
+
 end
 
 
@@ -1401,8 +1615,7 @@ function BW_ShowHelp()
 
     BW_HelpFrameText:SetText(
 
-        [[            
-        - BuffWatch Usage - v 1.10 -
+"        - BuffWatch Usage - v " .. BW_VERSION .. " - " .. [[
 
         Show/Hide the BuffWatch window:
              - Bind a keyboard button to show/hide the window
@@ -1414,7 +1627,7 @@ function BW_ShowHelp()
 
         Locking a player's watched buffs:
              - If the checkbox to the left is unchecked, buffs will be added automatically whenever they gain a buff
-             - If checked, buffs will not be added
+             - If checked, buffs will not be added, or removed
 
         Rebuffing:
              - Left click an icon (will auto-target)
