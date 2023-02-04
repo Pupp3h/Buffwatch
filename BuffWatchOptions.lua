@@ -16,7 +16,7 @@ function Buffwatch_Options_OnLoad()
 
     -- Add Buffwatch_Options to the UIPanelWindows list
     UIPanelWindows["Buffwatch_Options"] = {area = "center", pushable = 0};
-
+    
 end
 
 function Buffwatch_Options_Init()
@@ -28,7 +28,10 @@ function Buffwatch_Options_Init()
 --    Buffwatch_Options_ShowExpiredWarning:SetChecked(BuffwatchConfig.ExpiredWarning);
 --    Buffwatch_Options_PlayExpiredSound:SetChecked(BuffwatchConfig.ExpiredSound);
     Buffwatch_Options_ShowSpirals:SetChecked(BuffwatchConfig.Spirals);
---    Buffwatch_Options_HideOmniCC:SetChecked(BuffwatchConfig.HideOmniCC);
+    Buffwatch_Options_HideOmniCC:SetChecked(BuffwatchConfig.HideOmniCC);
+    if (not OmniCC) then
+        Buffwatch_Options_HideOmniCC:Hide();
+    end 
     Buffwatch_Options_Alpha:SetValue(BuffwatchConfig.Alpha);
 end
 

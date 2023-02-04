@@ -4,7 +4,7 @@
     <Frame name="Buffwatch_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="300" y="320"/>
+            <AbsDimension x="300" y="340"/>
         </Size>
 
         <Anchors>
@@ -280,8 +280,14 @@
                     <OnClick>
                         if (self:GetChecked()) then
                             BuffwatchConfig.Spirals = true;
+                            if (OmniCC) then
+                                Buffwatch_EnableCheckbox(Buffwatch_Options_HideOmniCC);
+                            end
                         else
                             BuffwatchConfig.Spirals = false;
+                            if (OmniCC) then
+                                Buffwatch_DisableCheckbox(Buffwatch_Options_HideOmniCC);
+                            end
                         end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
@@ -295,7 +301,7 @@
                 </Scripts>
             </CheckButton>
             
-            <!--CheckButton name="$parent_HideOmniCC" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_HideOmniCC" inherits="OptionsCheckButtonTemplate">
                 <Size>
                     <AbsDimension x="20" y="20"/>
                 </Size>
@@ -311,7 +317,7 @@
                         getglobal(self:GetName().."Text"):SetText("Hide OmniCC text");
                     </OnLoad>
                     <OnShow>
-                        if (BuffwatchConfig.Spirals == true) then
+                        if (BuffwatchConfig.Spirals == true and OmniCC) then
                             Buffwatch_EnableCheckbox(self);
                         else
                             Buffwatch_DisableCheckbox(self);
@@ -323,6 +329,9 @@
                         else
                             BuffwatchConfig.HideOmniCC = false;
                         end
+                        if (OmniCC) then
+                          OmniCC:HookCooldown();
+                        end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
                     <OnEnter>
@@ -333,7 +342,7 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </CheckButton-->            
+            </CheckButton>            
             
 <!--   
             <CheckButton name="$parent_ShowDebuffs" inherits="OptionsCheckButtonTemplate">
@@ -464,7 +473,7 @@
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowSpirals" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_HideOmniCC" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="0" y="-20" />
                         </Offset>

@@ -7,13 +7,14 @@
 -- ** Alt click for Lesser/Greater Buffs (?)
 -- ** Timers for buffs expiring
 -- ** Warning message for buff expiring
+-- ** Option for showing only last x minutes of a buff as a cooldown spiral
 
 -- ** Integrate with Blizz Addon options
 
 -- Changes
 --
--- Added Group Mode option to restrict to Solo or Party
--- Added optional cooldown spirals on buff buttons
+-- Fixed pet toggling in Solo Group Mode
+-- Added option to allow OmniCC timer text
 --
 
 -- ****************************************************************************
@@ -22,8 +23,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.13";
-BW_RELEASE_DATE = "22 April 2009";
+BW_VERSION = "3.14";
+BW_RELEASE_DATE = "11 May 2009";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -698,8 +699,9 @@ function Buffwatch_Set_UNIT_IDs(forced)
     
         UNIT_IDs = table.wipe(UNIT_IDs);
         UNIT_IDs[1] = "player";
-        UNIT_IDs[2] = "pet";
-        
+        if BuffwatchConfig.ShowPets == true then
+            UNIT_IDs[2] = "pet";
+        end
         grouptype = "solo";
         
     else
@@ -1213,7 +1215,6 @@ end]]
                         curr_buff.cooldown = cooldown;
                         cooldown:SetAllPoints(curr_buff);
                         cooldown:SetReverse(true);
-                        cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
   
                     end
 
@@ -1241,10 +1242,11 @@ end]]
                     curr_buff:SetAttribute("spell1", buff.."("..rank..")");
                     
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
-                      curr_buff.cooldown:Show();
-                      curr_buff.cooldown:SetCooldown(expTime - duration, duration);
+                        curr_buff.cooldown:Show();
+                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
+                        curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
-                      curr_buff.cooldown:Hide();
+                        curr_buff.cooldown:Hide();
                     end
 
                 else
@@ -1360,10 +1362,11 @@ end]]
                     end
                     
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
-                      curr_buff.cooldown:Show();
-                      curr_buff.cooldown:SetCooldown(expTime - duration, duration);
+                        curr_buff.cooldown:Show();
+                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;                      
+                        curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
-                      curr_buff.cooldown:Hide();
+                        curr_buff.cooldown:Hide();
                     end                      
 
                 end
@@ -1476,7 +1479,6 @@ function Buffwatch_Player_LoadBuffs(v)
                     curr_buff.cooldown = cooldown;
                     cooldown:SetAllPoints(curr_buff);
                     cooldown:SetReverse(true);
-                    cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
   
                 end
 
@@ -1498,10 +1500,11 @@ function Buffwatch_Player_LoadBuffs(v)
                 curr_buff:SetAttribute("spell1", BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Buff"].."("..BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Rank"]..")");
 
                 if BuffwatchConfig.Spirals == true and duration and duration > 0 then
-                  curr_buff.cooldown:Show();
-                  curr_buff.cooldown:SetCooldown(expTime - duration, duration);
+                    curr_buff.cooldown:Show();
+                    curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;                  
+                    curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                 else
-                  curr_buff.cooldown:Hide();
+                    curr_buff.cooldown:Hide();
                 end  
   
             else
@@ -1683,7 +1686,7 @@ function Buffwatch_ShowHelp()
         2) Tick the checkbox next to each player which locks those buffs to the player 
              (alternatively tick the checkbox at the top to lock them all) 
         
-        3) Remove monitoring of the buffs you are not interested in using the following methods : 
+        3) Remove monitoring of the buffs you are not interested in, using the following methods : 
         
            * Alt-Right Click to remove the selected buff 
            
