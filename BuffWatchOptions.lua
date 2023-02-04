@@ -26,8 +26,8 @@ function Buffwatch_Options_Init()
     Buffwatch_Options_Alpha:SetValue(BuffwatchConfig.Alpha);
 end
 
-function Buffwatch_Options_SortOrder_OnClick()
-    i = this:GetID();
+function Buffwatch_Options_SortOrder_OnClick(self)
+    i = self:GetID();
     UIDropDownMenu_SetSelectedID(Buffwatch_Options_SortOrder, i);
     BuffwatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[i];
     Buffwatch_PositionAllPlayerFrames();
@@ -44,8 +44,18 @@ function Buffwatch_Options_SortOrder_Initialize()
     end
 end
 
-function Buffwatch_Options_SortOrder_OnLoad()
-    UIDropDownMenu_Initialize(this, Buffwatch_Options_SortOrder_Initialize);
-    UIDropDownMenu_SetText(BuffwatchConfig.SortOrder, this);
-    UIDropDownMenu_SetWidth(90, Buffwatch_Options_SortOrder);
+function Buffwatch_Options_SortOrder_OnLoad(self)
+    UIDropDownMenu_Initialize(self, Buffwatch_Options_SortOrder_Initialize);
+    UIDropDownMenu_SetText(self, BuffwatchConfig.SortOrder);
+    UIDropDownMenu_SetWidth(self, 90);
+end
+
+function Buffwatch_EnableCheckbox(checkbox)
+    checkbox:Enable();
+    getglobal(checkbox:GetName().."Text"):SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
+end
+
+function Buffwatch_DisableCheckbox(checkbox)
+    checkbox:Disable();
+    getglobal(checkbox:GetName().."Text"):SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
 end

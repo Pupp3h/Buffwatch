@@ -6,7 +6,7 @@
 -- **   Add an InCombat icon next to Buffwatch header
 -- **
 
--- ** Add seperate frame for debuffs, so it can be shown/hidden/ressized in combat?
+-- ** Add seperate frame for debuffs, so it can be shown/hidden/resized in combat?
 
 -- ** Alt click for Lesser/Greater Buffs (?)
 -- ** Timers for buffs expiring
@@ -15,10 +15,10 @@
 
 -- Changes
 --
--- Checkbox to lock all is now set correctly on login
--- Buffs will show as present, if a lesser or greater equivalent is buffed
---   while in combat
-
+-- Fixed up for 3.0.2 (WotLK beta)
+-- Re-added the help page (finally!)
+-- Added reset command
+-- Enabled dragging from the header text
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -26,8 +26,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "2.0";
-BW_RELEASE_DATE = "26 June 2007";
+BW_VERSION = "3.00";
+BW_RELEASE_DATE = "8 October 2008";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -67,18 +67,18 @@ local debugchatframe = DEFAULT_CHAT_FRAME;
 -- **                                                                        **
 -- ****************************************************************************
 
-function Buffwatch_OnLoad()
+function Buffwatch_OnLoad(self)
 
-    this:RegisterEvent("PLAYER_LOGIN");
-    this:RegisterEvent("PARTY_MEMBERS_CHANGED");
-    this:RegisterEvent("RAID_ROSTER_UPDATE");
-    this:RegisterEvent("UNIT_PET");
---    this:RegisterEvent("UNIT_SPELLCAST_SENT");
-    this:RegisterEvent("UNIT_AURA");
---    this:RegisterEvent("UNIT_FACTION");
-    this:RegisterEvent("VARIABLES_LOADED");
-    this:RegisterEvent("PLAYER_REGEN_ENABLED");
-    this:RegisterEvent("PLAYER_REGEN_DISABLED");
+    self:RegisterEvent("PLAYER_LOGIN");
+    self:RegisterEvent("PARTY_MEMBERS_CHANGED");
+    self:RegisterEvent("RAID_ROSTER_UPDATE");
+    self:RegisterEvent("UNIT_PET");
+--    self:RegisterEvent("UNIT_SPELLCAST_SENT");
+    self:RegisterEvent("UNIT_AURA");
+--    self:RegisterEvent("UNIT_FACTION");
+    self:RegisterEvent("VARIABLES_LOADED");
+    self:RegisterEvent("PLAYER_REGEN_ENABLED");
+    self:RegisterEvent("PLAYER_REGEN_DISABLED");
 
     SlashCmdList["BUFFWATCH"] = Buffwatch_SlashHandler;
     SLASH_BUFFWATCH1 = "/buffwatch";
@@ -154,7 +154,7 @@ function Buffwatch_OnLoad()
         ["Lesser"] = "Blessing of Wisdom",
         ["Type"] = "Class"
     };
-    -- Blessing of Salvation
+    --[[ Blessing of Salvation (removed for 3.0)
     GroupBuffs["Blessing of Salvation"] = {
         ["Greater"] = "Greater Blessing of Salvation",
         ["Type"] = "Class"
@@ -163,7 +163,7 @@ function Buffwatch_OnLoad()
     GroupBuffs["Greater Blessing of Salvation"] = {
         ["Lesser"] = "Blessing of Salvation",
         ["Type"] = "Class"
-    };
+    };]]
     -- Blessing of Kings
     GroupBuffs["Blessing of Kings"] = {
         ["Greater"] = "Greater Blessing of Kings",
@@ -174,7 +174,7 @@ function Buffwatch_OnLoad()
         ["Lesser"] = "Blessing of Kings",
         ["Type"] = "Class"
     };
-    -- Blessing of Light
+    --[[ Blessing of Light (removed for 3.0)
     GroupBuffs["Blessing of Light"] = {
         ["Greater"] = "Greater Blessing of Light",
         ["Type"] = "Class"
@@ -183,7 +183,7 @@ function Buffwatch_OnLoad()
     GroupBuffs["Greater Blessing of Light"] = {
         ["Lesser"] = "Blessing of Light",
         ["Type"] = "Class"
-    };
+    };]]
     -- Blessing of Sanctuary
     GroupBuffs["Blessing of Sanctuary"] = {
         ["Greater"] = "Greater Blessing of Sanctuary",
@@ -283,7 +283,7 @@ end
 
             if event == "PLAYER_LOGIN" then
 
-                Buffwatch_Check_Clicked(_, _, getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[next(Player_Info)].ID.."_Lock"));
+                Buffwatch_Check_Clicked(_, _, _, getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[next(Player_Info)].ID.."_Lock"));
 
             end
 
@@ -329,15 +329,15 @@ end
 end
 
 
-function Buffwatch_MouseDown(button)
+function Buffwatch_MouseDown(self, button)
     if button == "LeftButton" and BuffwatchConfig.WindowLocked == false then
-        BuffwatchFrame:StartMoving();
+        self:StartMoving();
     end
 end
 
-function Buffwatch_MouseUp(button)
+function Buffwatch_MouseUp(self, button)
     if button == "LeftButton" then
-        BuffwatchFrame:StopMovingOrSizing();
+        self:StopMovingOrSizing();
     end
 end
 
@@ -381,10 +381,10 @@ function Buffwatch_Header_Clicked(button, down)
 end
 
 
-function Buffwatch_DropDown_OnLoad()
+function Buffwatch_DropDown_OnLoad(self)
     -- Prepare the dropdown menu
-    UIDropDownMenu_Initialize(this, Buffwatch_DropDown_Initialize, "MENU");
-    UIDropDownMenu_SetAnchor(0, 0, this, "TOPLEFT", "BuffwatchFrame_Header", "CENTER");
+    UIDropDownMenu_Initialize(self, Buffwatch_DropDown_Initialize, "MENU");
+    UIDropDownMenu_SetAnchor(0, 0, self, "TOPLEFT", "BuffwatchFrame_Header", "CENTER");
 end
 
 
@@ -428,7 +428,7 @@ function Buffwatch_DropDown_Initialize()
     UIDropDownMenu_AddButton(info);
 
     info = {};
-    info.text = "Hide";
+    info.text = "Close Menu";
     info.func = function()
         BuffwatchFrame_DropDown:Hide();
     end
@@ -437,7 +437,7 @@ function Buffwatch_DropDown_Initialize()
 end
 
 
-function Buffwatch_Check_Clicked(button, down, obj)
+function Buffwatch_Check_Clicked(self, button, down, obj)
 
     local playerid;
     local checked;
@@ -447,8 +447,8 @@ function Buffwatch_Check_Clicked(button, down, obj)
         checked = obj:GetChecked();
         playerid = obj:GetParent():GetID();
     else
-        checked = this:GetChecked();
-        playerid = this:GetParent():GetID();
+        checked = self:GetChecked();
+        playerid = self:GetParent():GetID();
     end
 
     local playername = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText();
@@ -481,14 +481,14 @@ function Buffwatch_Check_Clicked(button, down, obj)
         Buffwatch_ResizeWindow();
     end
 
---    Buffwatch_Player_SaveBuffs(this:GetParent():GetID());
+--    Buffwatch_Player_SaveBuffs(self:GetParent():GetID());
 
 end
 
 
-function Buffwatch_Buff_Clicked(button, down)
+function Buffwatch_Buff_Clicked(self, button, down)
 
-    local playerid = this:GetParent():GetID();
+    local playerid = self:GetParent():GetID();
     local playerframe = "BuffwatchFrame_PlayerFrame"..playerid;
 
     if getglobal(playerframe.."_Lock"):GetChecked() and IsAltKeyDown() then
@@ -499,7 +499,7 @@ function Buffwatch_Buff_Clicked(button, down)
 
         else
 
-            local buffid = this:GetID();
+            local buffid = self:GetID();
             local playername = getglobal(playerframe.."_NameText"):GetText();
 
             if button == "LeftButton" then
@@ -511,7 +511,7 @@ function Buffwatch_Buff_Clicked(button, down)
                             getglobal(playerframe.."_Buff"..i):Hide();
                             BuffwatchPlayerBuffs[playername]["Buffs"][i] = nil;
                         else
-                            this:SetPoint("TOPLEFT", playerframe.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
+                            self:SetPoint("TOPLEFT", playerframe.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                         end
                     else
                         break;
@@ -528,14 +528,14 @@ function Buffwatch_Buff_Clicked(button, down)
                 local nextbuffid = next(BuffwatchPlayerBuffs[playername]["Buffs"], buffid);
 
                 -- Hide the clicked buff
-                this:Hide();
+                self:Hide();
                 BuffwatchPlayerBuffs[playername]["Buffs"][buffid] = nil;
                 BuffwatchSaveBuffs[playername]["Buffs"][buffid] = nil;
 
                 -- Re-anchor any following buff
                 if nextbuffid then
                     getglobal(playerframe.."_Buff"..nextbuffid):ClearAllPoints();
-                    getglobal(playerframe.."_Buff"..nextbuffid):SetPoint(this:GetPoint());
+                    getglobal(playerframe.."_Buff"..nextbuffid):SetPoint(self:GetPoint());
                 end
 
                 Buffwatch_ResizeWindow();
@@ -548,7 +548,7 @@ function Buffwatch_Buff_Clicked(button, down)
     else
 --[[
 if BuffwatchConfig.debug == true then
-local buffid = this:GetID();
+local buffid = self:GetID();
 local playername = getglobal(playerframe.."_NameText"):GetText();
 local curr_buff = getglobal(playerframe.."_Buff"..buffid);
 
@@ -560,12 +560,12 @@ end ]]
 end
 
 
-function Buffwatch_Buff_Tooltip()
+function Buffwatch_Buff_Tooltip(self)
 
-    local playername = getglobal("BuffwatchFrame_PlayerFrame"..this:GetParent():GetID().."_NameText"):GetText();
+    local playername = getglobal("BuffwatchFrame_PlayerFrame"..self:GetParent():GetID().."_NameText"):GetText();
     local unit = Player_Info[playername]["UNIT_ID"];
-    local buff = BuffwatchPlayerBuffs[playername]["Buffs"][this:GetID()]["Buff"];
-    local rank = BuffwatchPlayerBuffs[playername]["Buffs"][this:GetID()]["Rank"];
+    local buff = BuffwatchPlayerBuffs[playername]["Buffs"][self:GetID()]["Buff"];
+    local rank = BuffwatchPlayerBuffs[playername]["Buffs"][self:GetID()]["Rank"];
     local buffbuttonid = nil;
     local debuffbuttonid = nil;
 
@@ -579,16 +579,16 @@ function Buffwatch_Buff_Tooltip()
     if buffbuttonid ~= 0 then
 
         -- If the buff is present, show the tooltip for it
-        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
         GameTooltip:SetUnitBuff(unit, buffbuttonid);
 --    elseif debuffbuttonid then
---        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
+--        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
 --        GameTooltip:SetUnitDebuff(unit, debuffbuttonid);
 
     else
 
         -- If the buff isn't present, create a tooltip
-        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
         if rank ~= "" then
             GameTooltip:SetText(buff.." ("..rank..")", 1, 1, 0);
         else
@@ -627,12 +627,23 @@ function Buffwatch_SlashHandler(msg)
         else
             Buffwatch_Print("Buffwatch debugging OFF");
         end
+        
+    elseif msg == "help" then
+    
+        Buffwatch_ShowHelp();
+        
+    elseif msg == "reset" then
+    
+        BuffwatchFrame:ClearAllPoints();
+        BuffwatchFrame:SetPoint("CENTER", 200, 200);
 
     else
 
         Buffwatch_Print("Buffwatch commands (/buffwatch or /bfw):");
+        Buffwatch_Print("/bfw help - Show the help page");
         Buffwatch_Print("/bfw toggle - Toggle the Buffwatch window on or off");
         Buffwatch_Print("/bfw options - Toggle the options window on or off");
+        Buffwatch_Print("/bfw reset - Reset the window position");
         Buffwatch_Print("Right click the Buffwatch header for more options");
 
     end
@@ -1084,17 +1095,15 @@ function Buffwatch_Player_GetBuffs(v)
             BuffwatchSaveBuffs[v.Name] = nil;
 
             local showbuffs;
-
-            if UnitIsUnit(v.UNIT_ID, "player") then
-
-                if BuffwatchConfig.ShowAllForPlayer == true then
-                    showbuffs = false;
-                else
-                    showbuffs = BuffwatchConfig.ShowCastableBuffs;
-                end
-
+            
+            if BuffwatchConfig.ShowCastableBuffs == true then
+              showbuffs = "RAID";
             else
-                showbuffs = BuffwatchConfig.ShowCastableBuffs;
+              showbuffs = "";
+            end
+
+            if UnitIsUnit(v.UNIT_ID, "player") and BuffwatchConfig.ShowAllForPlayer == true then
+              showbuffs = "";
             end
 
             for i = 1, 32 do
@@ -1414,7 +1423,7 @@ function Buffwatch_Player_LoadBuffs(v)
 
      else
 
-        Buffwatch_Check_Clicked(_, _, getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"));
+        Buffwatch_Check_Clicked(_, _, _, getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"));
 
      end
 
@@ -1516,6 +1525,52 @@ end
 
 
 function Buffwatch_ShowHelp()
+
+    Buffwatch_HelpFrame:Show()
+    Buffwatch_HelpFrame:ClearAllPoints()
+    Buffwatch_HelpFrame:SetPoint("CENTER","UIParent","CENTER",0,-32)
+
+    Buffwatch_HelpFrameText:SetText(
+"        - BuffWatch Usage - v " .. BW_VERSION .. " - " .. [[
+
+
+
+        1) Make sure the buffs you want to monitor are on the relevant players 
+        
+        2) Tick the checkbox next to each player which locks those buffs to the player 
+             (alternatively tick the checkbox at the top to lock them all) 
+        
+        3) Remove monitoring of the buffs you are not interested in using the following methods : 
+        
+           * Alt-Right Click to remove the selected buff 
+           
+           * Alt-Left Click to remove all buffs but the selected one 
+
+        4) Buffs that have expired will turn red, and clicking on them will recast the buff on the player 
+             (if you have the spell)
+        
+        
+        Other features :
+        
+        - Left click a player name to target that player 
+        
+        - Right click a player name to assist that player (target their target)
+        
+        
+        Buffwatch commands (/buffwatch or /bfw):
+        
+        /bfw toggle - Toggle the Buffwatch window on or off
+        
+        /bfw options - Toggle the options window on or off
+        
+        /bfw reset - Reset the window position
+        
+        /bfw help - Show this help page
+        
+        
+        Right click the Buffwatch header for more options       
+        
+        ]] )
 
 end
 

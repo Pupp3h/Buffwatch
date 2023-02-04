@@ -46,7 +46,7 @@
         </Anchors>
         <Scripts>
           <OnClick>
-            Buffwatch_Set_AllChecks(this:GetChecked());
+            Buffwatch_Set_AllChecks(self:GetChecked());
           </OnClick>
         </Scripts>
       </CheckButton>
@@ -69,12 +69,17 @@
         </Layers>
         <Scripts>
           <OnLoad>
-            this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-            this:RegisterForDrag("LeftButton");
+            self:RegisterForClicks("RightButtonUp");
           </OnLoad>
           <OnClick>
             Buffwatch_Header_Clicked(button, down);
           </OnClick>
+          <OnMouseDown>
+            Buffwatch_MouseDown(self:GetParent(), button);
+          </OnMouseDown>
+          <OnMouseUp>
+            Buffwatch_MouseUp(self:GetParent(), button);
+          </OnMouseUp>          
         </Scripts>
       </Button>
 
@@ -88,7 +93,7 @@
         </Anchors>
         <Scripts>
           <OnLoad>
-            Buffwatch_DropDown_OnLoad();
+            Buffwatch_DropDown_OnLoad(self);
           </OnLoad>
         </Scripts>
       </Frame> 
@@ -115,23 +120,59 @@
     <Scripts>
 
       <OnLoad>
-        this:RegisterForDrag("LeftButton");
-        Buffwatch_OnLoad();
+        Buffwatch_OnLoad(self);
       </OnLoad>
       <OnEvent>
         Buffwatch_OnEvent(event, ...);
       </OnEvent>
       <OnMouseDown>
-        Buffwatch_MouseDown(button);
+        Buffwatch_MouseDown(self, button);
       </OnMouseDown>
       <OnMouseUp>
-        Buffwatch_MouseUp(button);
+        Buffwatch_MouseUp(self, button);
       </OnMouseUp>
     </Scripts>
     
   </Frame>
   
-  <!--==================================================================================-->
+  <Frame name="Buffwatch_HelpFrame" inherits="DialogBoxFrame" movable="true" enableMouse="true">
+
+    <Size>
+        <AbsDimension x="540" y="420"/>
+    </Size>
+
+    <Layers>
+      <Layer level="OVERLAY">
+        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="CENTER">
+          <Size>
+            <AbsDimension x="500" y="0"/>
+          </Size>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    
+    <Scripts>
+
+      <OnLoad>
+        self:RegisterForDrag("LeftButton");
+        getglobal(self:GetName().."Button"):ClearAllPoints();
+        getglobal(self:GetName().."Button"):SetPoint("BOTTOM", 180, 16);
+      </OnLoad>
+      <OnDragStart>
+        this:StartMoving();
+      </OnDragStart>
+      <OnDragStop>
+        this:StopMovingOrSizing();
+      </OnDragStop>
+     
+    </Scripts>
+
+  </Frame>   
+  
+  <!--== Inherited Frames ==============================================================-->
 
   <CheckButton name="Buffwatch_LockButton_Template" inherits="UICheckButtonTemplate" hidden="false" virtual="true">
     <Size>
@@ -139,7 +180,7 @@
     </Size>
     <Scripts>
       <OnClick>
-        Buffwatch_Check_Clicked(button, down);
+        Buffwatch_Check_Clicked(self, button, down);
       </OnClick>
     </Scripts>
   </CheckButton>
@@ -155,7 +196,7 @@
     </Layers>
     <Scripts>
       <OnLoad>
-        this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+        self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
       </OnLoad>
     </Scripts>
   </Button>
@@ -171,13 +212,13 @@
     </Layers>
     <Scripts>
       <OnLoad>
-        this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+        self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
       </OnLoad>
       <PostClick>
-        Buffwatch_Buff_Clicked(button, down);
+        Buffwatch_Buff_Clicked(self, button, down);
       </PostClick>
       <OnEnter>
-        Buffwatch_Buff_Tooltip(motion);
+        Buffwatch_Buff_Tooltip(self, motion);
       </OnEnter>
       <OnLeave>
         GameTooltip:Hide();
@@ -240,6 +281,6 @@
       </Button>      
 
     </Frames>
-  </Frame>  
+  </Frame>   
   
 </Ui>

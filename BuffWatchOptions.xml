@@ -76,13 +76,13 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        Buffwatch_Options_SortOrder_OnLoad();
+                        Buffwatch_Options_SortOrder_OnLoad(self);
                     </OnLoad>
                     <OnShow>
-                        Buffwatch_Options_SortOrder_OnLoad();
+                        Buffwatch_Options_SortOrder_OnLoad(self);
                     </OnShow>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SORTORDER);
                     </OnEnter>
                     <OnLeave>
@@ -101,10 +101,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Show Pets");
+                        getglobal(self:GetName().."Text"):SetText("Show Pets");
                     </OnLoad>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ShowPets = true;
                         else
                             BuffwatchConfig.ShowPets = false;
@@ -113,7 +113,7 @@
                         Buffwatch_ResizeWindow();
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SHOWPETS);
                     </OnEnter>
                     <OnLeave>
@@ -132,20 +132,20 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Show Only Castable Buffs");
+                        getglobal(self:GetName().."Text"):SetText("Show Only Castable Buffs");
                     </OnLoad>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ShowCastableBuffs = true;
-                            OptionsFrame_EnableCheckBox(Buffwatch_Options_ShowAllForPlayer);
+                            Buffwatch_EnableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                         else
                             BuffwatchConfig.ShowCastableBuffs = false;
-                            OptionsFrame_DisableCheckBox(Buffwatch_Options_ShowAllForPlayer);
+                            Buffwatch_DisableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                         end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SHOWCASTABLEBUFFS);
                     </OnEnter>
                     <OnLeave>
@@ -167,10 +167,17 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Show all buffs for this player");
+                        getglobal(self:GetName().."Text"):SetText("Show all buffs for this player");
                     </OnLoad>
+                    <OnShow>
+                        if (BuffwatchConfig.ShowCastableBuffs == true) then
+                            Buffwatch_EnableCheckbox(self);
+                        else
+                            Buffwatch_DisableCheckbox(self);
+                        end                                            
+                    </OnShow>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ShowAllForPlayer = true;
                         else
                             BuffwatchConfig.ShowAllForPlayer = false;
@@ -178,7 +185,7 @@
                         Buffwatch_GetAllBuffs();
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SHOWALLFORPLAYER);
                     </OnEnter>
                     <OnLeave>
@@ -197,10 +204,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Show Debuffs");
+                        getglobal(self:GetName().."Text"):SetText("Show Debuffs");
                     </OnLoad>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ShowDebuffs = true;
                             OptionsFrame_EnableCheckBox(Buffwatch_Options_ShowOnlyDispellDebuffs, Buffwatch_Options_ShowOnlyDispellDebuffs:GetChecked());
                         else
@@ -210,7 +217,7 @@
                         Buffwatch_GetAllBuffs();
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SHOWDEBUFFS);
                     </OnEnter>
                     <OnLeave>
@@ -232,10 +239,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Show Only Dispellable Debuffs");
+                        getglobal(self:GetName().."Text"):SetText("Show Only Dispellable Debuffs");
                     </OnLoad>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ShowDispellableDebuffs = true;
                         else
                             BuffwatchConfig.ShowDispellableDebuffs = false;
@@ -243,7 +250,7 @@
                         Buffwatch_GetAllBuffs();
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SHOWDISPELLDEBUFFS);
                     </OnEnter>
                     <OnLeave>
@@ -262,17 +269,17 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Show Expired Warning");
+                        getglobal(self:GetName().."Text"):SetText("Show Expired Warning");
                     </OnLoad>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ExpiredWarning = true;
                         else
                             BuffwatchConfig.ExpiredWarning = false;
                         end
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_SHOWEXPIREDWARNING);
                     </OnEnter>
                     <OnLeave>
@@ -291,17 +298,17 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Play Expired Sound");
+                        getglobal(self:GetName().."Text"):SetText("Play Expired Sound");
                     </OnLoad>
                     <OnClick>
-                        if (this:GetChecked()) then
+                        if (self:GetChecked()) then
                             BuffwatchConfig.ExpiredSound = true;
                         else
                             BuffwatchConfig.ExpiredSound = false;
                         end
                     </OnClick>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_PLAYEXPIREDSOUND);
                     </OnEnter>
                     <OnLeave>
@@ -323,18 +330,18 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Transparency");
-                        getglobal(this:GetName().."High"):SetText();
-                        getglobal(this:GetName().."Low"):SetText();
-                        this:SetMinMaxValues(0.0,1.0);
-                        this:SetValueStep(0.01);
+                        getglobal(self:GetName().."Text"):SetText("Transparency");
+                        getglobal(self:GetName().."High"):SetText();
+                        getglobal(self:GetName().."Low"):SetText();
+                        self:SetMinMaxValues(0.0,1.0);
+                        self:SetValueStep(0.01);
                     </OnLoad>
                     <OnValueChanged>
-                        BuffwatchConfig.Alpha = this:GetValue();
+                        BuffwatchConfig.Alpha = self:GetValue();
                         BuffwatchFrame_Background:SetAlpha(BuffwatchConfig.Alpha);
                     </OnValueChanged>
                     <OnEnter>
-                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
                         GameTooltip:SetText(BW_TTIP_ALPHA);
                     </OnEnter>
                     <OnLeave>
