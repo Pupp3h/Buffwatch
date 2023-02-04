@@ -184,7 +184,26 @@
       </OnLeave>
     </Scripts>
   </Button>
-
+<!--
+  <Button name="Buffwatch_DebuffButton_Template" hidden="true" virtual="true">
+    <Size>
+      <AbsDimension x="18" y="18"/>
+    </Size>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture name="$parentIcon"/>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnEnter>
+        Buffwatch_Buff_Tooltip(motion);
+      </OnEnter>
+      <OnLeave>
+        GameTooltip:Hide();
+      </OnLeave>
+    </Scripts>
+  </Button>
+-->
   <Frame name="Buffwatch_Player_Template" hidden="false" virtual="true">
     <Size>
       <AbsDimension x="100" y="18"/>

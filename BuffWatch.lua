@@ -15,15 +15,9 @@
 
 -- Changes
 --
--- Buff buttons will now automatically change (out of combat) if a matching
---   group buff is found, and vice versa.
--- Added menu option to lock window
--- Added option to always show all buffs for this player
--- Sort Order dropdown from Option panel now changes order immediately
--- Removed dragging from header
--- Fixed errors generated from sorting player list
--- Fixed formatting of tooltip for buffs without a rank
--- Fixed window resizing
+-- Checkbox to lock all is now set correctly on login
+-- Buffs will show as present, if a lesser or greater equivalent is buffed
+--   while in combat
 
 
 -- ****************************************************************************
@@ -32,8 +26,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "2.0b5";
-BW_RELEASE_DATE = "27 February 2007";
+BW_VERSION = "2.0";
+BW_RELEASE_DATE = "26 June 2007";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -286,6 +280,12 @@ end
 
             Buffwatch_Set_UNIT_IDs();
             Buffwatch_ResizeWindow();
+
+            if event == "PLAYER_LOGIN" then
+
+                Buffwatch_Check_Clicked(_, _, getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[next(Player_Info)].ID.."_Lock"));
+
+            end
 
         elseif event == "UNIT_AURA" and select(1, ...) ~= "target" then
 
@@ -1181,27 +1181,24 @@ end]]
                         curr_buff_icon:SetVertexColor(1,1,1);
                     else
 
-                        if InCombatLockdown() then
+                        if GroupBuffs[buff] then
 
-                            curr_buff_icon:SetVertexColor(1,0,0);
+                            buff = GroupBuffs[buff].Lesser or GroupBuffs[buff].Greater;
+                            buffbuttonid = UnitHasBuff(v.UNIT_ID, buff);
 
-                            if GroupBuffs[buff] then
-                                Buffwatch_Add_InCombat_Events({"GetBuffs", v});
-                            end
+                            if buffbuttonid ~= 0 then
 
-                        else
+                                curr_buff_icon:SetVertexColor(1,1,1);
 
-                            if GroupBuffs[buff] then
+                                if InCombatLockdown() then
 
-                                buff = GroupBuffs[buff].Lesser or GroupBuffs[buff].Greater;
-                                buffbuttonid = UnitHasBuff(v.UNIT_ID, buff);
+                                    Buffwatch_Add_InCombat_Events({"GetBuffs", v});
 
-                                if buffbuttonid ~= 0 then
+                                else
 
                                     local icon;
                                     _, rank, icon = UnitBuff(v.UNIT_ID, buffbuttonid);
 
-                                    curr_buff_icon:SetVertexColor(1,1,1);
                                     curr_buff_icon:SetTexture(icon);
                                     BuffwatchPlayerBuffs[v.Name]["Buffs"][i] = { };
                                     BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Buff"] = buff;
@@ -1212,10 +1209,6 @@ end]]
                                     curr_buff:SetAttribute("unit1", v.UNIT_ID);
                                     curr_buff:SetAttribute("spell1", buff.."("..rank..")");
 
-                                else
-
-                                    curr_buff_icon:SetVertexColor(1,0,0);
-
                                 end
 
                             else
@@ -1224,7 +1217,12 @@ end]]
 
                             end
 
+                        else
+
+                            curr_buff_icon:SetVertexColor(1,0,0);
+
                         end
+
 
 --[[                        buffexpired = buffexpired + 1;
 
