@@ -65,6 +65,19 @@
         <Layers>
           <Layer level="OVERLAY">
             <FontString inherits="GameFontNormalSmall" setAllPoints="true" text="Buffwatch" />
+            <Texture name="$parentCombatIcon" file="Interface\CharacterFrame\UI-StateIcon" hidden="true">
+              <Size>
+                <AbsDimension x="24" y="24"/>
+              </Size>
+              <Anchors>
+                <Anchor point="TOPRIGHT" relativeTo="$parent">
+                  <Offset>
+                    <AbsDimension x="0" y="6"/>
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <TexCoords left="0.5" right="1.0" top="0" bottom="0.5"/>
+            </Texture>             
           </Layer>
         </Layers>
         <Scripts>
@@ -113,7 +126,7 @@
           </Anchor>
         </Anchors>
         
-      </Frame>
+      </Frame>     
       
     </Frames>
     

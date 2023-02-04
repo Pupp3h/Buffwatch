@@ -1,6 +1,7 @@
 BW_TTIP_SORTORDER = "Specifies the sort order for the player list in the Buffwatch Window";
 BW_TTIP_SHOWPETS = "Show pets in the player list";
-BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast";
+BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
+BW_TTIP_SHOWONLYMINE = "Only show buffs you have cast";
 BW_TTIP_SHOWALLFORPLAYER = "Always show all buffs for this player";
 BW_TTIP_SHOWDEBUFFS = "Show debuffs";
 BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell";

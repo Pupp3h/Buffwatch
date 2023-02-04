@@ -121,8 +121,8 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
-
-            <CheckButton name="$parent_ShowOnlyCastableBuffs" inherits="OptionsCheckButtonTemplate">
+            
+            <CheckButton name="$parent_ShowOnlyMine" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowPets" relativePoint="BOTTOMLEFT">
                         <Offset>
@@ -132,7 +132,41 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show Only Castable Buffs");
+                        getglobal(self:GetName().."Text"):SetText("Show only buffs you cast");
+                    </OnLoad>
+                    <OnClick>
+                        if (self:GetChecked()) then
+                            BuffwatchConfig.ShowOnlyMine = true;
+                            Buffwatch_EnableCheckbox(Buffwatch_Options_ShowAllForPlayer);
+                        else
+                            BuffwatchConfig.ShowOnlyMine = false;
+                            if BuffwatchConfig.ShowCastableBuffs == false then
+                              Buffwatch_DisableCheckbox(Buffwatch_Options_ShowAllForPlayer);
+                            end
+                        end
+                        Buffwatch_GetAllBuffs();
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_SHOWONLYMINE);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>            
+
+            <CheckButton name="$parent_ShowOnlyCastableBuffs" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyMine" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(self:GetName().."Text"):SetText("Show only castable buffs");
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
@@ -140,7 +174,9 @@
                             Buffwatch_EnableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                         else
                             BuffwatchConfig.ShowCastableBuffs = false;
-                            Buffwatch_DisableCheckbox(Buffwatch_Options_ShowAllForPlayer);
+                            if BuffwatchConfig.ShowOnlyMine == false then
+                              Buffwatch_DisableCheckbox(Buffwatch_Options_ShowAllForPlayer);
+                            end
                         end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
@@ -153,7 +189,7 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
-
+            
             <CheckButton name="$parent_ShowAllForPlayer" inherits="OptionsCheckButtonTemplate">
                 <Size>
                     <AbsDimension x="20" y="20"/>
@@ -193,6 +229,7 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
+            
 <!--   
             <CheckButton name="$parent_ShowDebuffs" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
@@ -324,7 +361,7 @@
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowAllForPlayer" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="0" y="-20" />
+                            <AbsDimension x="-10" y="-20" />
                         </Offset>
                     </Anchor>
                 </Anchors>
