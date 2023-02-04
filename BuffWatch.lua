@@ -6,13 +6,14 @@
 -- **   Add an InCombat icon next to Buffwatch header
 -- **
 
+-- ** Add own Buff tooltips for when not present
 -- ** Check playerframe positioning if SortOrder == "Raid Order" and player gets moved groups.
+-- ** Check players get resorted imediately when changing sort order
 -- ** Check / Fix / Improve Window Resizing code
 -- ** Add seperate frame for debuffs, so it can be shown/hidden/ressized in combat?
 
 -- ** Warning message for buff expiring
 -- ** Debuffs
--- ** Player targetting
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -20,8 +21,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "2.0b3";
-BW_RELEASE_DATE = "10 January 2007";
+BW_VERSION = "2.0b4";
+BW_RELEASE_DATE = "16 January 2007";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -41,7 +42,7 @@ local Player_Order = { };
 local UNIT_IDs = { };
 local InCombat_Events = { };
 
-BuffwatchConfig = { AlignBuffs, Alpha, ExpiredSound, ExpiredWarning,
+BuffwatchConfig = { Alpha, ExpiredSound, ExpiredWarning,
     ShowCastableBuffs, ShowDebuffs, ShowDispellableDebuffs, ShowPets,
     SortOrder, debug };
 
@@ -87,10 +88,6 @@ for i = 1, select("#", ...) do
 end
 ]]
     if event == "VARIABLES_LOADED" then
-
-        if BuffwatchConfig.AlignBuffs == nil then
-            BuffwatchConfig.AlignBuffs = true;
-        end
 
         if BuffwatchConfig.Alpha == nil then
             BuffwatchConfig.Alpha = 0.5;
@@ -350,7 +347,7 @@ function Buffwatch_Buff_Clicked(button, down)
                             getglobal(playerframe.."_Buff"..i):Hide();
                             BuffwatchPlayerBuffs[playername]["Buffs"][i] = nil;
                         else
-                            this:SetPoint("TOPLEFT", playerframe.."_Name", "TOPRIGHT", 5, 4);
+                            this:SetPoint("TOPLEFT", playerframe.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                         end
                     else
                         break;
@@ -408,17 +405,26 @@ function Buffwatch_Buff_Tooltip()
 
     buffbuttonid = UnitHasBuff(unit, buff, rank);
 
-    if buffbuttonid == 0 then
-        debuffbuttonid = UnitHasDebuff(unit, buff, rank);
-    end
+--    if buffbuttonid == 0 then
+--        debuffbuttonid = UnitHasDebuff(unit, buff, rank);
+--    end
 
 
-    if buffbuttonid then
+    if buffbuttonid ~= 0 then
         GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
         GameTooltip:SetUnitBuff(unit, buffbuttonid);
-    elseif debuffbuttonid then
+--    elseif debuffbuttonid then
+--        GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
+--        GameTooltip:SetUnitDebuff(unit, debuffbuttonid);
+    else
         GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT");
-        GameTooltip:SetUnitDebuff(unit, debuffbuttonid);
+        if rank then
+            GameTooltip:SetText(buff.." ("..rank..")", 1, 1, 0);
+        else
+            GameTooltip:SetText(buff, 1, 1, 0);
+        end
+        
+
     end
 
 end
@@ -564,7 +570,7 @@ function Buffwatch_GetPlayerInfo()
                     Player_Info[unitname]["Name"] = unitname;
 
                     local _, classname = UnitClass(UNIT_IDs[i]);
-                    
+
                     if classname then
                         Player_Info[unitname]["Class"] = classname;
                     else
@@ -587,6 +593,7 @@ function Buffwatch_GetPlayerInfo()
                     if maxnamewidth < nametext:GetStringWidth() then
                         maxnamewidth = nametext:GetStringWidth();
                         maxnameid = id;
+                        Buffwatch_SetBuffAlignment();
                     end
 
                     Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
@@ -702,6 +709,8 @@ Buffwatch_Debug("Hiding player frame "..v.ID.." for "..v.Name);
                 end
 
             end
+
+            Buffwatch_SetBuffAlignment();
 
         end
 
@@ -897,7 +906,7 @@ end]]
                     end
 
                     if i == 1 then
-                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPRIGHT", 5, 4);
+                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                     else
                         curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1),
                             "TOPRIGHT");
@@ -1024,6 +1033,30 @@ end]]
 ]]
 end
 
+
+function Buffwatch_SetBuffAlignment()
+
+    for k, v in pairs(Player_Info) do
+
+        if BuffwatchPlayerBuffs[v.Name] then
+
+            local i = next(BuffwatchPlayerBuffs[v.Name]["Buffs"]);
+
+            if i then
+            
+                local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
+
+                curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
+
+            end
+
+        end
+
+    end
+
+end
+
+
 function Buffwatch_Player_SaveBuffs(playerid)
 
 --[[    local playername = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText();
@@ -1058,7 +1091,20 @@ end
 function Buffwatch_Player_LoadBuffs(v)
 
     if BuffwatchSaveBuffs[v.Name] then
-
+    
+        local tmp = BuffwatchSaveBuffs[v.Name]["Buffs"];
+        
+        BuffwatchSaveBuffs[v.Name]["Buffs"] = { };
+        
+        -- remove nil values
+        for k, val in pairs(tmp) do
+        
+            if val then
+                table.insert(BuffwatchSaveBuffs[v.Name]["Buffs"], val);
+            end
+            
+        end
+        
         BuffwatchPlayerBuffs[v.Name]["Buffs"] = BuffwatchSaveBuffs[v.Name]["Buffs"];
 
         for i = 1, 32 do
@@ -1077,7 +1123,7 @@ function Buffwatch_Player_LoadBuffs(v)
                 end
 
                 if i == 1 then
-                    curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPRIGHT", 5, 4);
+                    curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                 else
                     curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1),
                         "TOPRIGHT");
@@ -1460,6 +1506,7 @@ function Buffwatch_Debug(msg, R, G, B)
 end
 
 -- for debugging
+--[[
 function GetUNIT_IDs()
 
     return UNIT_IDs;
@@ -1496,10 +1543,15 @@ function GetBuffwatchPlayerBuffs()
 
 end
 
+function GetBuffwatchSaveBuffs()
+
+    return BuffwatchPlayerBuffs;
+
+end
+
 function GetInCombat_Events()
 
     return InCombat_Events;
 
 end
-
-
+]]

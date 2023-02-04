@@ -3,7 +3,6 @@ BW_TTIP_SHOWPETS = "Show pets in the player list";
 BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast";
 BW_TTIP_SHOWDEBUFFS = "Show debuffs";
 BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell";
-BW_TTIP_ALIGNBUFFS = "Align buff icons for all players";
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire";
 BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire";
 BW_TTIP_ALPHA = "Sets the transparency of the Buffwatch window";
@@ -20,7 +19,6 @@ function Buffwatch_Options_Init()
     Buffwatch_Options_ShowOnlyCastableBuffs:SetChecked(BuffwatchConfig.ShowCastableBuffs);
 --    Buffwatch_Options_ShowDebuffs:SetChecked(BuffwatchConfig.ShowDebuffs);
 --    Buffwatch_Options_ShowOnlyDispellDebuffs:SetChecked(BuffwatchConfig.ShowDispellableDebuffs);
---    Buffwatch_Options_AlignBuffs:SetChecked(BuffwatchConfig.AlignBuffs);
 --    Buffwatch_Options_ShowExpiredWarning:SetChecked(BuffwatchConfig.ExpiredWarning);
 --    Buffwatch_Options_PlayExpiredSound:SetChecked(BuffwatchConfig.ExpiredSound);
     Buffwatch_Options_Alpha:SetValue(BuffwatchConfig.Alpha);
