@@ -13,11 +13,9 @@
 
 -- Changes
 --
--- Changed method for detecting replacement buffs
--- Added Dalaran Brilliance to intellect buff group
--- Added Flask (ilvl85), Battle Elixir & Guardian Elixir (ilvl80) buff groups
---
--- (a) Fix for some Elixir buff names
+-- Added Anchor Point config option, for window growth direction
+-- Added Battle Shout, Mana Spring and Paladin Seals to Group Buff lists
+-- Moved many of the config options to be saved per player
 --
 
 -- ****************************************************************************
@@ -26,8 +24,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.15a";
-BW_RELEASE_DATE = "8 June 2009";
+BW_VERSION = "3.16";
+BW_RELEASE_DATE = "8 August 2009";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -37,6 +35,22 @@ BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
     "Name"
+};
+BW_ANCHORPOINT_DROPDOWN_LIST = {
+    "Auto",
+    "Top Left",
+    "Top Right",
+    "Bottom Left",
+    "Bottom Right",
+    "Center"
+};
+BW_ANCHORPOINT_DROPDOWN_MAP = {
+    ["Auto"] = "",
+    ["Top Left"] = "TOPLEFT",
+    ["Top Right"] = "TOPRIGHT",
+    ["Bottom Left"] = "BOTTOMLEFT",
+    ["Bottom Right"] = "BOTTOMRIGHT",
+    ["Center"] = "CENTER"
 };
 
 local grouptype;                -- solo, raid or party
@@ -55,10 +69,13 @@ local InCombat_Events = { };    -- Events that occur in combat lockdown, to sort
 local GroupBuffs = { };         -- Relationship list of buffs that can automatically replace each other
 local dropdowninfo = { };       -- Info for dropdown menu buttons
 
--- Save option variables
-BuffwatchConfig = { Alpha, ExpiredSound, ExpiredWarning, HideOmniCC, Mode, ShowOnlyMine, 
+-- Save global options
+BuffwatchConfig = { Alpha, ExpiredSound, ExpiredWarning, HideOmniCC, Spirals, debug };
+
+-- Save player options
+BuffwatchPlayerConfig = { AnchorPoint, AnchorX, AnchorY, Mode, ShowOnlyMine, 
     ShowCastableBuffs, ShowAllForPlayer, ShowDebuffs, ShowDispellableDebuffs,
-    ShowPets, SortOrder, Spirals, WindowLocked, debug };
+    ShowPets, SortOrder, WindowLocked };
 
 BuffwatchPlayerBuffs = { };     -- List of buffs that are shown for each player
 BuffwatchSaveBuffs = { };       -- List of locked buffs that we save between sessions for each player
@@ -85,29 +102,9 @@ function Buffwatch_OnLoad(self)
     SlashCmdList["BUFFWATCH"] = Buffwatch_SlashHandler;
     SLASH_BUFFWATCH1 = "/buffwatch";
     SLASH_BUFFWATCH2 = "/bfw";
-
-    GroupBuffs.Group = { };
-    GroupBuffs.Group[1] = { "Gift of the Wild", "Mark of the Wild" };
-    GroupBuffs.Group[2] = { "Prayer of Fortitude", "Power Word: Fortitude" };
-    GroupBuffs.Group[3] = { "Prayer of Spirit", "Divine Spirit" };
-    GroupBuffs.Group[4] = { "Prayer of Shadow Protection", "Shadow Protection" };
-    GroupBuffs.Group[5] = { "Dalaran Brilliance", "Arcane Brilliance", "Arcane Intellect" };
-    GroupBuffs.Group[6] = { "Greater Blessing of Might", "Blessing of Might" };
-    GroupBuffs.Group[7] = { "Greater Blessing of Wisdom", "Blessing of Wisdom" };
-    GroupBuffs.Group[8] = { "Greater Blessing of Kings", "Blessing of Kings" };
-    GroupBuffs.Group[9] = { "Greater Blessing of Sanctuary", "Blessing of Sanctuary" };
-    -- Flasks
-    GroupBuffs.Group[10] = { "Flask of Endless Rage", "Flask of Pure Mojo", "Flask of Stoneblood", 
-      "Flask of the Frost Wyrm" };
-    -- Battle Elixirs
-    GroupBuffs.Group[11] = { "Accuracy", "Armor Piercing", "Deadly Strikes", "Expertise", 
-      "Lightning Speed", "Mighty Agility", "Mighty Strength", "Guru's Elixir", 
-      "Spellpower Elixir", "Wrath Elixir" };
-    -- Guardian Elixirs
-    GroupBuffs.Group[12] = { "Mighty Defense", "Elixir of Mighty Fortitude", 
-      "Mighty Mana Regeneration", "Mighty Thoughts", "Protection", "Elixir of Spirit" };
       
     GroupBuffs.Buff = { };
+    -- Class Group Buffs
     GroupBuffs.Buff["Gift of the Wild"] = 1;
     GroupBuffs.Buff["Mark of the Wild"] = 1;
     GroupBuffs.Buff["Prayer of Fortitude"] = 2;
@@ -121,16 +118,20 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Arcane Intellect"] = 5;
     GroupBuffs.Buff["Greater Blessing of Might"] = 6;
     GroupBuffs.Buff["Blessing of Might"] = 6;
+    GroupBuffs.Buff["Battle Shout"] = 6;
     GroupBuffs.Buff["Greater Blessing of Wisdom"] = 7;
     GroupBuffs.Buff["Blessing of Wisdom"] = 7;
+    GroupBuffs.Buff["Mana Spring"] = 7;
     GroupBuffs.Buff["Greater Blessing of Kings"] = 8;
     GroupBuffs.Buff["Blessing of Kings"] = 8;
     GroupBuffs.Buff["Greater Blessing of Sanctuary"] = 9;
     GroupBuffs.Buff["Blessing of Sanctuary"] = 9;
+    -- Flasks
     GroupBuffs.Buff["Flask of Endless Rage"] = 10;
     GroupBuffs.Buff["Flask of Pure Mojo"] = 10;
     GroupBuffs.Buff["Flask of Stoneblood"] = 10;
     GroupBuffs.Buff["Flask of the Frost Wyrm"] = 10;
+    -- Battle Elixirs
     GroupBuffs.Buff["Accuracy"] = 11;
     GroupBuffs.Buff["Armor Piercing"] = 11;
     GroupBuffs.Buff["Deadly Strikes"] = 11;
@@ -141,12 +142,33 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Guru's Elixir"] = 11;
     GroupBuffs.Buff["Spellpower Elixir"] = 11;
     GroupBuffs.Buff["Wrath Elixir"] = 11;
+    -- Guardian Elixirs
     GroupBuffs.Buff["Mighty Defense"] = 12;
     GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 12;
     GroupBuffs.Buff["Mighty Mana Regeneration"] = 12;
     GroupBuffs.Buff["Mighty Thoughts"] = 12;
     GroupBuffs.Buff["Protection"] = 12;
     GroupBuffs.Buff["Elixir of Spirit"] = 12;
+    -- Seals
+    GroupBuffs.Buff["Seal of Vengeance"] = 13;
+    GroupBuffs.Buff["Seal of Corruption"] = 13;
+    GroupBuffs.Buff["Seal of Light"] = 13;
+    GroupBuffs.Buff["Seal of Wisdom"] = 13;
+    GroupBuffs.Buff["Seal of Righteousness"] = 13;
+    GroupBuffs.Buff["Seal of Justice"] = 13;
+   
+    
+    GroupBuffs.Group = { };
+    
+    for k, v in pairs(GroupBuffs.Buff) do
+    
+      if GroupBuffs.Group[v] == nil then
+        GroupBuffs.Group[v] = { };
+      end
+      
+      table.insert(GroupBuffs.Group[v], k);
+    
+    end
     
 end
 
@@ -167,6 +189,18 @@ end
 
         BuffwatchFrame_Background:SetAlpha(BuffwatchConfig.Alpha);
 
+        if BuffwatchPlayerConfig.AnchorPoint == nil then
+            BuffwatchPlayerConfig.AnchorPoint = "Auto";
+        end
+
+        if BuffwatchPlayerConfig.AnchorX == nil then
+            BuffwatchPlayerConfig.AnchorX = 200;
+        end
+
+        if BuffwatchPlayerConfig.AnchorY == nil then
+            BuffwatchPlayerConfig.AnchorY = 200;
+        end  
+        
         if BuffwatchConfig.ExpiredSound == nil then
             BuffwatchConfig.ExpiredSound = false;
         end
@@ -179,50 +213,54 @@ end
             BuffwatchConfig.HideOmniCC = true;
         end   
         
-        if BuffwatchConfig.Mode == nil then
-            BuffwatchConfig.Mode = BW_MODE_DROPDOWN_LIST[3];
+        if BuffwatchPlayerConfig.Mode == nil then
+            BuffwatchPlayerConfig.Mode = BW_MODE_DROPDOWN_LIST[3];
         end
 
-        if BuffwatchConfig.ShowOnlyMine == nil then
-            BuffwatchConfig.ShowOnlyMine = false;
+        if BuffwatchPlayerConfig.ShowOnlyMine == nil then
+            BuffwatchPlayerConfig.ShowOnlyMine = false;
         end
 
-        if BuffwatchConfig.ShowCastableBuffs == nil then
-            BuffwatchConfig.ShowCastableBuffs = false;
+        if BuffwatchPlayerConfig.ShowCastableBuffs == nil then
+            BuffwatchPlayerConfig.ShowCastableBuffs = false;
         end
 
-        if BuffwatchConfig.ShowAllForPlayer == nil then
-            BuffwatchConfig.ShowAllForPlayer = false;
+        if BuffwatchPlayerConfig.ShowAllForPlayer == nil then
+            BuffwatchPlayerConfig.ShowAllForPlayer = false;
         end
 
-        if BuffwatchConfig.ShowDebuffs == nil then
-            BuffwatchConfig.ShowDebuffs = true;
+        if BuffwatchPlayerConfig.ShowDebuffs == nil then
+            BuffwatchPlayerConfig.ShowDebuffs = true;
         end
 
-        if BuffwatchConfig.ShowDispellableDebuffs == nil then
-            BuffwatchConfig.ShowDispellableDebuffs = false;
+        if BuffwatchPlayerConfig.ShowDispellableDebuffs == nil then
+            BuffwatchPlayerConfig.ShowDispellableDebuffs = false;
         end     
 
-        if BuffwatchConfig.ShowPets == nil then
-            BuffwatchConfig.ShowPets = true;
+        if BuffwatchPlayerConfig.ShowPets == nil then
+            BuffwatchPlayerConfig.ShowPets = true;
         end
 
-        if BuffwatchConfig.SortOrder == nil then
-            BuffwatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[1];
+        if BuffwatchPlayerConfig.SortOrder == nil then
+            BuffwatchPlayerConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[1];
         end
 
         if BuffwatchConfig.Spirals == nil then
             BuffwatchConfig.Spirals = true;
         end
 
-        if BuffwatchConfig.WindowLocked == nil then
-            BuffwatchConfig.WindowLocked = false;
+        if BuffwatchPlayerConfig.WindowLocked == nil then
+            BuffwatchPlayerConfig.WindowLocked = false;
         end
 
         if BuffwatchConfig.debug == nil then
             BuffwatchConfig.debug = false;
         end
-
+        
+        Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], BuffwatchPlayerConfig.AnchorX, BuffwatchPlayerConfig.AnchorY);
+    
+--Buffwatch_DebugPosition();
+    
         Buffwatch_Options_Init();
 
     end
@@ -230,7 +268,7 @@ end
     if BuffwatchFrame_PlayerFrame:IsVisible() then
 
         if event == "PLAYER_LOGIN" or event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE"
-            or (event == "UNIT_PET" and BuffwatchConfig.ShowPets == true) then
+            or (event == "UNIT_PET" and BuffwatchPlayerConfig.ShowPets == true) then
 
 
             -- Look for a chatframe called 'BWDebug' on login for sending debug messsages to
@@ -303,7 +341,7 @@ end
 
 
 function Buffwatch_MouseDown(self, button)
-    if button == "LeftButton" and BuffwatchConfig.WindowLocked == false then
+    if button == "LeftButton" and BuffwatchPlayerConfig.WindowLocked == false then
         self:StartMoving();
     end
 end
@@ -311,6 +349,8 @@ end
 function Buffwatch_MouseUp(self, button)
     if button == "LeftButton" then
         self:StopMovingOrSizing();
+        -- Save new X and Y position
+        Buffwatch_GetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint]);
     end
 end
 
@@ -372,9 +412,9 @@ function Buffwatch_DropDown_Initialize()
 
     -- Add items to the dropdown menu
     dropdowninfo.text = "Lock Window";
-    dropdowninfo.checked = BuffwatchConfig.WindowLocked;
+    dropdowninfo.checked = BuffwatchPlayerConfig.WindowLocked;
     dropdowninfo.func = function()
-        BuffwatchConfig.WindowLocked = not BuffwatchConfig.WindowLocked;
+        BuffwatchPlayerConfig.WindowLocked = not BuffwatchPlayerConfig.WindowLocked;
     end
     UIDropDownMenu_AddButton(dropdowninfo);
 
@@ -669,18 +709,18 @@ end
 -- Setup basic list of possible UNIT_IDs
 function Buffwatch_Set_UNIT_IDs(forced)
 
-    if BuffwatchConfig.Mode == BW_MODE_DROPDOWN_LIST[1] then  -- "Solo"
+    if BuffwatchPlayerConfig.Mode == BW_MODE_DROPDOWN_LIST[1] then  -- "Solo"
     
         UNIT_IDs = table.wipe(UNIT_IDs);
         UNIT_IDs[1] = "player";
-        if BuffwatchConfig.ShowPets == true then
+        if BuffwatchPlayerConfig.ShowPets == true then
             UNIT_IDs[2] = "pet";
         end
         grouptype = "solo";
         
     else
 
-        if GetNumRaidMembers() > 0 and BuffwatchConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
+        if GetNumRaidMembers() > 0 and BuffwatchPlayerConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
 
             if grouptype ~= "raid" or forced == true then
 
@@ -691,7 +731,7 @@ function Buffwatch_Set_UNIT_IDs(forced)
                     UNIT_IDs[i] = "raid"..i;
                 end
 
-                if BuffwatchConfig.ShowPets == true then
+                if BuffwatchPlayerConfig.ShowPets == true then
                     for i = 1, 40 do
                         UNIT_IDs[i+40] = "raidpet"..i;
                     end
@@ -712,7 +752,7 @@ function Buffwatch_Set_UNIT_IDs(forced)
             UNIT_IDs[4] = "party3";
             UNIT_IDs[5] = "party4";
 
-            if BuffwatchConfig.ShowPets == true then
+            if BuffwatchPlayerConfig.ShowPets == true then
                 UNIT_IDs[6] = "pet";
                 UNIT_IDs[7] = "partypet1";
                 UNIT_IDs[8] = "partypet2";
@@ -866,7 +906,7 @@ function Buffwatch_GetPlayerInfo()
 --                    if not lastsubgroup or subgroup ~= lastsubgroup then -- ***** Check logic or if needed
                     if subgroup ~= Player_Info[unitname]["SubGroup"] then
                         Player_Info[unitname]["SubGroup"] = subgroup;
-                        if BuffwatchConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[1] then  -- "Raid Order"
+                        if BuffwatchPlayerConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[1] then  -- "Raid Order"
                             positionframe = true;
                         end
                     end
@@ -1068,7 +1108,7 @@ function Buffwatch_GetPlayerSortOrder()
         end
 
         -- Sort the player list in temp array
-        if BuffwatchConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[2] then -- "Class"
+        if BuffwatchPlayerConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[2] then -- "Class"
 
             table.sort(Player_Order,
             function(a,b)
@@ -1087,7 +1127,7 @@ function Buffwatch_GetPlayerSortOrder()
 
             end);
 
-        elseif BuffwatchConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[3] then -- "Name"
+        elseif BuffwatchPlayerConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[3] then -- "Name"
 
             table.sort(Player_Order,
             function(a,b)
@@ -1156,13 +1196,13 @@ function Buffwatch_Player_GetBuffs(v)
             local showbuffs, showallplayer;
             
             -- Setup buff filter
-            if BuffwatchConfig.ShowCastableBuffs == true then
+            if BuffwatchPlayerConfig.ShowCastableBuffs == true then
               showbuffs = "RAID";
             else
               showbuffs = "";
             end
 
-            if UnitIsUnit(v.UNIT_ID, "player") and BuffwatchConfig.ShowAllForPlayer == true then
+            if UnitIsUnit(v.UNIT_ID, "player") and BuffwatchPlayerConfig.ShowAllForPlayer == true then
               showbuffs = "";
               showallplayer = true;
             end
@@ -1176,7 +1216,7 @@ function Buffwatch_Player_GetBuffs(v)
     Buffwatch_Debug(i.." : buff="..buff);
 end]]
 
-                if buff and (not BuffwatchConfig.ShowOnlyMine or (caster == "player") or showallplayer) then
+                if buff and (not BuffwatchPlayerConfig.ShowOnlyMine or (caster == "player") or showallplayer) then
 
                     -- Check if buff button has been created
                     if curr_buff == nil then
@@ -1373,13 +1413,13 @@ end]]
 
         local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i);
 
-        if BuffwatchConfig.ShowDebuffs == false then
+        if BuffwatchPlayerConfig.ShowDebuffs == false then
 
             if curr_buff then curr_buff:Hide(); end
 
         else
 
-            local _, _, icon = UnitDebuff(v.UNIT_ID, i, BuffwatchConfig.ShowDispellableDebuffs);
+            local _, _, icon = UnitDebuff(v.UNIT_ID, i, BuffwatchPlayerConfig.ShowDispellableDebuffs);
 
             if icon then
 
@@ -1516,7 +1556,7 @@ function Buffwatch_Player_LoadBuffs(v)
         getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):SetChecked(true);
 
      else
-
+--[[
         local moo = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock");
         
         if moo then
@@ -1524,7 +1564,7 @@ Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerID from fram
         else
 Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerFrame"..v.ID.."_Lock=nil");
         end
-        
+]]        
         Buffwatch_Check_Clicked(_, _, _, getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"));
 
      end
@@ -1536,10 +1576,11 @@ function Buffwatch_ResizeWindow()
 
     if not InCombatLockdown() then
     
+        local x, y = Buffwatch_GetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint]);
+    
         if not minimized then
 
             local len, width;
-            
 
             if HideUnmonitored == false then
                 BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
@@ -1587,6 +1628,8 @@ function Buffwatch_ResizeWindow()
         
         end
 
+        Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], x, y);
+        
     end
 
 end
@@ -1956,6 +1999,41 @@ function GetLen(arr)
     return len;
 end
 
+
+function Buffwatch_GetPoint(frame, point)
+
+    local x, y;
+
+    if point == "TOPRIGHT" then
+        x = frame:GetRight();
+        y = frame:GetTop();    
+    elseif point == "TOPLEFT" then
+        x = frame:GetLeft();
+        y = frame:GetTop();
+    elseif point == "BOTTOMLEFT" then
+        x = frame:GetLeft();
+        y = frame:GetBottom();    
+    elseif point == "BOTTOMRIGHT" then
+        x = frame:GetRight();
+        y = frame:GetBottom();
+    elseif point == "CENTER" then
+        x = (frame:GetLeft() + frame:GetRight())/2;
+        y = (frame:GetTop() + frame:GetBottom())/2;
+    end
+    
+    BuffwatchPlayerConfig.AnchorX = x;
+    BuffwatchPlayerConfig.AnchorY = y;
+    
+    return x, y;   
+end   
+    
+function Buffwatch_SetPoint(frame, point, x, y)
+    if point ~= "" then
+        frame:ClearAllPoints();   
+        frame:SetPoint(point, UIParent, "BOTTOMLEFT", x, y);   
+    end
+end   
+
 function Buffwatch_Print(msg, R, G, B)
 
     if R == nil then
@@ -1977,6 +2055,17 @@ end
 
 -- for debugging
 --[[
+function Buffwatch_DebugPosition()
+
+    if BuffwatchConfig.debugleft ~= nil then
+        Buffwatch_Debug("Buffwatch Old Position Top : "..BuffwatchConfig.debugtop..", Left : "..BuffwatchConfig.debugleft, 1, 0.2, 0.2);
+    end
+    BuffwatchConfig.debugtop = BuffwatchFrame:GetTop();
+    BuffwatchConfig.debugleft = BuffwatchFrame:GetLeft();
+    Buffwatch_Debug("Buffwatch New Position Top : "..BuffwatchConfig.debugtop..", Left : "..BuffwatchConfig.debugleft, 0.2, 1, 0.2);
+
+end
+
 function GetUNIT_IDs()
 
     return UNIT_IDs;

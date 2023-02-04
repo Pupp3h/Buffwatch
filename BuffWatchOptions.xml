@@ -4,7 +4,7 @@
     <Frame name="Buffwatch_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="300" y="340"/>
+            <AbsDimension x="300" y="360"/>
         </Size>
 
         <Anchors>
@@ -70,6 +70,16 @@
                     </Anchors>
                 </FontString>
 
+                <FontString name="$parent_AnchorPointLabel" inherits="GameFontNormalSmall" text="Anchor Point">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeTo="$parent_SortOrderLabel" relativePoint="BOTTOMLEFT">
+                            <Offset>
+                                <AbsDimension x="0" y="-20" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
             </Layer>
 
         </Layers>
@@ -80,7 +90,7 @@
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parent_ModeLabel" relativePoint="RIGHT">
                         <Offset>
-                            <AbsDimension x="-10" y="-2" />
+                            <AbsDimension x="0" y="-2" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -105,7 +115,7 @@
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_Mode" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="0" y="0" />
+                            <AbsDimension x="0" y="2" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -125,10 +135,35 @@
                     </OnLeave>
                 </Scripts>
             </Frame>
+            
+            <Frame name="$parent_AnchorPoint" inherits="UIDropDownMenuTemplate" enableMouse="true">         
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_SortOrder" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="-10" y="2" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        Buffwatch_Options_AnchorPoint_OnLoad(self);
+                    </OnLoad>
+                    <OnShow>
+                        Buffwatch_Options_AnchorPoint_OnLoad(self);
+                    </OnShow>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_ANCHORPOINT);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>            
 
             <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_SortOrderLabel" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_AnchorPointLabel" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="-5" y="-10"/>
                         </Offset>
@@ -140,9 +175,9 @@
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
-                            BuffwatchConfig.ShowPets = true;
+                            BuffwatchPlayerConfig.ShowPets = true;
                         else
-                            BuffwatchConfig.ShowPets = false;
+                            BuffwatchPlayerConfig.ShowPets = false;
                         end
                         Buffwatch_Set_UNIT_IDs(true);
                         Buffwatch_ResizeWindow();
@@ -171,11 +206,11 @@
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
-                            BuffwatchConfig.ShowOnlyMine = true;
+                            BuffwatchPlayerConfig.ShowOnlyMine = true;
                             Buffwatch_EnableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                         else
-                            BuffwatchConfig.ShowOnlyMine = false;
-                            if BuffwatchConfig.ShowCastableBuffs == false then
+                            BuffwatchPlayerConfig.ShowOnlyMine = false;
+                            if BuffwatchPlayerConfig.ShowCastableBuffs == false then
                               Buffwatch_DisableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                             end
                         end
@@ -205,11 +240,11 @@
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
-                            BuffwatchConfig.ShowCastableBuffs = true;
+                            BuffwatchPlayerConfig.ShowCastableBuffs = true;
                             Buffwatch_EnableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                         else
-                            BuffwatchConfig.ShowCastableBuffs = false;
-                            if BuffwatchConfig.ShowOnlyMine == false then
+                            BuffwatchPlayerConfig.ShowCastableBuffs = false;
+                            if BuffwatchPlayerConfig.ShowOnlyMine == false then
                               Buffwatch_DisableCheckbox(Buffwatch_Options_ShowAllForPlayer);
                             end
                         end
@@ -241,7 +276,7 @@
                         getglobal(self:GetName().."Text"):SetText("Show all buffs for this player");
                     </OnLoad>
                     <OnShow>
-                        if (BuffwatchConfig.ShowCastableBuffs == true) then
+                        if (BuffwatchPlayerConfig.ShowCastableBuffs == true) then
                             Buffwatch_EnableCheckbox(self);
                         else
                             Buffwatch_DisableCheckbox(self);
@@ -249,9 +284,9 @@
                     </OnShow>
                     <OnClick>
                         if (self:GetChecked()) then
-                            BuffwatchConfig.ShowAllForPlayer = true;
+                            BuffwatchPlayerConfig.ShowAllForPlayer = true;
                         else
-                            BuffwatchConfig.ShowAllForPlayer = false;
+                            BuffwatchPlayerConfig.ShowAllForPlayer = false;
                         end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
@@ -359,10 +394,10 @@
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
-                            BuffwatchConfig.ShowDebuffs = true;
+                            BuffwatchPlayerConfig.ShowDebuffs = true;
                             OptionsFrame_EnableCheckBox(Buffwatch_Options_ShowOnlyDispellDebuffs, Buffwatch_Options_ShowOnlyDispellDebuffs:GetChecked());
                         else
-                            BuffwatchConfig.ShowDebuffs = false;
+                            BuffwatchPlayerConfig.ShowDebuffs = false;
                             OptionsFrame_DisableCheckBox(Buffwatch_Options_ShowOnlyDispellDebuffs);
                         end
                         Buffwatch_GetAllBuffs();
@@ -394,9 +429,9 @@
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
-                            BuffwatchConfig.ShowDispellableDebuffs = true;
+                            BuffwatchPlayerConfig.ShowDispellableDebuffs = true;
                         else
-                            BuffwatchConfig.ShowDispellableDebuffs = false;
+                            BuffwatchPlayerConfig.ShowDispellableDebuffs = false;
                         end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
