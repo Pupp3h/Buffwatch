@@ -12,10 +12,11 @@
 -- ** Ability to modify Buff Groups in game, with reset option.
 -- ** Range checking and dead player greying.
 -- ** Load / Save templates
+-- ** Weapon Buffs
 
 -- Changes
 --
--- Fixed bug where playerframes get hidden or main window gets sized incorrectly
+-- Fixed occasional error when a group member or pet left during combat
 --
 
 -- ****************************************************************************
@@ -25,8 +26,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++"
-BW_VERSION = "3.20";
-BW_RELEASE_DATE = "7 September 2010";
+BW_VERSION = "3.21";
+BW_RELEASE_DATE = "19 September 2010";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -898,7 +899,6 @@ function Buffwatch_GetPlayerInfo()
                 -- Add ID to temp array in case they come back
                 -- (useful for dismissed or dead pets, or if a player leaves group briefly)
                 Player_Left[v.Name] = v.ID;
-
                 Player_Info[k] = nil;
                 BuffwatchPlayerBuffs[k] = nil;
 
@@ -1645,8 +1645,10 @@ function Buffwatch_Process_InCombat_Events()
             Buffwatch_GetPlayerInfo();
 
         elseif t[1] == "GetBuffs" then
-
-            Buffwatch_Player_GetBuffs(t[2]);
+        
+            if Player_Info[t[2]] ~= nil then 
+            	Buffwatch_Player_GetBuffs(t[2]);
+            end
 
         end
 
