@@ -13,8 +13,7 @@
 
 -- Changes
 --
--- Added minimise button
--- Disabled HideUnmonitored toggling while in combat
+-- Fixes for 3.1 changes to UnitBuff
 --
 
 -- ****************************************************************************
@@ -23,8 +22,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.11";
-BW_RELEASE_DATE = "08 November 2008";
+BW_VERSION = "3.12";
+BW_RELEASE_DATE = "15 April 2009";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -242,13 +241,13 @@ end
             or (event == "UNIT_PET" and BuffwatchConfig.ShowPets == true) then
 
 
-            -- Look for a chatframe called 'Debug' on login for sending debug messsages to
+            -- Look for a chatframe called 'BWDebug' on login for sending debug messsages to
             if event == "PLAYER_LOGIN" then
                 local windowname;
 
                 for i = 1, 10 do
                     windowname = GetChatWindowInfo(i);
-                    if windowname and windowname == "Debug" then
+                    if windowname and windowname == "BWDebug" then
                         debugchatframe = getglobal("ChatFrame"..i);
                         break;
                     end
@@ -1012,10 +1011,10 @@ function Buffwatch_PositionPlayerFrame(playerid)
         end
 
         playerframe:Show();
-Buffwatch_Debug("Showing player frame "..playerid.." for "..getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText());
+-- Buffwatch_Debug("Showing player frame "..playerid.." for "..getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText());
     else
         playerframe:Hide();
-Buffwatch_Debug("Hiding player frame "..playerid.." for "..getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText());
+-- Buffwatch_Debug("Hiding player frame "..playerid.." for "..getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText());
 --        getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):SetText(nil);
     end
 
@@ -1165,14 +1164,14 @@ function Buffwatch_Player_GetBuffs(v)
 
             for i = 1, 32 do
 
-                local buff, rank, icon, _, _, _, _, mine = UnitBuff(v.UNIT_ID, i, showbuffs);
+                local buff, rank, icon, _, _, _, _, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
                 local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
 
 --[[if buff then
     Buffwatch_Debug(i.." : buff="..buff);
 end]]
 
-                if buff and (not BuffwatchConfig.ShowOnlyMine or mine or showallplayer) then
+                if buff and (not BuffwatchConfig.ShowOnlyMine or (caster == "player") or showallplayer) then
 
                     -- Check if buff button has been created
                     if curr_buff == nil then
@@ -1461,6 +1460,14 @@ function Buffwatch_Player_LoadBuffs(v)
 
      else
 
+        local moo = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock");
+        
+        if moo then
+Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerID from frame="..moo:GetParent():GetID());        
+        else
+Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerFrame"..v.ID.."_Lock=nil");
+        end
+        
         Buffwatch_Check_Clicked(_, _, _, getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"));
 
      end
