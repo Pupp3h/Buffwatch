@@ -33,6 +33,34 @@
 
       </Frame>
 
+      <Button name="$parent_MinimizeButton" hidden="false">
+        <Size>
+          <AbsDimension x="16" y="16"/>
+        </Size>
+        <Anchors>
+          <Anchor point="TOPRIGHT" relativeTo="$parent_Background" relativePoint="TOPRIGHT">
+            <Offset>
+              <AbsDimension x="-1" y="-1"/>
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <NormalTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Up"/>
+        <PushedTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Down"/>
+        <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
+        <Scripts>
+          <OnClick>
+            Buffwatch_MinimizeButton_Clicked();
+          </OnClick>
+          <OnEnter>
+            GameTooltip:SetOwner(this, "ANCHOR_BOTTOM");
+            GameTooltip:SetText("Min/Max");
+          </OnEnter>
+          <OnLeave>
+            GameTooltip:Hide();
+          </OnLeave>
+        </Scripts>
+      </Button>
+
       <CheckButton name="$parent_LockAll" inherits="UICheckButtonTemplate">
         <Size>
           <AbsDimension x="18" y="18"/>
@@ -53,12 +81,12 @@
 
       <Button name="$parent_Header">
         <Size>
-          <AbsDimension x="100" y="12"/>
+          <AbsDimension x="95" y="12"/>
         </Size>
         <Anchors>
           <Anchor point="TOP">
             <Offset>
-              <AbsDimension x="0" y="-4"/>
+              <AbsDimension x="-4" y="-4"/>
             </Offset>
           </Anchor>
         </Anchors>

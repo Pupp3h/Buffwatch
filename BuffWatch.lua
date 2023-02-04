@@ -13,10 +13,9 @@
 
 -- Changes
 --
--- Added option to only show buffs cast by player
--- Added option to hide players with no locked buffs
--- Added combat icon
--- Fixed UIDropDownMenu SetAnchor error
+-- Added minimise button
+-- Disabled HideUnmonitored toggling while in combat
+--
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -24,8 +23,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.10";
-BW_RELEASE_DATE = "11 October 2008";
+BW_VERSION = "3.11";
+BW_RELEASE_DATE = "08 November 2008";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -37,6 +36,7 @@ local maxnamewidth = 0;         -- Width of the longest player name, to set buff
 local maxnameid = 1;            -- The frame ID with the longest player name
 --local buffexpired = 0;          -- Count of expired buffs, used for the Expired Warning
 local HideUnmonitored = false;  -- Whether to show locked frames that have no buffs
+local minimized = false;        -- Is window minimized
 
 local Player_Info = { };        -- Details of each player, see Buffwatch_GetPlayerInfo()
 local Player_Left = { };        -- Retained Player_Info for players that have left group
@@ -283,6 +283,7 @@ end
             -- We have come out of combat, remove combat restrictions and process any pending events
             BuffwatchFrame_HeaderCombatIcon:Hide();
             BuffwatchFrame_LockAll:Enable();
+            BuffwatchFrame_MinimizeButton:Enable();
 
             for k, v in pairs(Player_Info) do
                 local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
@@ -296,6 +297,7 @@ end
             -- We have entered combat, enforce combat restrictions
             BuffwatchFrame_HeaderCombatIcon:Show();
             BuffwatchFrame_LockAll:Disable();
+            BuffwatchFrame_MinimizeButton:Disable();
 
             for k, v in pairs(Player_Info) do
                 local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
@@ -425,6 +427,26 @@ function Buffwatch_DropDown_Initialize()
         BuffwatchFrame_DropDown:Hide();
     end
     UIDropDownMenu_AddButton(dropdowninfo);
+
+end
+
+
+function Buffwatch_MinimizeButton_Clicked()
+
+    minimized = not minimized;
+
+    if minimized == true then
+        BuffwatchFrame_PlayerFrame:Hide();
+        BuffwatchFrame_LockAll:Disable();
+    else
+        BuffwatchFrame_PlayerFrame:Show();
+        BuffwatchFrame_LockAll:Enable();
+        -- Do a refresh
+        Buffwatch_GetPlayerInfo();
+        Buffwatch_GetAllBuffs();        
+    end
+
+    Buffwatch_ResizeWindow();
 
 end
 
@@ -1031,65 +1053,70 @@ end
 
 function Buffwatch_GetPlayerSortOrder()
 
-    --Player_Order = { };
-    Player_Order = table.wipe(Player_Order);
-    
-    for k, v in pairs(Player_Info) do
-        table.insert(Player_Order, v);
-    end
+    -- Only bother to sort player frames if we can see them
+    if not minimized then
 
-    -- Sort the player list in temp array
-    if BuffwatchConfig.SortOrder == "Class" then
+        --Player_Order = { };
+        Player_Order = table.wipe(Player_Order);
 
-        table.sort(Player_Order,
-        function(a,b)
+        for k, v in pairs(Player_Info) do
+            table.insert(Player_Order, v);
+        end
 
-            if a.IsPet == b.IsPet then
+        -- Sort the player list in temp array
+        if BuffwatchConfig.SortOrder == "Class" then
 
-                if a.Class == b.Class then
+            table.sort(Player_Order,
+            function(a,b)
+
+                if a.IsPet == b.IsPet then
+
+                    if a.Class == b.Class then
+                        return a.Name < b.Name;
+                    else
+                        return a.Class < b.Class;
+                    end
+
+                else
+                    return a.IsPet < b.IsPet;
+                end
+
+            end);
+
+        elseif BuffwatchConfig.SortOrder == "Name" then
+
+            table.sort(Player_Order,
+            function(a,b)
+
+                if a.IsPet == b.IsPet then
                     return a.Name < b.Name;
                 else
-                    return a.Class < b.Class;
+                    return a.IsPet < b.IsPet;
                 end
 
-            else
-                return a.IsPet < b.IsPet;
-            end
+            end);
 
-        end);
+        else -- Default
 
-    elseif BuffwatchConfig.SortOrder == "Name" then
+            table.sort(Player_Order,
+            function(a,b)
 
-        table.sort(Player_Order,
-        function(a,b)
+                if a.IsPet == b.IsPet then
 
-            if a.IsPet == b.IsPet then
-                return a.Name < b.Name;
-            else
-                return a.IsPet < b.IsPet;
-            end
+                    if a.SubGroup == b.SubGroup then
+                        return a.UNIT_ID < b.UNIT_ID;
+                    else
+                        return a.SubGroup < b.SubGroup;
+                    end
 
-        end);
-
-    else -- Default
-
-        table.sort(Player_Order,
-        function(a,b)
-
-            if a.IsPet == b.IsPet then
-
-                if a.SubGroup == b.SubGroup then
-                    return a.UNIT_ID < b.UNIT_ID;
                 else
-                    return a.SubGroup < b.SubGroup;
+                    return a.IsPet < b.IsPet;
                 end
 
-            else
-                return a.IsPet < b.IsPet;
-            end
+            end);       
 
-        end);       
-        
+        end
+     
     end
 
 end
@@ -1444,40 +1471,57 @@ end
 function Buffwatch_ResizeWindow()
 
     if not InCombatLockdown() then
+    
+        if not minimized then
 
-        local len;
-        
-        if HideUnmonitored == false then
-          BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
+            local len, width;
+            
+
+            if HideUnmonitored == false then
+                BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
+            else
+
+                local players = 0;
+
+                -- Only count player frames that are not hidden
+                for k, v in pairs(Player_Info) do
+                    if not getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() or (#BuffwatchPlayerBuffs[v.Name]["Buffs"] > 0) then          
+                        players = players + 1;
+                    end
+                end
+
+                BuffwatchFrame:SetHeight(24 + (players * 18));          
+
+            end
+
+            local maxbuffs = 0;
+  -- ***** may need to move this to only check when buffs actually get hidden or shown
+            for k, v in pairs(BuffwatchPlayerBuffs) do
+
+                len = GetLen(v.Buffs);
+
+                if maxbuffs < len then
+                    maxbuffs = len;
+  --                maxbuffid = v.ID;
+                end
+
+            end
+            
+            width = math.max(32 + maxnamewidth + (maxbuffs * 18), 115);
+          --  BuffwatchFrame_Header:ClearAllPoints();
+          --  if width < 125 then
+          --      BuffwatchFrame_Header:SetPoint("LEFT", BuffwatchFrame_LockAll);
+          --  else
+          --      BuffwatchFrame_Header:SetPoint("TOP", BuffwatchFrame, "TOP", 0, -4);
+          --  end 
+            BuffwatchFrame:SetWidth(width);
+    
         else
-
-          local players = 0;
-          
-          -- Only count player frames that are not hidden
-          for k, v in pairs(Player_Info) do
-            if not getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() or (#BuffwatchPlayerBuffs[v.Name]["Buffs"] > 0) then          
-              players = players + 1;
-            end
-          end
-
-          BuffwatchFrame:SetHeight(24 + (players * 18));          
+    
+            BuffwatchFrame:SetHeight(20);
+            BuffwatchFrame:SetWidth(115);
         
         end
-
-        local maxbuffs = 0;
--- ***** may need to move this to only check when buffs actually get hidden or shown
-        for k, v in pairs(BuffwatchPlayerBuffs) do
-
-            len = GetLen(v.Buffs);
-
-            if maxbuffs < len then
-                maxbuffs = len;
---                maxbuffid = v.ID;
-            end
-
-        end
-
-        BuffwatchFrame:SetWidth(math.max(32 + maxnamewidth + (maxbuffs * 18), 100));
 
     end
 
@@ -1637,10 +1681,18 @@ end
 
 function Buffwatch_HideUnmonitored_Clicked(self)
 
-    HideUnmonitored = not HideUnmonitored;
-        
-    Buffwatch_PositionAllPlayerFrames();
-    Buffwatch_ResizeWindow();
+    if InCombatLockdown() then
+
+        Buffwatch_Print("Cannot hide or show buffs while in combat.");
+
+    else
+
+        HideUnmonitored = not HideUnmonitored;
+
+        Buffwatch_PositionAllPlayerFrames();
+        Buffwatch_ResizeWindow();
+    
+    end
     
 end
 
