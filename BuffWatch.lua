@@ -9,14 +9,13 @@
 -- ** Warning message for buff expiring (toggle option for each buff)
 -- ** Option for showing only last x minutes of a buff as a cooldown spiral
 
--- ** Integrate with Blizz Addon options
+-- ** Ability to modify Buff Groups in game, with reset option.
+-- ** Range checking and dead player greying.
+-- ** Load / Save templates
 
 -- Changes
 --
--- Integration with Blizzard Addon options window
--- Fixed minor toggle issue with Show all buffs for this player option
--- Added Buff Group for Horn of Winter and Strength of Earth
--- Added Seal of Command to Paladin Seal Buff Group
+-- Fixed bug where playerframes get hidden or main window gets sized incorrectly
 --
 
 -- ****************************************************************************
@@ -26,8 +25,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++"
-BW_VERSION = "3.19";
-BW_RELEASE_DATE = "16 December 2009";
+BW_VERSION = "3.20";
+BW_RELEASE_DATE = "7 September 2010";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -481,7 +480,7 @@ function Buffwatch_Check_Clicked(self, button, down, obj)
         end
 
         -- Hide any frames affected by the HideUnmonitored flag
-        if HideUnmonitored and (#BuffwatchPlayerBuffs[playername]["Buffs"] == 0) then
+        if HideUnmonitored and (next(BuffwatchPlayerBuffs[playername]["Buffs"], nil) == nil) then
             Buffwatch_PositionPlayerFrame(playerid);
             Buffwatch_ResizeWindow();
         end
@@ -985,7 +984,7 @@ function Buffwatch_PositionPlayerFrame(playerid)
     k, playerdata = Buffwatch_GetPlayerFramePosition(playerid);
 
     -- Insert frame into new order if it should be visible (ie. hide it if it is locked with no buffs and HideUnmonitored is set)
-    if k and (not HideUnmonitored or (#BuffwatchPlayerBuffs[playerdata.Name]["Buffs"] > 0) or not getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_Lock"):GetChecked()) then
+    if k and (not HideUnmonitored or (next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) or not getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_Lock"):GetChecked()) then
 
         -- Insert back into current order in new position
         table.insert(Current_Order, k,  playerdata);
@@ -1037,7 +1036,7 @@ function Buffwatch_GetPlayerFramePosition(playerid)
         if HideUnmonitored then
 
             -- Adjust final player count, if any frames are hidden
-            if getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() and (#BuffwatchPlayerBuffs[v.Name]["Buffs"] == 0) then
+            if getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
                 count = count + 1;
             end
 
@@ -1550,7 +1549,7 @@ function Buffwatch_ResizeWindow()
 
                 -- Only count player frames that are not hidden
                 for k, v in pairs(Player_Info) do
-                    if not getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() or (#BuffwatchPlayerBuffs[v.Name]["Buffs"] > 0) then
+                    if not getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() or (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) ~= nil) then
                         players = players + 1;
                     end
                 end

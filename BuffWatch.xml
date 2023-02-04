@@ -51,7 +51,7 @@
             Buffwatch_MinimizeButton_Clicked();
           </OnClick>
           <OnEnter>
-            GameTooltip:SetOwner(this, "ANCHOR_BOTTOM");
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
             GameTooltip:SetText("Min/Max");
           </OnEnter>
           <OnLeave>
@@ -202,10 +202,10 @@
         getglobal(self:GetName().."Button"):SetPoint("BOTTOM", 180, 16);
       </OnLoad>
       <OnDragStart>
-        this:StartMoving();
+        self:StartMoving();
       </OnDragStart>
       <OnDragStop>
-        this:StopMovingOrSizing();
+        self:StopMovingOrSizing();
       </OnDragStop>
      
     </Scripts>
