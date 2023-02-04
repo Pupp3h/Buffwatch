@@ -36,14 +36,14 @@ function Buffwatch_Options_Init()
     BuffwatchTempConfig = CopyTable(BuffwatchConfig);
     BuffwatchTempPlayerConfig = CopyTable(BuffwatchPlayerConfig);
 
-    UIDropDownMenu_SetText(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
     UIDropDownMenu_SetSelectedValue(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
+    UIDropDownMenu_SetText(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
 
-    UIDropDownMenu_SetText(Buffwatch_Options_SortOrder, BuffwatchPlayerConfig.SortOrder);
     UIDropDownMenu_SetSelectedValue(Buffwatch_Options_SortOrder, BuffwatchPlayerConfig.SortOrder);
+    UIDropDownMenu_SetText(Buffwatch_Options_SortOrder, BuffwatchPlayerConfig.SortOrder);
 
-    UIDropDownMenu_SetText(Buffwatch_Options_AnchorPoint, BuffwatchPlayerConfig.AnchorPoint);
     UIDropDownMenu_SetSelectedValue(Buffwatch_Options_AnchorPoint, BuffwatchPlayerConfig.AnchorPoint);
+    UIDropDownMenu_SetText(Buffwatch_Options_AnchorPoint, BuffwatchPlayerConfig.AnchorPoint);
 
     Buffwatch_Options_ShowPets:SetChecked(BuffwatchPlayerConfig.ShowPets);
     Buffwatch_Options_ShowPets_OnClick(Buffwatch_Options_ShowPets);
@@ -68,6 +68,8 @@ function Buffwatch_Options_Init()
     Buffwatch_Options_HideOmniCC:SetChecked(BuffwatchConfig.HideOmniCC);
     if (not OmniCC) then
         Buffwatch_Options_HideOmniCC:Hide();
+    else
+    	Buffwatch_Options_HideOmniCC:Show();
     end
     Buffwatch_Options_HideOmniCC_OnClick(Buffwatch_Options_HideOmniCC, true);
 
@@ -233,7 +235,8 @@ function Buffwatch_Options_HideOmniCC_OnClick(self, suppressRefresh)
         BuffwatchConfig.HideOmniCC = false;
     end
     if (OmniCC) then
-      OmniCC:HookCooldown();
+--      OmniCC:HookCooldown();
+        OmniCC.Timer:ForAllShown('UpdateShown');
     end
 
     if (suppressRefresh ~= true) then
@@ -261,10 +264,10 @@ end
 
 function Buffwatch_EnableCheckbox(checkbox)
     checkbox:Enable();
-    getglobal(checkbox:GetName().."Text"):SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
+    _G[checkbox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
 end
 
 function Buffwatch_DisableCheckbox(checkbox)
     checkbox:Disable();
-    getglobal(checkbox:GetName().."Text"):SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+    _G[checkbox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
 end

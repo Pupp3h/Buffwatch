@@ -16,6 +16,8 @@
 
 -- Changes
 --
+-- Updates for Cataclysm Interface changes
+-- Updated buff groupings for Cataclysm
 -- Fixed occasional error when a group member or pet left during combat
 --
 
@@ -26,8 +28,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++"
-BW_VERSION = "3.21";
-BW_RELEASE_DATE = "19 September 2010";
+BW_VERSION = "4.00";
+BW_RELEASE_DATE = "12 October 2010";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -130,62 +132,75 @@ function Buffwatch_OnLoad(self)
     SLASH_BUFFWATCH2 = "/bfw";
 
     GroupBuffs.Buff = { };
+
     -- Class Group Buffs
-    GroupBuffs.Buff["Gift of the Wild"] = 1;
+    GroupBuffs.Buff["Blessing of Kings"] = 1;
     GroupBuffs.Buff["Mark of the Wild"] = 1;
-    GroupBuffs.Buff["Prayer of Fortitude"] = 2;
-    GroupBuffs.Buff["Power Word: Fortitude"] = 2;
-    GroupBuffs.Buff["Prayer of Spirit"] = 3;
-    GroupBuffs.Buff["Divine Spirit"] = 3;
-    GroupBuffs.Buff["Prayer of Shadow Protection"] = 4;
-    GroupBuffs.Buff["Shadow Protection"] = 4;
-    GroupBuffs.Buff["Dalaran Brilliance"] = 5;
-    GroupBuffs.Buff["Arcane Brilliance"] = 5;
-    GroupBuffs.Buff["Arcane Intellect"] = 5;
-    GroupBuffs.Buff["Greater Blessing of Might"] = 6;
-    GroupBuffs.Buff["Blessing of Might"] = 6;
-    GroupBuffs.Buff["Battle Shout"] = 6;
-    GroupBuffs.Buff["Greater Blessing of Wisdom"] = 7;
-    GroupBuffs.Buff["Blessing of Wisdom"] = 7;
-    GroupBuffs.Buff["Mana Spring"] = 7;
-    GroupBuffs.Buff["Greater Blessing of Kings"] = 8;
-    GroupBuffs.Buff["Blessing of Kings"] = 8;
-    GroupBuffs.Buff["Greater Blessing of Sanctuary"] = 9;
-    GroupBuffs.Buff["Blessing of Sanctuary"] = 9;
-    GroupBuffs.Buff["Horn of Winter"] = 14;
-    GroupBuffs.Buff["Strength of Earth"] = 14;
+
+    GroupBuffs.Buff["Horn of Winter"] = 2;
+    GroupBuffs.Buff["Strength of Earth"] = 2;
+    GroupBuffs.Buff["Battle Shout"] = 2;
+
+    GroupBuffs.Buff["Bloodlust"] = 3;
+    GroupBuffs.Buff["Heroism"] = 3;
+    GroupBuffs.Buff["Time Warp"] = 3;
+    GroupBuffs.Buff["Ancient Hysteria"] = 3;
+
+    GroupBuffs.Buff["Dalaran Brilliance"] = 4;
+    GroupBuffs.Buff["Arcane Brilliance"] = 4;
+
+    GroupBuffs.Buff["Power Word: Fortitude"] = 5;
+    GroupBuffs.Buff["Commanding Shout"] = 5;
+
     -- Flasks
     GroupBuffs.Buff["Flask of Endless Rage"] = 10;
     GroupBuffs.Buff["Flask of Pure Mojo"] = 10;
     GroupBuffs.Buff["Flask of Stoneblood"] = 10;
     GroupBuffs.Buff["Flask of the Frost Wyrm"] = 10;
-    -- Battle Elixirs
+    GroupBuffs.Buff["Flask of Enhancement"] = 10;
+    GroupBuffs.Buff["Flask of Flowing Water"] = 10;
+    GroupBuffs.Buff["Flask of Steelskin"] = 10;
+    GroupBuffs.Buff["Flask of Titanic Strength"] = 10;
+    GroupBuffs.Buff["Flask of the Draconic Mind"] = 10;
+    GroupBuffs.Buff["Flask of the Winds"] = 10;
+
+    -- Lvl80 Battle Elixirs
     GroupBuffs.Buff["Accuracy"] = 11;
     GroupBuffs.Buff["Armor Piercing"] = 11;
     GroupBuffs.Buff["Deadly Strikes"] = 11;
     GroupBuffs.Buff["Expertise"] = 11;
     GroupBuffs.Buff["Lightning Speed"] = 11;
     GroupBuffs.Buff["Mighty Agility"] = 11;
+    GroupBuffs.Buff["Mighty Mana Regeneration"] = 11;
     GroupBuffs.Buff["Mighty Strength"] = 11;
+    GroupBuffs.Buff["Elixir of Spirit"] = 11;
     GroupBuffs.Buff["Guru's Elixir"] = 11;
     GroupBuffs.Buff["Spellpower Elixir"] = 11;
     GroupBuffs.Buff["Wrath Elixir"] = 11;
-    -- Guardian Elixirs
+
+    -- Lvl85 Battle Elixirs
+    GroupBuffs.Buff["Impossible Accuracy"] = 11;
+    GroupBuffs.Buff["Mighty Speed"] = 11;
+    GroupBuffs.Buff["Elixir of the Cobra"] = 11;
+    GroupBuffs.Buff["Elixir of the Master"] = 11;
+    GroupBuffs.Buff["Ghost Elixir"] = 11;
+
+    -- Lvl80 Guardian Elixirs
     GroupBuffs.Buff["Mighty Defense"] = 12;
     GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 12;
-    GroupBuffs.Buff["Mighty Mana Regeneration"] = 12;
     GroupBuffs.Buff["Mighty Thoughts"] = 12;
     GroupBuffs.Buff["Protection"] = 12;
-    GroupBuffs.Buff["Elixir of Spirit"] = 12;
-    -- Seals
-    GroupBuffs.Buff["Seal of Vengeance"] = 13;
-    GroupBuffs.Buff["Seal of Corruption"] = 13;
-    GroupBuffs.Buff["Seal of Light"] = 13;
-    GroupBuffs.Buff["Seal of Wisdom"] = 13;
-    GroupBuffs.Buff["Seal of Righteousness"] = 13;
-    GroupBuffs.Buff["Seal of Justice"] = 13;
-    GroupBuffs.Buff["Seal of Command"] = 13;
 
+    -- Lvl85 Guardian Elixirs
+    GroupBuffs.Buff["Elixir of Deep Earth"] = 12;
+    GroupBuffs.Buff["Elixir of the Naga"] = 12;
+    GroupBuffs.Buff["Prismatic Elixir"] = 12;
+
+    -- Seals
+    GroupBuffs.Buff["Seal of Truth"] = 13;
+    GroupBuffs.Buff["Seal of Justice"] = 13;
+    GroupBuffs.Buff["Seal of Insight"] = 13;
+    GroupBuffs.Buff["Seal of Righteousness"] = 13;
 
     GroupBuffs.Group = { };
 
@@ -202,7 +217,7 @@ function Buffwatch_OnLoad(self)
 end
 
 
-function Buffwatch_OnEvent(event, ...)
+function Buffwatch_OnEvent(self, event, ...)
 --[[
 Buffwatch_Debug("Event vars for "..event..":");
 for i = 1, select("#", ...) do
@@ -210,16 +225,27 @@ for i = 1, select("#", ...) do
 end
 ]]
 
+    -- Set default values, if unset
+    if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
+        Buffwatch_Options_Init();
+    end
+
     if event == "PLAYER_LOGIN" then
         -- Ensure correct repositioning and anchoring of the frame
         Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], BuffwatchPlayerConfig.AnchorX, BuffwatchPlayerConfig.AnchorY);
         framePositioned = true;
 --Buffwatch_DebugPosition();
-    end
 
-    -- Set default values, if unset
-    if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
-        Buffwatch_Options_Init();
+        -- Look for a chatframe called 'BWDebug' on login for sending debug messsages to
+        local windowname;
+
+        for i = 1, 10 do
+            windowname = GetChatWindowInfo(i);
+            if windowname and windowname == "BWDebug" then
+            debugchatframe = _G["ChatFrame"..i];
+            break;
+            end
+        end
     end
 
     if BuffwatchFrame_PlayerFrame:IsVisible() then
@@ -227,27 +253,12 @@ end
         if event == "PLAYER_LOGIN" or event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE"
             or (event == "UNIT_PET" and BuffwatchPlayerConfig.ShowPets == true) then
 
-
-            -- Look for a chatframe called 'BWDebug' on login for sending debug messsages to
-            if event == "PLAYER_LOGIN" then
-                local windowname;
-
-                for i = 1, 10 do
-                    windowname = GetChatWindowInfo(i);
-                    if windowname and windowname == "BWDebug" then
-                        debugchatframe = getglobal("ChatFrame"..i);
-                        break;
-                    end
-                end
-
-            end
-
             Buffwatch_Set_UNIT_IDs();
             Buffwatch_ResizeWindow();
 
             if event == "PLAYER_LOGIN" then
 
-                Buffwatch_Check_Clicked(_, _, _, getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[next(Player_Info)].ID.."_Lock"));
+                Buffwatch_Check_Clicked(_, _, _, _G["BuffwatchFrame_PlayerFrame"..Player_Info[next(Player_Info)].ID.."_Lock"]);
 
             end
 
@@ -272,7 +283,7 @@ end
             BuffwatchFrame_MinimizeButton:Enable();
 
             for k, v in pairs(Player_Info) do
-                local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
+                local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
                 curr_lock:Enable();
             end
 
@@ -286,7 +297,7 @@ end
             BuffwatchFrame_MinimizeButton:Disable();
 
             for k, v in pairs(Player_Info) do
-                local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
+                local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
                 curr_lock:Disable();
             end
 
@@ -317,13 +328,13 @@ function Buffwatch_Set_AllChecks(checked)
     -- Toggle all checkboxes on or off
     for k, v in pairs(Player_Info) do
 
-        local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock")
+        local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
 
         if curr_lock:GetChecked() ~= checked then
             curr_lock:SetChecked(checked);
 
             -- Show or Hide any frames affected by the HideUnmonitored flag
-            if HideUnmonitored and (#BuffwatchPlayerBuffs[v.Name]["Buffs"] == 0) then
+            if HideUnmonitored and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
                 Buffwatch_PositionPlayerFrame(v.ID);
                 Buffwatch_ResizeWindow();
             end
@@ -369,6 +380,7 @@ function Buffwatch_HeaderDropDown_Initialize()
 
     -- Add items to the dropdown menu
     dropdowninfo.text = "Lock Window";
+    dropdowninfo.notCheckable = false;
     dropdowninfo.checked = BuffwatchPlayerConfig.WindowLocked;
     dropdowninfo.func = function()
         BuffwatchPlayerConfig.WindowLocked = not BuffwatchPlayerConfig.WindowLocked;
@@ -377,6 +389,7 @@ function Buffwatch_HeaderDropDown_Initialize()
 
     dropdowninfo.text = "Refresh";
     dropdowninfo.checked = nil;
+    dropdowninfo.notCheckable = true;
     dropdowninfo.func = function()
         Buffwatch_GetPlayerInfo();
         Buffwatch_GetAllBuffs();
@@ -455,7 +468,7 @@ function Buffwatch_Check_Clicked(self, button, down, obj)
         playerid = self:GetParent():GetID();
     end
 
-    local playername = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText();
+    local playername = _G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:GetText();
 
     if checked then
 
@@ -466,7 +479,7 @@ function Buffwatch_Check_Clicked(self, button, down, obj)
         -- Check to see if they are all now checked
         for k, v in pairs(Player_Info) do
 
-            local curr_lock = getglobal("BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock");
+            local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"];
 
             if not curr_lock:GetChecked() then
                 checked = nil;
@@ -501,7 +514,7 @@ function Buffwatch_Buff_Clicked(self, button, down)
     local playerid = self:GetParent():GetID();
     local playerframe = "BuffwatchFrame_PlayerFrame"..playerid;
 
-    if getglobal(playerframe.."_Lock"):GetChecked() and IsAltKeyDown() then
+    if _G[playerframe.."_Lock"]:GetChecked() and IsAltKeyDown() then
 
         if InCombatLockdown() then
 
@@ -510,15 +523,15 @@ function Buffwatch_Buff_Clicked(self, button, down)
         else
 
             local buffid = self:GetID();
-            local playername = getglobal(playerframe.."_NameText"):GetText();
+            local playername = _G[playerframe.."_NameText"]:GetText();
 
             if button == "LeftButton" then
 
                 -- Hide all but the clicked buff and adjust positions
                 for i = 1, 32 do
-                    if getglobal(playerframe.."_Buff"..i) then
+                    if _G[playerframe.."_Buff"..i] then
                         if i ~= buffid then
-                            getglobal(playerframe.."_Buff"..i):Hide();
+                            _G[playerframe.."_Buff"..i]:Hide();
                             BuffwatchPlayerBuffs[playername]["Buffs"][i] = nil;
                         else
                             self:SetPoint("TOPLEFT", playerframe.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
@@ -543,12 +556,12 @@ function Buffwatch_Buff_Clicked(self, button, down)
 
                 -- Re-anchor any following buff
                 if nextbuffid then
-                    getglobal(playerframe.."_Buff"..nextbuffid):ClearAllPoints();
-                    getglobal(playerframe.."_Buff"..nextbuffid):SetPoint(self:GetPoint());
+                    _G[playerframe.."_Buff"..nextbuffid]:ClearAllPoints();
+                    _G[playerframe.."_Buff"..nextbuffid]:SetPoint(self:GetPoint());
                 end
 
                 if HideUnmonitored then
-                    if getglobal(playerframe.."_Lock"):GetChecked() and (#BuffwatchPlayerBuffs[playername]["Buffs"] == 0) then
+                    if _G[playerframe.."_Lock"]:GetChecked() and next(BuffwatchPlayerBuffs[playername]["Buffs"], nil) == nil then
                         Buffwatch_PositionPlayerFrame(playerid);
                     end
                 end
@@ -564,8 +577,8 @@ function Buffwatch_Buff_Clicked(self, button, down)
 --[[
 if BuffwatchConfig.debug == true then
 local buffid = self:GetID();
-local playername = getglobal(playerframe.."_NameText"):GetText();
-local curr_buff = getglobal(playerframe.."_Buff"..buffid);
+local playername = _G[playerframe.."_NameText"]:GetText();
+local curr_buff = _G[playerframe.."_Buff"..buffid];
 
 Buffwatch_Debug("Casting spell :");
 Buffwatch_Debug("Array : Player="..playername..", Buff="..BuffwatchPlayerBuffs[playername]["Buffs"][buffid]["Buff"]);
@@ -577,7 +590,7 @@ end
 
 function Buffwatch_Buff_Tooltip(self)
 
-    local playername = getglobal("BuffwatchFrame_PlayerFrame"..self:GetParent():GetID().."_NameText"):GetText();
+    local playername = _G["BuffwatchFrame_PlayerFrame"..self:GetParent():GetID().."_NameText"]:GetText();
     local unit = Player_Info[playername]["UNIT_ID"];
     local buff = BuffwatchPlayerBuffs[playername]["Buffs"][self:GetID()]["Buff"];
     local rank = BuffwatchPlayerBuffs[playername]["Buffs"][self:GetID()]["Rank"];
@@ -768,7 +781,7 @@ function Buffwatch_GetPlayerInfo()
                     local id = Buffwatch_GetNextID(unitname);
 
                     -- Check if frame has been created
-                    if not getglobal("BuffwatchFrame_PlayerFrame"..id) then
+                    if not _G["BuffwatchFrame_PlayerFrame"..id] then
 
                         local f = CreateFrame("Frame", "BuffwatchFrame_PlayerFrame"..id,
                             BuffwatchFrame_PlayerFrame, "Buffwatch_Player_Template");
@@ -795,8 +808,8 @@ function Buffwatch_GetPlayerInfo()
                         Player_Info[unitname]["IsPet"] = 0;
                     end
 
-                    local namebutton = getglobal("BuffwatchFrame_PlayerFrame"..id.."_Name");
-                    local nametext = getglobal("BuffwatchFrame_PlayerFrame"..id.."_NameText");
+                    local namebutton = _G["BuffwatchFrame_PlayerFrame"..id.."_Name"];
+                    local nametext = _G["BuffwatchFrame_PlayerFrame"..id.."_NameText"];
 
                     nametext:SetText(unitname);
                     namebutton:SetWidth(nametext:GetStringWidth());
@@ -835,7 +848,7 @@ function Buffwatch_GetPlayerInfo()
 
                     -- UNIT_ID has changed, so update secure button attributes
 
-                    local namebutton = getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Name");
+                    local namebutton = _G["BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Name"];
 
                     Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
 --                    namebutton:SetAttribute("type1", "target");
@@ -843,7 +856,7 @@ function Buffwatch_GetPlayerInfo()
                     namebutton:SetAttribute("unit", UNIT_IDs[i]);
 
                     for j = 1, 32 do
-                        local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Buff"..j);
+                        local curr_buff = _G["BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Buff"..j];
 
                         if curr_buff then
                             if curr_buff:IsShown() then
@@ -915,7 +928,7 @@ function Buffwatch_GetPlayerInfo()
 
             for k, v in pairs(Player_Info) do
 
-                local nametext = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_NameText");
+                local nametext = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_NameText"];
 
                 if maxnamewidth < nametext:GetStringWidth() then
                     maxnamewidth = nametext:GetStringWidth();
@@ -946,7 +959,7 @@ end
 
 function Buffwatch_PositionPlayerFrame(playerid)
 
-    local playerframe = getglobal("BuffwatchFrame_PlayerFrame"..playerid);
+    local playerframe = _G["BuffwatchFrame_PlayerFrame"..playerid];
     local arraypos;
     local playerdata;
 
@@ -963,7 +976,7 @@ function Buffwatch_PositionPlayerFrame(playerid)
     -- See if there is a frame attached to this one
     if arraypos and Current_Order[arraypos+1] then
 
-        local nextplayer = getglobal("BuffwatchFrame_PlayerFrame"..Current_Order[arraypos+1].ID);
+        local nextplayer = _G["BuffwatchFrame_PlayerFrame"..Current_Order[arraypos+1].ID];
 
         -- Remove next frame from order and reattach it to where our player frame was attached
         if nextplayer then
@@ -984,7 +997,7 @@ function Buffwatch_PositionPlayerFrame(playerid)
     k, playerdata = Buffwatch_GetPlayerFramePosition(playerid);
 
     -- Insert frame into new order if it should be visible (ie. hide it if it is locked with no buffs and HideUnmonitored is set)
-    if k and (not HideUnmonitored or (next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) or not getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_Lock"):GetChecked()) then
+    if k and (not HideUnmonitored or (next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) or not _G["BuffwatchFrame_PlayerFrame"..playerid.."_Lock"]:GetChecked()) then
 
         -- Insert back into current order in new position
         table.insert(Current_Order, k,  playerdata);
@@ -1005,7 +1018,7 @@ function Buffwatch_PositionPlayerFrame(playerid)
         -- Reattach next frame in order to our player frame, if there is one
         if Current_Order[k+1] then
 
-            local nextplayer = getglobal("BuffwatchFrame_PlayerFrame"..Current_Order[k+1].ID);
+            local nextplayer = _G["BuffwatchFrame_PlayerFrame"..Current_Order[k+1].ID];
 
             if nextplayer then
                 nextplayer:ClearAllPoints();
@@ -1015,11 +1028,11 @@ function Buffwatch_PositionPlayerFrame(playerid)
         end
 
         playerframe:Show();
--- Buffwatch_Debug("Showing player frame "..playerid.." for "..getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText());
+-- Buffwatch_Debug("Showing player frame "..playerid.." for ".._G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:GetText());
     else
         playerframe:Hide();
--- Buffwatch_Debug("Hiding player frame "..playerid.." for "..getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText());
---        getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):SetText(nil);
+-- Buffwatch_Debug("Hiding player frame "..playerid.." for ".._G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:GetText());
+--        _G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:SetText(nil);
     end
 
 end
@@ -1036,7 +1049,7 @@ function Buffwatch_GetPlayerFramePosition(playerid)
         if HideUnmonitored then
 
             -- Adjust final player count, if any frames are hidden
-            if getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
+            if _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked() and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
                 count = count + 1;
             end
 
@@ -1138,7 +1151,7 @@ end
 
 function Buffwatch_Player_GetBuffs(v)
 
-    local curr_lock = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock");
+    local curr_lock = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"];
 
     if not curr_lock:GetChecked() then
 
@@ -1156,20 +1169,20 @@ function Buffwatch_Player_GetBuffs(v)
 
             -- Setup buff filter
             if BuffwatchPlayerConfig.ShowCastableBuffs == true then
-              showbuffs = "RAID";
+                showbuffs = "RAID";
             else
-              showbuffs = "";
+                showbuffs = "";
             end
 
             if UnitIsUnit(v.UNIT_ID, "player") and BuffwatchPlayerConfig.ShowAllForPlayer == true then
-              showbuffs = "";
-              showallplayer = true;
+                showbuffs = "";
+                showallplayer = true;
             end
 
             for i = 1, 32 do
 
                 local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
-                local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
+                local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
 --[[if buff then
     Buffwatch_Debug(i.." : buff="..buff);
@@ -1181,7 +1194,7 @@ end]]
                     if curr_buff == nil then
 
                         curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i,
-                            getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
+                            _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
                         curr_buff:SetID(i);
 
                         local cooldown = CreateFrame("Cooldown", nil, curr_buff, "CooldownFrameTemplate")
@@ -1199,7 +1212,7 @@ end]]
                     end
 
 
-                    local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+                    local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
                     curr_buff_icon:SetVertexColor(1,1,1);
                     curr_buff:Show();
@@ -1226,7 +1239,7 @@ end]]
 
                     if curr_buff then
 
-                        local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+                        local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
                         curr_buff:Hide();
                         curr_buff_icon:SetTexture(nil);
@@ -1244,8 +1257,8 @@ end]]
         -- Refresh currently locked buffs
         for i = 1, 32 do
 
-            local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
-            local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+            local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
+            local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
             if curr_buff and curr_buff:IsShown() then
 
@@ -1370,7 +1383,7 @@ end]]
 --[[
     for i = 1, 8 do
 
-        local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i);
+        local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i];
 
         if BuffwatchPlayerConfig.ShowDebuffs == false then
 
@@ -1386,11 +1399,11 @@ end]]
                 if not curr_buff then
 
                     curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i,
-                        getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
+                        _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
 
                 end
 
-                local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i.."Icon");
+                local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i.."Icon"];
 
                 curr_buff:Show();
                 curr_buff_icon:SetTexture(icon);
@@ -1419,7 +1432,7 @@ function Buffwatch_SetBuffAlignment()
 
             if i then
 
-                local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
+                local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
                 curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
 
@@ -1454,7 +1467,7 @@ function Buffwatch_Player_LoadBuffs(v)
 
         for i = 1, 32 do
 
-            local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
+            local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
             if BuffwatchSaveBuffs[v.Name]["Buffs"][i] then
 
@@ -1462,7 +1475,7 @@ function Buffwatch_Player_LoadBuffs(v)
                 if curr_buff == nil then
 
                     curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i,
-                        getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
+                        _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
                     curr_buff:SetID(i);
 
                     local cooldown = CreateFrame("Cooldown", nil, curr_buff, "CooldownFrameTemplate")
@@ -1479,7 +1492,7 @@ function Buffwatch_Player_LoadBuffs(v)
                         "TOPRIGHT");
                 end
 
-                local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+                local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
                 curr_buff_icon:SetVertexColor(1,1,1);
                 curr_buff:Show();
@@ -1501,7 +1514,7 @@ function Buffwatch_Player_LoadBuffs(v)
 
                 if curr_buff then
 
-                    local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+                    local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
                     curr_buff:Hide();
                     curr_buff_icon:SetTexture(nil);
@@ -1512,11 +1525,11 @@ function Buffwatch_Player_LoadBuffs(v)
 
         end
 
-        getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):SetChecked(true);
+        _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:SetChecked(true);
 
      else
 --[[
-        local moo = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock");
+        local moo = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"];
 
         if moo then
 Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerID from frame="..moo:GetParent():GetID());
@@ -1524,7 +1537,7 @@ Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerID from fram
 Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerFrame"..v.ID.."_Lock=nil");
         end
 ]]
-        Buffwatch_Check_Clicked(_, _, _, getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"));
+        Buffwatch_Check_Clicked(_, _, _, _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]);
 
      end
 
@@ -1549,7 +1562,7 @@ function Buffwatch_ResizeWindow()
 
                 -- Only count player frames that are not hidden
                 for k, v in pairs(Player_Info) do
-                    if not getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):GetChecked() or (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) ~= nil) then
+                    if not _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked() or (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) ~= nil) then
                         players = players + 1;
                     end
                 end
@@ -1645,8 +1658,8 @@ function Buffwatch_Process_InCombat_Events()
             Buffwatch_GetPlayerInfo();
 
         elseif t[1] == "GetBuffs" then
-        
-            if Player_Info[t[2]] ~= nil then 
+
+            if Player_Info[t[2]] ~= nil then
             	Buffwatch_Player_GetBuffs(t[2]);
             end
 
@@ -1798,7 +1811,7 @@ function Buffwatch_GetNextID(unitname)
             Player_Left[unitname] = nil;
 
             if found == false then
---                getglobal("BuffwatchFrame_PlayerFrame"..oldID):Show();
+--                _G["BuffwatchFrame_PlayerFrame"..oldID]:Show();
                 return oldID;
             end
 
@@ -1828,8 +1841,8 @@ function Buffwatch_GetNextID(unitname)
 
     end
 
-    if getglobal("BuffwatchFrame_PlayerFrame"..i.."_Lock") then
-        getglobal("BuffwatchFrame_PlayerFrame"..i.."_Lock"):SetChecked(false);
+    if _G["BuffwatchFrame_PlayerFrame"..i.."_Lock"] then
+        _G["BuffwatchFrame_PlayerFrame"..i.."_Lock"]:SetChecked(false);
     end
 
     BuffwatchFrame_LockAll:SetChecked(false);
@@ -1914,7 +1927,7 @@ end
 
 function Buffwatch_Player_ColourName(v)
 
-    local nametext = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_NameText");
+    local nametext = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_NameText"];
 
 --    if BuffwatchConfig.HighlightPvP and UnitIsPVP(v.UNIT_ID) then
 

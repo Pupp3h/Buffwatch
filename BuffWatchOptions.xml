@@ -4,14 +4,17 @@
     <Frame name="Buffwatch_Options">
 
         <Layers>
+        
             <Layer level="ARTWORK">
-				<FontString name="$parent_Title" inherits="GameFontNormalLarge">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="20" y="-15"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
+            
+                <FontString name="$parent_Title" inherits="GameFontNormalLarge">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset x="20" y="-15"/>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                
                 <FontString name="$parent_ModeLabel" inherits="GameFontNormalSmall" text="Group Mode">
                     <Anchors>
                         <Anchor point="TOPLEFT">
@@ -122,10 +125,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show Pets");
+                        _G[self:GetName().."Text"]:SetText("Show Pets");
                     </OnLoad>
                     <OnClick>
-						Buffwatch_Options_ShowPets_OnClick(self);
+                        Buffwatch_Options_ShowPets_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -147,10 +150,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show only buffs you cast");
+                        _G[self:GetName().."Text"]:SetText("Show only buffs you cast");
                     </OnLoad>
                     <OnClick>
-						Buffwatch_Options_ShowOnlyMine_OnClick(self);
+                        Buffwatch_Options_ShowOnlyMine_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -172,10 +175,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show only castable buffs");
+                        _G[self:GetName().."Text"]:SetText("Show only castable buffs");
                     </OnLoad>
                     <OnClick>
-                    	Buffwatch_Options_ShowOnlyCastableBuffs_OnClick(self);
+                        Buffwatch_Options_ShowOnlyCastableBuffs_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -200,7 +203,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show all buffs for this player");
+                        _G[self:GetName().."Text"]:SetText("Show all buffs for this player");
                     </OnLoad>
                     <OnShow>
                         if (BuffwatchPlayerConfig.ShowCastableBuffs == true or BuffwatchPlayerConfig.ShowOnlyMine == true) then
@@ -210,7 +213,7 @@
                         end
                     </OnShow>
                     <OnClick>
-                    	Buffwatch_Options_ShowAllForPlayer_OnClick(self);
+                        Buffwatch_Options_ShowAllForPlayer_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -232,10 +235,10 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show cooldown spirals");
+                        _G[self:GetName().."Text"]:SetText("Show cooldown spirals");
                     </OnLoad>
                     <OnClick>
-                    	Buffwatch_Options_ShowSpirals_OnClick(self);
+                        Buffwatch_Options_ShowSpirals_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -270,7 +273,7 @@
                         end
                     </OnShow>
                     <OnClick>
-                    	Buffwatch_Options_HideOmniCC_OnClick(self);
+                        Buffwatch_Options_HideOmniCC_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -293,7 +296,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Show Expired Warning");
+                        _G[self:GetName().."Text"]:SetText("Show Expired Warning");
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
@@ -322,7 +325,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Play Expired Sound");
+                        _G[self:GetName().."Text"]:SetText("Play Expired Sound");
                     </OnLoad>
                     <OnClick>
                         if (self:GetChecked()) then
@@ -354,15 +357,15 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."High"):SetText("1");
-                        getglobal(self:GetName().."Low"):SetText("0");
+                        _G[self:GetName().."High"]:SetText("1");
+                        _G[self:GetName().."Low"]:SetText("0");
                         self:SetMinMaxValues(0.0,1.0);
                         self:SetValueStep(0.01);
                     </OnLoad>
                     <OnValueChanged>
                         BuffwatchConfig.Alpha = self:GetValue();
                         BuffwatchFrame_Background:SetAlpha(BuffwatchConfig.Alpha);
-                        getglobal(self:GetName().."Text"):SetText("Transparency ("..string.format("%.2f", BuffwatchConfig.Alpha)..")");
+                        _G[self:GetName().."Text"]:SetText("Transparency ("..string.format("%.2f", BuffwatchConfig.Alpha)..")");
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -387,15 +390,15 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."High"):SetText("200%");
-                        getglobal(self:GetName().."Low"):SetText("50%");
+                        _G[self:GetName().."High"]:SetText("200%");
+                        _G[self:GetName().."Low"]:SetText("50%");
                         self:SetMinMaxValues(0.5,2.0);
                         self:SetValueStep(0.01);
                     </OnLoad>
                     <OnValueChanged>
-                    	BuffwatchPlayerConfig.Scale = self:GetValue();
-                    	BuffwatchFrame:SetScale(BuffwatchPlayerConfig.Scale);
-                    	getglobal(self:GetName().."Text"):SetText("Scale ("..string.format("%.0f%%", BuffwatchPlayerConfig.Scale * 100)..")");
+                        BuffwatchPlayerConfig.Scale = self:GetValue();
+                        BuffwatchFrame:SetScale(BuffwatchPlayerConfig.Scale);
+                        _G[self:GetName().."Text"]:SetText("Scale ("..string.format("%.0f%%", BuffwatchPlayerConfig.Scale * 100)..")");
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
