@@ -13,8 +13,9 @@
 
 -- Changes
 --
--- Fixed pet toggling in Solo Group Mode
--- Added option to allow OmniCC timer text
+-- Changed method for detecting replacement buffs
+-- Added Dalaran Brilliance to intellect buff group
+-- Added Flask (ilvl85), Battle Elixir & Guardian Elixir (ilvl80) buff groups
 --
 
 -- ****************************************************************************
@@ -23,8 +24,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.14";
-BW_RELEASE_DATE = "11 May 2009";
+BW_VERSION = "3.15";
+BW_RELEASE_DATE = "8 June 2009";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -83,96 +84,68 @@ function Buffwatch_OnLoad(self)
     SLASH_BUFFWATCH1 = "/buffwatch";
     SLASH_BUFFWATCH2 = "/bfw";
 
-    -- Mark of the Wild
-    GroupBuffs["Mark of the Wild"] = {
-        ["Greater"] = "Gift of the Wild",
-        ["Type"] = "SubGroup",
-    };
-    -- Gift of the Wild
-    GroupBuffs["Gift of the Wild"] = {
-        ["Lesser"] = "Mark of the Wild",
-        ["Type"] = "SubGroup",
-    };
-    -- Power Word: Fortitude
-    GroupBuffs["Power Word: Fortitude"] = {
-        ["Greater"] = "Prayer of Fortitude",
-        ["Type"] = "SubGroup"
-    };
-    -- Prayer of Fortitude
-    GroupBuffs["Prayer of Fortitude"] = {
-        ["Lesser"] = "Power Word: Fortitude",
-        ["Type"] = "SubGroup"
-    };
-    -- Divine Spirit
-    GroupBuffs["Divine Spirit"] = {
-        ["Greater"] = "Prayer of Spirit",
-        ["Type"] = "SubGroup"
-    };
-    -- Prayer of Spirit
-    GroupBuffs["Prayer of Spirit"] = {
-        ["Lesser"] = "Divine Spirit",
-        ["Type"] = "SubGroup"
-    };
-    -- Shadow Protection
-    GroupBuffs["Shadow Protection"] = {
-        ["Greater"] = "Prayer of Shadow Protection",
-        ["Type"] = "SubGroup"
-    };
-    -- Prayer of Shadow Protection
-    GroupBuffs["Prayer of Shadow Protection"] = {
-        ["Lesser"] = "Shadow Protection",
-        ["Type"] = "SubGroup"
-    };
-    -- Arcane Intellect
-    GroupBuffs["Arcane Intellect"] = {
-        ["Greater"] = "Arcane Brilliance",
-        ["Type"] = "SubGroup"
-    };
-    -- Arcane Brilliance
-    GroupBuffs["Arcane Brilliance"] = {
-        ["Lesser"] = "Arcane Intellect",
-        ["Type"] = "SubGroup"
-    };
-    -- Blessing of Might
-    GroupBuffs["Blessing of Might"] = {
-        ["Greater"] = "Greater Blessing of Might",
-        ["Type"] = "Class"
-    };
-    -- Greater Blessing of Might
-    GroupBuffs["Greater Blessing of Might"] = {
-        ["Lesser"] = "Blessing of Might",
-        ["Type"] = "Class"
-    };
-    -- Blessing of Wisdom
-    GroupBuffs["Blessing of Wisdom"] = {
-        ["Greater"] = "Greater Blessing of Wisdom",
-        ["Type"] = "Class"
-    };
-    -- Greater Blessing of Wisdom
-    GroupBuffs["Greater Blessing of Wisdom"] = {
-        ["Lesser"] = "Blessing of Wisdom",
-        ["Type"] = "Class"
-    };
-    -- Blessing of Kings
-    GroupBuffs["Blessing of Kings"] = {
-        ["Greater"] = "Greater Blessing of Kings",
-        ["Type"] = "Class"
-    };
-    -- Greater Blessing of Kings
-    GroupBuffs["Greater Blessing of Kings"] = {
-        ["Lesser"] = "Blessing of Kings",
-        ["Type"] = "Class"
-    };
-    -- Blessing of Sanctuary
-    GroupBuffs["Blessing of Sanctuary"] = {
-        ["Greater"] = "Greater Blessing of Sanctuary",
-        ["Type"] = "Class"
-    };
-    -- Greater Blessing of Sanctuary
-    GroupBuffs["Greater Blessing of Sanctuary"] = {
-        ["Lesser"] = "Blessing of Sanctuary",
-        ["Type"] = "Class"
-    };
+    GroupBuffs.Group = { };
+    GroupBuffs.Group[1] = { "Gift of the Wild", "Mark of the Wild" };
+    GroupBuffs.Group[2] = { "Prayer of Fortitude", "Power Word: Fortitude" };
+    GroupBuffs.Group[3] = { "Prayer of Spirit", "Divine Spirit" };
+    GroupBuffs.Group[4] = { "Prayer of Shadow Protection", "Shadow Protection" };
+    GroupBuffs.Group[5] = { "Dalaran Brilliance", "Arcane Brilliance", "Arcane Intellect" };
+    GroupBuffs.Group[6] = { "Greater Blessing of Might", "Blessing of Might" };
+    GroupBuffs.Group[7] = { "Greater Blessing of Wisdom", "Blessing of Wisdom" };
+    GroupBuffs.Group[8] = { "Greater Blessing of Kings", "Blessing of Kings" };
+    GroupBuffs.Group[9] = { "Greater Blessing of Sanctuary", "Blessing of Sanctuary" };
+    -- Flasks
+    GroupBuffs.Group[10] = { "Flask of Endless Rage", "Flask of Pure Mojo", "Flask of Stoneblood", 
+      "Flask of the Frost Wyrm" };
+    -- Battle Elixirs
+    GroupBuffs.Group[11] = { "Elixir of Accuracy", "Elixir of Armor Piercing", "Elixir of Deadly Strikes",
+      "Elixir of Expertise", "Elixir of Lightning Speed", "Elixir of Mighty Agility", 
+      "Elixir of Mighty Strength", "Guru's Elixir", "Spellpower Elixir", "Wrath Elixir" };
+    -- Guardian Elixirs
+    GroupBuffs.Group[12] = { "Elixir of Mighty Defense", "Elixir of Mighty Fortitude", 
+      "Elixir of Mighty Mageblood", "Elixir of Mighty Thoughts", "Elixir of Protection", 
+      "Elixir of Spirit" };
+      
+    GroupBuffs.Buff = { };
+    GroupBuffs.Buff["Gift of the Wild"] = 1;
+    GroupBuffs.Buff["Mark of the Wild"] = 1;
+    GroupBuffs.Buff["Prayer of Fortitude"] = 2;
+    GroupBuffs.Buff["Power Word: Fortitude"] = 2;
+    GroupBuffs.Buff["Prayer of Spirit"] = 3;
+    GroupBuffs.Buff["Divine Spirit"] = 3;
+    GroupBuffs.Buff["Prayer of Shadow Protection"] = 4;
+    GroupBuffs.Buff["Shadow Protection"] = 4;
+    GroupBuffs.Buff["Dalaran Brilliance"] = 5;
+    GroupBuffs.Buff["Arcane Brilliance"] = 5;
+    GroupBuffs.Buff["Arcane Intellect"] = 5;
+    GroupBuffs.Buff["Greater Blessing of Might"] = 6;
+    GroupBuffs.Buff["Blessing of Might"] = 6;
+    GroupBuffs.Buff["Greater Blessing of Wisdom"] = 7;
+    GroupBuffs.Buff["Blessing of Wisdom"] = 7;
+    GroupBuffs.Buff["Greater Blessing of Kings"] = 8;
+    GroupBuffs.Buff["Blessing of Kings"] = 8;
+    GroupBuffs.Buff["Greater Blessing of Sanctuary"] = 9;
+    GroupBuffs.Buff["Blessing of Sanctuary"] = 9;
+    GroupBuffs.Buff["Flask of Endless Rage"] = 10;
+    GroupBuffs.Buff["Flask of Pure Mojo"] = 10;
+    GroupBuffs.Buff["Flask of Stoneblood"] = 10;
+    GroupBuffs.Buff["Flask of the Frost Wyrm"] = 10;
+    GroupBuffs.Buff["Elixir of Accuracy"] = 11;
+    GroupBuffs.Buff["Elixir of Armor Piercing"] = 11;
+    GroupBuffs.Buff["Elixir of Deadly Strikes"] = 11;
+    GroupBuffs.Buff["Elixir of Expertise"] = 11;
+    GroupBuffs.Buff["Elixir of Lightning Speed"] = 11;
+    GroupBuffs.Buff["Elixir of Mighty Agility"] = 11;
+    GroupBuffs.Buff["Elixir of Mighty Strength"] = 11;
+    GroupBuffs.Buff["Guru's Elixir"] = 11;
+    GroupBuffs.Buff["Spellpower Elixir"] = 11;
+    GroupBuffs.Buff["Wrath Elixir"] = 11;
+    GroupBuffs.Buff["Elixir of Mighty Defense"] = 12;
+    GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 12;
+    GroupBuffs.Buff["Elixir of Mighty Mageblood"] = 12;
+    GroupBuffs.Buff["Elixir of Mighty Thoughts"] = 12;
+    GroupBuffs.Buff["Elixir of Protection"] = 12;
+    GroupBuffs.Buff["Elixir of Spirit"] = 12;
     
 end
 
@@ -1294,12 +1267,29 @@ end]]
                         curr_buff_icon:SetVertexColor(1,1,1);
                         
                     else
-
+                    
                         -- Buff has expired, start by checking if there is an automatic replacement
-                        if GroupBuffs[buff] then
-
-                            buff = GroupBuffs[buff].Lesser or GroupBuffs[buff].Greater;
-                            buffbuttonid = UnitHasBuff(v.UNIT_ID, buff);
+                        local buffGroup = GroupBuffs.Buff[buff];
+                        
+                        if buffGroup then
+                        
+                            -- Iterate Group for this buff
+                            for index, val in ipairs(GroupBuffs.Group[buffGroup]) do
+                            
+                              if val ~= buff then
+                                
+                                buffbuttonid = UnitHasBuff(v.UNIT_ID, val);
+                                
+                                if buffbuttonid ~= 0 then
+                                
+                                  buff = val;
+                                  break;
+                                  
+                                end
+                              
+                              end
+                            
+                            end
 
                             if buffbuttonid ~= 0 then
 

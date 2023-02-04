@@ -1,7 +1,7 @@
 ## Interface: 30100
 ## Title: Buffwatch
 ## Author: Pup
-## Version: 3.14
+## Version: 3.15
 ## Notes: Monitors Player/Party/Raid buffs of your choosing
 ## SavedVariables: BuffwatchConfig
 ## SavedVariablesPerCharacter: BuffwatchSaveBuffs
