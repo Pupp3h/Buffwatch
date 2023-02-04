@@ -123,7 +123,7 @@
         </Scripts>
       </Button>
 
-      <Frame name="$parent_DropDown" inherits="UIDropDownMenuTemplate">
+      <Frame name="$parent_HeaderDropDown" inherits="UIDropDownMenuTemplate" hidden="true">
         <Anchors>
           <Anchor point="TOP">
             <Offset>
@@ -133,7 +133,7 @@
         </Anchors>
         <Scripts>
           <OnLoad>
-            Buffwatch_DropDown_OnLoad(self);
+            Buffwatch_HeaderDropDown_OnLoad(self);
           </OnLoad>
         </Scripts>
       </Frame> 
