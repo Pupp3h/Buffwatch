@@ -4,16 +4,16 @@
 -- ** TODO:
 -- **
 
--- ** Add seperate frame for debuffs, so it can be shown/hidden/resized in combat?
-
 -- ** Alt click for Lesser/Greater Buffs (?)
 -- ** Timers for buffs expiring
 -- ** Warning message for buff expiring
--- ** Debuffs
+
+-- ** Integrate with Blizz Addon options
 
 -- Changes
 --
--- Fixes for 3.1 changes to UnitBuff
+-- Added Group Mode option to restrict to Solo or Party
+-- Added optional cooldown spirals on buff buttons
 --
 
 -- ****************************************************************************
@@ -22,15 +22,20 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.12";
-BW_RELEASE_DATE = "15 April 2009";
+BW_VERSION = "3.13";
+BW_RELEASE_DATE = "22 April 2009";
+BW_MODE_DROPDOWN_LIST = {
+    "Solo",
+    "Party",
+    "Raid"
+};
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
     "Name"
 };
 
-local grouptype;                -- 'raid' or 'party'
+local grouptype;                -- solo, raid or party
 local maxnamewidth = 0;         -- Width of the longest player name, to set buff button alignment
 local maxnameid = 1;            -- The frame ID with the longest player name
 --local buffexpired = 0;          -- Count of expired buffs, used for the Expired Warning
@@ -47,9 +52,9 @@ local GroupBuffs = { };         -- Relationship list of buffs that can automatic
 local dropdowninfo = { };       -- Info for dropdown menu buttons
 
 -- Save option variables
-BuffwatchConfig = { Alpha, ExpiredSound, ExpiredWarning, ShowOnlyMine, 
+BuffwatchConfig = { Alpha, ExpiredSound, ExpiredWarning, HideOmniCC, Mode, ShowOnlyMine, 
     ShowCastableBuffs, ShowAllForPlayer, ShowDebuffs, ShowDispellableDebuffs,
-    ShowPets, SortOrder, WindowLocked, debug };
+    ShowPets, SortOrder, Spirals, WindowLocked, debug };
 
 BuffwatchPlayerBuffs = { };     -- List of buffs that are shown for each player
 BuffwatchSaveBuffs = { };       -- List of locked buffs that we save between sessions for each player
@@ -167,7 +172,7 @@ function Buffwatch_OnLoad(self)
         ["Lesser"] = "Blessing of Sanctuary",
         ["Type"] = "Class"
     };
-
+    
 end
 
 
@@ -194,6 +199,14 @@ end
         if BuffwatchConfig.ExpiredWarning == nil then
             BuffwatchConfig.ExpiredWarning = true;
         end
+        
+        if BuffwatchConfig.HideOmniCC == nil then
+            BuffwatchConfig.HideOmniCC = true;
+        end   
+        
+        if BuffwatchConfig.Mode == nil then
+            BuffwatchConfig.Mode = BW_MODE_DROPDOWN_LIST[3];
+        end
 
         if BuffwatchConfig.ShowOnlyMine == nil then
             BuffwatchConfig.ShowOnlyMine = false;
@@ -213,7 +226,7 @@ end
 
         if BuffwatchConfig.ShowDispellableDebuffs == nil then
             BuffwatchConfig.ShowDispellableDebuffs = false;
-        end
+        end     
 
         if BuffwatchConfig.ShowPets == nil then
             BuffwatchConfig.ShowPets = true;
@@ -221,6 +234,10 @@ end
 
         if BuffwatchConfig.SortOrder == nil then
             BuffwatchConfig.SortOrder = BW_SORTORDER_DROPDOWN_LIST[1];
+        end
+
+        if BuffwatchConfig.Spirals == nil then
+            BuffwatchConfig.Spirals = true;
         end
 
         if BuffwatchConfig.WindowLocked == nil then
@@ -677,47 +694,59 @@ end
 -- Setup basic list of possible UNIT_IDs
 function Buffwatch_Set_UNIT_IDs(forced)
 
-    if GetNumRaidMembers() > 0 then
+    if BuffwatchConfig.Mode == BW_MODE_DROPDOWN_LIST[1] then  -- "Solo"
+    
+        UNIT_IDs = table.wipe(UNIT_IDs);
+        UNIT_IDs[1] = "player";
+        UNIT_IDs[2] = "pet";
+        
+        grouptype = "solo";
+        
+    else
 
-        if grouptype ~= "raid" or forced == true then
+        if GetNumRaidMembers() > 0 and BuffwatchConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
+
+            if grouptype ~= "raid" or forced == true then
+
+                --UNIT_IDs = { };
+                UNIT_IDs = table.wipe(UNIT_IDs);
+
+                for i = 1, 40 do
+                    UNIT_IDs[i] = "raid"..i;
+                end
+
+                if BuffwatchConfig.ShowPets == true then
+                    for i = 1, 40 do
+                        UNIT_IDs[i+40] = "raidpet"..i;
+                    end
+                end
+
+                grouptype = "raid";
+
+            end
+
+        elseif grouptype ~= "party" or forced == true then
 
             --UNIT_IDs = { };
             UNIT_IDs = table.wipe(UNIT_IDs);
 
-            for i = 1, 40 do
-                UNIT_IDs[i] = "raid"..i;
-            end
+            UNIT_IDs[1] = "player";
+            UNIT_IDs[2] = "party1";
+            UNIT_IDs[3] = "party2";
+            UNIT_IDs[4] = "party3";
+            UNIT_IDs[5] = "party4";
 
             if BuffwatchConfig.ShowPets == true then
-                for i = 1, 40 do
-                    UNIT_IDs[i+40] = "raidpet"..i;
-                end
+                UNIT_IDs[6] = "pet";
+                UNIT_IDs[7] = "partypet1";
+                UNIT_IDs[8] = "partypet2";
+                UNIT_IDs[9] = "partypet3";
+                UNIT_IDs[10] = "partypet4";
             end
 
-            grouptype = "raid";
-
+            grouptype = "party";
+            
         end
-
-    elseif grouptype ~= "party" or forced == true then
-
-        --UNIT_IDs = { };
-        UNIT_IDs = table.wipe(UNIT_IDs);
-
-        UNIT_IDs[1] = "player";
-        UNIT_IDs[2] = "party1";
-        UNIT_IDs[3] = "party2";
-        UNIT_IDs[4] = "party3";
-        UNIT_IDs[5] = "party4";
-
-        if BuffwatchConfig.ShowPets == true then
-            UNIT_IDs[6] = "pet";
-            UNIT_IDs[7] = "partypet1";
-            UNIT_IDs[8] = "partypet2";
-            UNIT_IDs[9] = "partypet3";
-            UNIT_IDs[10] = "partypet4";
-        end
-
-        grouptype = "party";
 
     end
 
@@ -783,7 +812,7 @@ function Buffwatch_GetPlayerInfo()
                         Player_Info[unitname]["Class"] = "";
                     end
 
-                    if (grouptype == "party" and i > 5) or (grouptype == "raid" and i > 40) then
+                    if (grouptype == "party" and i > 5) or (grouptype == "raid" and i > 40) or (grouptype == "solo" and i == 2) then
                         Player_Info[unitname]["IsPet"] = 1;
                         Player_Info[unitname]["Class"] = "";
                     else
@@ -861,7 +890,7 @@ function Buffwatch_GetPlayerInfo()
 --                    if not lastsubgroup or subgroup ~= lastsubgroup then -- ***** Check logic or if needed
                     if subgroup ~= Player_Info[unitname]["SubGroup"] then
                         Player_Info[unitname]["SubGroup"] = subgroup;
-                        if BuffwatchConfig.SortOrder == "Raid Order" then
+                        if BuffwatchConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[1] then  -- "Raid Order"
                             positionframe = true;
                         end
                     end
@@ -1063,7 +1092,7 @@ function Buffwatch_GetPlayerSortOrder()
         end
 
         -- Sort the player list in temp array
-        if BuffwatchConfig.SortOrder == "Class" then
+        if BuffwatchConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[2] then -- "Class"
 
             table.sort(Player_Order,
             function(a,b)
@@ -1082,7 +1111,7 @@ function Buffwatch_GetPlayerSortOrder()
 
             end);
 
-        elseif BuffwatchConfig.SortOrder == "Name" then
+        elseif BuffwatchConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[3] then -- "Name"
 
             table.sort(Player_Order,
             function(a,b)
@@ -1164,7 +1193,7 @@ function Buffwatch_Player_GetBuffs(v)
 
             for i = 1, 32 do
 
-                local buff, rank, icon, _, _, _, _, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
+                local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
                 local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
 
 --[[if buff then
@@ -1180,6 +1209,12 @@ end]]
                             getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
                         curr_buff:SetID(i);
 
+                        local cooldown = CreateFrame("Cooldown", nil, curr_buff, "CooldownFrameTemplate")
+                        curr_buff.cooldown = cooldown;
+                        cooldown:SetAllPoints(curr_buff);
+                        cooldown:SetReverse(true);
+                        cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
+  
                     end
 
                     if i == 1 then
@@ -1204,6 +1239,13 @@ end]]
                     curr_buff:SetAttribute("type", "spell");
                     curr_buff:SetAttribute("unit1", v.UNIT_ID);
                     curr_buff:SetAttribute("spell1", buff.."("..rank..")");
+                    
+                    if BuffwatchConfig.Spirals == true and duration and duration > 0 then
+                      curr_buff.cooldown:Show();
+                      curr_buff.cooldown:SetCooldown(expTime - duration, duration);
+                    else
+                      curr_buff.cooldown:Hide();
+                    end
 
                 else
 
@@ -1241,13 +1283,14 @@ end]]
 
                     local buff = BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Buff"];
                     local rank = BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Rank"];
-                    local buffbuttonid;
+                    local buffbuttonid, duration, expTime;
 
-                    buffbuttonid = UnitHasBuff(v.UNIT_ID, buff, rank);
+                    buffbuttonid, duration, expTime = UnitHasBuff(v.UNIT_ID, buff, rank);
 
                     if buffbuttonid ~= 0 then
                         -- Set buff icon to its normal colour if it exists
                         curr_buff_icon:SetVertexColor(1,1,1);
+                        
                     else
 
                         -- Buff has expired, start by checking if there is an automatic replacement
@@ -1315,6 +1358,13 @@ end]]
                         end
 ]]
                     end
+                    
+                    if BuffwatchConfig.Spirals == true and duration and duration > 0 then
+                      curr_buff.cooldown:Show();
+                      curr_buff.cooldown:SetCooldown(expTime - duration, duration);
+                    else
+                      curr_buff.cooldown:Hide();
+                    end                      
 
                 end
 
@@ -1422,6 +1472,12 @@ function Buffwatch_Player_LoadBuffs(v)
                         getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
                     curr_buff:SetID(i);
 
+                    local cooldown = CreateFrame("Cooldown", nil, curr_buff, "CooldownFrameTemplate")
+                    curr_buff.cooldown = cooldown;
+                    cooldown:SetAllPoints(curr_buff);
+                    cooldown:SetReverse(true);
+                    cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
+  
                 end
 
                 if i == 1 then
@@ -1441,6 +1497,13 @@ function Buffwatch_Player_LoadBuffs(v)
                 curr_buff:SetAttribute("unit1", v.UNIT_ID);
                 curr_buff:SetAttribute("spell1", BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Buff"].."("..BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Rank"]..")");
 
+                if BuffwatchConfig.Spirals == true and duration and duration > 0 then
+                  curr_buff.cooldown:Show();
+                  curr_buff.cooldown:SetCooldown(expTime - duration, duration);
+                else
+                  curr_buff.cooldown:Hide();
+                end  
+  
             else
 
                 if curr_buff then
@@ -1784,11 +1847,11 @@ end
 
 function UnitHasBuff(unit, buff, rank)
 
-  local thisbuff, thisrank;
+  local thisbuff, thisrank, duration, expTime;
 
   for i = 1, 32 do
 
-    thisbuff, thisrank = UnitBuff(unit, i);
+    thisbuff, thisrank, _, _, _, duration, expTime = UnitBuff(unit, i);
 
     if not thisbuff then break; end
 
@@ -1796,12 +1859,12 @@ function UnitHasBuff(unit, buff, rank)
 
       if rank then
         if thisrank == rank then
-          return i;
+          return i, duration, expTime;
         else
           return 0;
         end
       else
-        return i;
+        return i, duration, expTime;
       end
 
       break;

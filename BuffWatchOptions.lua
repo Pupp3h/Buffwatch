@@ -1,3 +1,5 @@
+BW_TTIP_HIDEOMNICC = "Hide OmniCC text overlays";
+BW_TTIP_MODE = "Selects which players to show";
 BW_TTIP_SORTORDER = "Specifies the sort order for the player list in the Buffwatch Window";
 BW_TTIP_SHOWPETS = "Show pets in the player list";
 BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
@@ -7,6 +9,7 @@ BW_TTIP_SHOWDEBUFFS = "Show debuffs";
 BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell";
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire";
 BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire";
+BW_TTIP_SHOWSPIRALS = "Enable cooldown spirals on buff buttons";
 BW_TTIP_ALPHA = "Sets the transparency of the Buffwatch window";
 
 function Buffwatch_Options_OnLoad()
@@ -24,7 +27,34 @@ function Buffwatch_Options_Init()
 --    Buffwatch_Options_ShowOnlyDispellDebuffs:SetChecked(BuffwatchConfig.ShowDispellableDebuffs);
 --    Buffwatch_Options_ShowExpiredWarning:SetChecked(BuffwatchConfig.ExpiredWarning);
 --    Buffwatch_Options_PlayExpiredSound:SetChecked(BuffwatchConfig.ExpiredSound);
+    Buffwatch_Options_ShowSpirals:SetChecked(BuffwatchConfig.Spirals);
+--    Buffwatch_Options_HideOmniCC:SetChecked(BuffwatchConfig.HideOmniCC);
     Buffwatch_Options_Alpha:SetValue(BuffwatchConfig.Alpha);
+end
+
+function Buffwatch_Options_Mode_OnClick(self)
+    i = self:GetID();
+    UIDropDownMenu_SetSelectedID(Buffwatch_Options_Mode, i);
+    BuffwatchConfig.Mode = BW_MODE_DROPDOWN_LIST[i];
+    Buffwatch_Set_UNIT_IDs();
+    Buffwatch_ResizeWindow();
+end
+
+function Buffwatch_Options_Mode_Initialize()
+    local info;
+    for i = 1, #BW_MODE_DROPDOWN_LIST do
+        info = {
+            text = BW_MODE_DROPDOWN_LIST[i],
+            func = Buffwatch_Options_Mode_OnClick
+        };
+        UIDropDownMenu_AddButton(info);
+    end
+end
+
+function Buffwatch_Options_Mode_OnLoad(self)
+    UIDropDownMenu_Initialize(self, Buffwatch_Options_Mode_Initialize);
+    UIDropDownMenu_SetText(self, BuffwatchConfig.Mode);
+    UIDropDownMenu_SetWidth(self, 90);
 end
 
 function Buffwatch_Options_SortOrder_OnClick(self)

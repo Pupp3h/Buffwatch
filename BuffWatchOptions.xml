@@ -4,7 +4,7 @@
     <Frame name="Buffwatch_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="300" y="250"/>
+            <AbsDimension x="300" y="320"/>
         </Size>
 
         <Anchors>
@@ -50,11 +50,21 @@
                     </Anchors>
                 </FontString>
 
-                <FontString name="$parent_SortOrderLabel" inherits="GameFontNormalSmall" text="Sort Order">
+                <FontString name="$parent_ModeLabel" inherits="GameFontNormalSmall" text="Group Mode">
                     <Anchors>
                         <Anchor point="TOPLEFT">
                             <Offset>
                                 <AbsDimension x="45" y="-50" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                
+                <FontString name="$parent_SortOrderLabel" inherits="GameFontNormalSmall" text="Sort Order">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeTo="$parent_ModeLabel" relativePoint="BOTTOMLEFT">
+                            <Offset>
+                                <AbsDimension x="0" y="-20" />
                             </Offset>
                         </Anchor>
                     </Anchors>
@@ -66,11 +76,36 @@
 
         <Frames>
 
-            <Frame name="$parent_SortOrder" inherits="UIDropDownMenuTemplate" enableMouse="true">
+            <Frame name="$parent_Mode" inherits="UIDropDownMenuTemplate" enableMouse="true">
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parent_SortOrderLabel" relativePoint="RIGHT">
+                    <Anchor point="LEFT" relativeTo="$parent_ModeLabel" relativePoint="RIGHT">
                         <Offset>
                             <AbsDimension x="-10" y="-2" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        Buffwatch_Options_Mode_OnLoad(self);
+                    </OnLoad>
+                    <OnShow>
+                        Buffwatch_Options_Mode_OnLoad(self);
+                    </OnShow>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_MODE);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+
+            <Frame name="$parent_SortOrder" inherits="UIDropDownMenuTemplate" enableMouse="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_Mode" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -229,6 +264,76 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
+
+            <CheckButton name="$parent_ShowSpirals" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowAllForPlayer" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="-10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(self:GetName().."Text"):SetText("Show cooldown spirals");
+                    </OnLoad>
+                    <OnClick>
+                        if (self:GetChecked()) then
+                            BuffwatchConfig.Spirals = true;
+                        else
+                            BuffwatchConfig.Spirals = false;
+                        end
+                        Buffwatch_GetAllBuffs();
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_SHOWSPIRALS);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
+            
+            <!--CheckButton name="$parent_HideOmniCC" inherits="OptionsCheckButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowSpirals" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(self:GetName().."Text"):SetText("Hide OmniCC text");
+                    </OnLoad>
+                    <OnShow>
+                        if (BuffwatchConfig.Spirals == true) then
+                            Buffwatch_EnableCheckbox(self);
+                        else
+                            Buffwatch_DisableCheckbox(self);
+                        end                                            
+                    </OnShow>
+                    <OnClick>
+                        if (self:GetChecked()) then
+                            BuffwatchConfig.HideOmniCC = true;
+                        else
+                            BuffwatchConfig.HideOmniCC = false;
+                        end
+                        Buffwatch_GetAllBuffs();
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_HIDEOMNICC);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </CheckButton-->            
             
 <!--   
             <CheckButton name="$parent_ShowDebuffs" inherits="OptionsCheckButtonTemplate">
@@ -359,9 +464,9 @@
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowAllForPlayer" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowSpirals" relativePoint="BOTTOMLEFT">
                         <Offset>
-                            <AbsDimension x="-10" y="-20" />
+                            <AbsDimension x="0" y="-20" />
                         </Offset>
                     </Anchor>
                 </Anchors>

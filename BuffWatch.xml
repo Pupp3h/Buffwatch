@@ -311,7 +311,7 @@
         </Anchors>
       </Button>
 
-      <Button name="$parent_Buff1" inherits="Buffwatch_BuffButton_Template" id="1">
+      <!--Button name="$parent_Buff1" inherits="Buffwatch_BuffButton_Template" id="1">
         <Anchors>
           <Anchor point="TOPLEFT" relativeTo="$parent_Name" relativePoint="TOPRIGHT">
             <Offset>
@@ -319,7 +319,7 @@
             </Offset>
           </Anchor>
         </Anchors>
-      </Button>      
+      </Button-->      
 
     </Frames>
   </Frame>   
