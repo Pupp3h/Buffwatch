@@ -20,8 +20,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "2.0b2";
-BW_RELEASE_DATE = "5 January 2007";
+BW_VERSION = "2.0b3";
+BW_RELEASE_DATE = "10 January 2007";
 BW_SORTORDER_DROPDOWN_LIST = {
     "Raid Order",
     "Class",
@@ -46,6 +46,7 @@ BuffwatchConfig = { AlignBuffs, Alpha, ExpiredSound, ExpiredWarning,
     SortOrder, debug };
 
 BuffwatchPlayerBuffs = { };
+BuffwatchSaveBuffs = { };
 
 local debugchatframe = DEFAULT_CHAT_FRAME;
 
@@ -204,6 +205,9 @@ function Buffwatch_Set_AllChecks(checked)
 
             if not checked then
                 Buffwatch_Player_GetBuffs(v);
+            else
+                BuffwatchSaveBuffs[v.Name] = { };
+                BuffwatchSaveBuffs[v.Name]["Buffs"] = BuffwatchPlayerBuffs[v.Name]["Buffs"];
             end
 --            Buffwatch_Player_SaveBuffs(v.ID);
         end
@@ -271,13 +275,25 @@ function Buffwatch_DropDown_Initialize()
 end
 
 
-function Buffwatch_Check_Clicked(button, down)
+function Buffwatch_Check_Clicked(button, down, obj)
 
-    local playerid = this:GetParent():GetID();
+    local playerid;
+    local checked;
+
+    if obj then
+        checked = obj:GetChecked();
+        playerid = obj:GetParent():GetID();
+    else
+        checked = this:GetChecked();
+        playerid = this:GetParent():GetID();
+    end
+
     local playername = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText();
-    local checked = this:GetChecked();
 
     if checked then
+
+        BuffwatchSaveBuffs[playername] = { };
+        BuffwatchSaveBuffs[playername]["Buffs"] = BuffwatchPlayerBuffs[playername]["Buffs"];
 
         for k, v in pairs(Player_Info) do
 
@@ -300,7 +316,7 @@ function Buffwatch_Check_Clicked(button, down)
         Buffwatch_ResizeWindow();
     end
 
---    BW_Player_SaveBuffs(this:GetParent():GetID());
+--    Buffwatch_Player_SaveBuffs(this:GetParent():GetID());
 
 end
 
@@ -341,8 +357,10 @@ function Buffwatch_Buff_Clicked(button, down)
                     end
                 end
 
+                BuffwatchSaveBuffs[playername]["Buffs"] = BuffwatchPlayerBuffs[playername]["Buffs"];
+
                 Buffwatch_ResizeWindow();
---                Buffwatch_Player_SaveBuffs(playerid)
+--                Buffwatch_Player_SaveBuffs(playerid);
 
             elseif button == "RightButton" then
 
@@ -350,6 +368,7 @@ function Buffwatch_Buff_Clicked(button, down)
 
                 this:Hide();
                 BuffwatchPlayerBuffs[playername]["Buffs"][buffid] = nil;
+                BuffwatchSaveBuffs[playername]["Buffs"][buffid] = nil;
 
                 if nextbuffid then
                     getglobal(playerframe.."_Buff"..nextbuffid):ClearAllPoints();
@@ -357,14 +376,24 @@ function Buffwatch_Buff_Clicked(button, down)
                 end
 
                 Buffwatch_ResizeWindow();
---                Buffwatch_Player_SaveBuffs(playerid)
+--                Buffwatch_Player_SaveBuffs(playerid);
 
             end
 
         end
 
-    end
+    else
+--[[
+if BuffwatchConfig.debug == true then
+local buffid = this:GetID();
+local playername = getglobal(playerframe.."_NameText"):GetText();
+local curr_buff = getglobal(playerframe.."_Buff"..buffid);
 
+Buffwatch_Debug("Casting spell :");
+Buffwatch_Debug("Array : Player="..playername..", Buff="..BuffwatchPlayerBuffs[playername]["Buffs"][buffid]["Buff"]);
+Buffwatch_Debug("Attribute : Player="..UnitName(curr_buff:GetAttribute("unit1"))..", Buff="..curr_buff:GetAttribute("spell1"));
+end ]]
+    end
 end
 
 
@@ -530,15 +559,12 @@ function Buffwatch_GetPlayerInfo()
 
                     end
 
-                    local namebutton = getglobal("BuffwatchFrame_PlayerFrame"..id.."_Name");
-                    local nametext = getglobal("BuffwatchFrame_PlayerFrame"..id.."_NameText");
-
                     Player_Info[unitname] = { };
                     Player_Info[unitname]["ID"] = id;
                     Player_Info[unitname]["Name"] = unitname;
 
                     local _, classname = UnitClass(UNIT_IDs[i]);
-
+                    
                     if classname then
                         Player_Info[unitname]["Class"] = classname;
                     else
@@ -552,6 +578,9 @@ function Buffwatch_GetPlayerInfo()
                         Player_Info[unitname]["IsPet"] = 0;
                     end
 
+                    local namebutton = getglobal("BuffwatchFrame_PlayerFrame"..id.."_Name");
+                    local nametext = getglobal("BuffwatchFrame_PlayerFrame"..id.."_NameText");
+
                     nametext:SetText(unitname);
                     namebutton:SetWidth(nametext:GetStringWidth());
 
@@ -561,15 +590,19 @@ function Buffwatch_GetPlayerInfo()
                     end
 
                     Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
+                    namebutton:SetAttribute("type1", "target");
+                    namebutton:SetAttribute("type2", "assist");
+                    namebutton:SetAttribute("unit", UNIT_IDs[i]);
+
                     Buffwatch_Player_ColourName(Player_Info[unitname]);
 
                     if not BuffwatchPlayerBuffs[unitname] then
                         BuffwatchPlayerBuffs[unitname] = { };
                         BuffwatchPlayerBuffs[unitname]["Buffs"] = { };
-                    end
-Buffwatch_Player_GetBuffs(Player_Info[unitname]); -- Temp until Buffwatch_Player_LoadBuffs() below is done
 
---                    Buffwatch_Player_LoadBuffs(id);
+                        Buffwatch_Player_LoadBuffs(Player_Info[unitname]);
+                        Buffwatch_Player_GetBuffs(Player_Info[unitname]);
+                    end
 
                     positionframe = true;
 
@@ -577,7 +610,29 @@ Buffwatch_Player_GetBuffs(Player_Info[unitname]); -- Temp until Buffwatch_Player
 
                 -- Update any information that may have changed about this person,
                 --    whether we captured before, or are taking for first time
-                Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
+
+                if Player_Info[unitname]["UNIT_ID"] ~= UNIT_IDs[i] then
+
+                    local namebutton = getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Name");
+
+                    Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
+                    namebutton:SetAttribute("type1", "target");
+                    namebutton:SetAttribute("type2", "assist");
+                    namebutton:SetAttribute("unit", UNIT_IDs[i]);
+
+                    for j = 1, 32 do
+                        local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Buff"..j);
+
+                        if curr_buff then
+                            if curr_buff:IsShown() then
+                                curr_buff:SetAttribute("unit1", UNIT_IDs[i]);
+                            end
+                        else
+                            break;
+                        end
+                    end
+
+                end
 
                 if grouptype == "raid" then
                     local subgroup;
@@ -624,7 +679,7 @@ Buffwatch_Debug("Showing player frame "..Player_Info[unitname].ID.." for "..unit
                 Player_Left[v.Name] = v.ID;
 
                 Player_Info[k] = nil;
---                BuffwatchPlayerBuffs[k] = nil;
+                BuffwatchPlayerBuffs[k] = nil;
 
 Buffwatch_Debug("Hiding player frame "..v.ID.." for "..v.Name);
                 Buffwatch_PositionPlayerFrame(v.ID);
@@ -819,6 +874,7 @@ function Buffwatch_Player_GetBuffs(v)
         else
 
             BuffwatchPlayerBuffs[v.Name]["Buffs"] = { };
+            BuffwatchSaveBuffs[v.Name] = nil;
 
             for i = 1, 32 do
 
@@ -913,7 +969,7 @@ end]]
                             end
 
 --                            if minimized then
---                                BW_HeaderText:SetTextColor(1, 0, 0);
+--                                Buffwatch_HeaderText:SetTextColor(1, 0, 0);
 --                            end
 
                         end
@@ -966,6 +1022,100 @@ end]]
 
     end
 ]]
+end
+
+function Buffwatch_Player_SaveBuffs(playerid)
+
+--[[    local playername = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_NameText"):GetText();
+    local i;
+
+    if getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_Lock"):GetChecked() then
+
+        i = 0;
+        BuffwatchPlayerBuffs[playername] = { };
+        BuffwatchPlayerBuffs[playername]["Buffs"] = { };
+
+        for j = 1, 32 do
+
+            if getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_Buff"..j):IsShown() then
+
+                i = i + 1;
+                BuffwatchPlayerBuffs[playername]["Buffs"][i] = { };
+                BuffwatchPlayerBuffs[playername]["Buffs"][i]["texture"] = getglobal("BuffwatchFrame_PlayerFrame"..playerid.."_Buff"..j.."Icon"):GetTexture();
+            end
+
+        end
+
+    else
+
+        BuffwatchPlayerBuffs[playername] = nil;
+
+    end
+]]
+
+end
+
+function Buffwatch_Player_LoadBuffs(v)
+
+    if BuffwatchSaveBuffs[v.Name] then
+
+        BuffwatchPlayerBuffs[v.Name]["Buffs"] = BuffwatchSaveBuffs[v.Name]["Buffs"];
+
+        for i = 1, 32 do
+
+            local curr_buff = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i);
+
+            if BuffwatchSaveBuffs[v.Name]["Buffs"][i] then
+
+                -- Check if buff button has been created
+                if curr_buff == nil then
+
+                    curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i,
+                        getglobal("BuffwatchFrame_PlayerFrame"..v.ID), "Buffwatch_BuffButton_Template");
+                    curr_buff:SetID(i);
+
+                end
+
+                if i == 1 then
+                    curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPRIGHT", 5, 4);
+                else
+                    curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1),
+                        "TOPRIGHT");
+                end
+
+                local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+
+                curr_buff_icon:SetVertexColor(1,1,1);
+                curr_buff:Show();
+                curr_buff_icon:SetTexture(BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Icon"]);
+
+                curr_buff:SetAttribute("type", "spell");
+                curr_buff:SetAttribute("unit1", v.UNIT_ID);
+                curr_buff:SetAttribute("spell1", BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Buff"].."("..BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Rank"]..")");
+
+            else
+
+                if curr_buff then
+
+                    local curr_buff_icon = getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon");
+
+                    curr_buff:Hide();
+                    curr_buff_icon:SetTexture(nil);
+
+                end
+
+            end
+
+        end
+
+        getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"):SetChecked(true);
+
+     else
+
+        Buffwatch_Check_Clicked(_, _, getglobal("BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"));
+
+     end
+
 end
 
 
@@ -1132,7 +1282,7 @@ function Buffwatch_GetNextID(unitname)
             Player_Left[unitname] = nil;
 
             if found == false then
---                getglobal("BW_Player"..oldID):Show();
+--                getglobal("BuffwatchFrame_PlayerFrame"..oldID):Show();
                 return oldID;
             end
 

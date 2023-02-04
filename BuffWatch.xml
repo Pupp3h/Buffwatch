@@ -150,7 +150,7 @@
     </Scripts>
   </CheckButton>
 
-  <Button name="Buffwatch_PlayerName_Template" inherits="SecureUnitButtonTemplate" hidden="false" virtual="true">
+  <Button name="Buffwatch_PlayerName_Template" inherits="SecureActionButtonTemplate" hidden="false" virtual="true">
     <Size>
       <AbsDimension x="18" y="10"/>
     </Size>

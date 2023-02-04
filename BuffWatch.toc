@@ -1,8 +1,10 @@
-## Interface: 20000
+## Interface: 20003
 ## Title: Buffwatch
 ## Author: Pup
 ## Version: 2.00
+## Notes: Monitors Player/Party/Raid buffs of your choosing
 ## SavedVariables: BuffwatchConfig
+## SavedVariablesPerCharacter: BuffwatchSaveBuffs
 Buffwatch.lua
 Buffwatch.xml
 BuffwatchOptions.lua
