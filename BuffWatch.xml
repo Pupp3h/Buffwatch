@@ -44,8 +44,7 @@
             </Offset>
           </Anchor>
         </Anchors>
-        <NormalTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Up"/>
-        <PushedTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Down"/>
+        <NormalTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Min"/>
         <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
         <Scripts>
           <OnClick>

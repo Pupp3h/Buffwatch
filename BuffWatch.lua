@@ -6,14 +6,16 @@
 
 -- ** Alt click for Lesser/Greater Buffs (?)
 -- ** Timers for buffs expiring
--- ** Warning message for buff expiring
+-- ** Warning message for buff expiring (toggle option for each buff)
 -- ** Option for showing only last x minutes of a buff as a cooldown spiral
 
 -- ** Integrate with Blizz Addon options
 
 -- Changes
 --
--- Fixed positioning of frame when logging in
+-- Added window scaling
+-- Fixed displaying of 'Show only buffs you cast' in options panel
+-- New, cleaner minimise texture
 --
 
 -- ****************************************************************************
@@ -22,8 +24,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.17";
-BW_RELEASE_DATE = "28 August 2009";
+BW_VERSION = "3.18";
+BW_RELEASE_DATE = "30 August 2009";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -71,7 +73,7 @@ local dropdowninfo = { };       -- Info for dropdown menu buttons
 BuffwatchConfig = { Alpha, ExpiredSound, ExpiredWarning, HideOmniCC, Spirals, debug };
 
 -- Save player options
-BuffwatchPlayerConfig = { AnchorPoint, AnchorX, AnchorY, Mode, ShowOnlyMine, 
+BuffwatchPlayerConfig = { AnchorPoint, AnchorX, AnchorY, Mode, Scale, ShowOnlyMine, 
     ShowCastableBuffs, ShowAllForPlayer, ShowDebuffs, ShowDispellableDebuffs,
     ShowPets, SortOrder, WindowLocked };
 
@@ -168,6 +170,9 @@ function Buffwatch_OnLoad(self)
     
     end
     
+    -- Hide dropdown so it doesnt overlap minimise button before its used
+    BuffwatchFrame_DropDown:Hide();
+    
 end
 
 
@@ -222,6 +227,10 @@ end
             BuffwatchPlayerConfig.Mode = BW_MODE_DROPDOWN_LIST[3];
         end
 
+        if BuffwatchPlayerConfig.Scale == nil then
+            BuffwatchPlayerConfig.Scale = 1.0;
+        end
+        
         if BuffwatchPlayerConfig.ShowOnlyMine == nil then
             BuffwatchPlayerConfig.ShowOnlyMine = false;
         end
@@ -470,12 +479,14 @@ function Buffwatch_MinimizeButton_Clicked()
     if minimized == true then
         BuffwatchFrame_PlayerFrame:Hide();
         BuffwatchFrame_LockAll:Disable();
+        BuffwatchFrame_MinimizeButton:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Max");
     else
         BuffwatchFrame_PlayerFrame:Show();
         BuffwatchFrame_LockAll:Enable();
+        BuffwatchFrame_MinimizeButton:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Min");
         -- Do a refresh
         Buffwatch_GetPlayerInfo();
-        Buffwatch_GetAllBuffs();        
+        Buffwatch_GetAllBuffs();
     end
 
     Buffwatch_ResizeWindow();
@@ -2029,11 +2040,15 @@ function Buffwatch_GetPoint(frame, point)
 end   
     
 function Buffwatch_SetPoint(frame, point, x, y)
+
     if point ~= "" then
+    
         frame:ClearAllPoints();   
-        frame:SetPoint(point, UIParent, "BOTTOMLEFT", x, y);   
+        frame:SetPoint(point, UIParent, "BOTTOMLEFT", x, y);
+        
     end
-end   
+    
+end
 
 function Buffwatch_Print(msg, R, G, B)
 

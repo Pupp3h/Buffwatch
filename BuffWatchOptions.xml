@@ -4,7 +4,7 @@
     <Frame name="Buffwatch_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="300" y="360"/>
+            <AbsDimension x="300" y="400"/>
         </Size>
 
         <Anchors>
@@ -516,15 +516,15 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Transparency");
-                        getglobal(self:GetName().."High"):SetText();
-                        getglobal(self:GetName().."Low"):SetText();
+                        getglobal(self:GetName().."High"):SetText("1");
+                        getglobal(self:GetName().."Low"):SetText("0");
                         self:SetMinMaxValues(0.0,1.0);
                         self:SetValueStep(0.01);
                     </OnLoad>
                     <OnValueChanged>
                         BuffwatchConfig.Alpha = self:GetValue();
                         BuffwatchFrame_Background:SetAlpha(BuffwatchConfig.Alpha);
+                        getglobal(self:GetName().."Text"):SetText("Transparency ("..string.format("%.2f", BuffwatchConfig.Alpha)..")");
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -535,6 +535,39 @@
                     </OnLeave>
                 </Scripts>
             </Slider>
+            
+            <Slider name="$parent_Scale" inherits="OptionsSliderTemplate">
+                <Size>
+                    <AbsDimension x="220" y="16"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_Alpha" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-20" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(self:GetName().."High"):SetText("200%");
+                        getglobal(self:GetName().."Low"):SetText("50%");
+                        self:SetMinMaxValues(0.5,2.0);
+                        self:SetValueStep(0.01);
+                    </OnLoad>
+                    <OnValueChanged>
+                    	BuffwatchPlayerConfig.Scale = self:GetValue();
+                    	BuffwatchFrame:SetScale(BuffwatchPlayerConfig.Scale);
+                    	getglobal(self:GetName().."Text"):SetText("Scale ("..string.format("%.0f%%", BuffwatchPlayerConfig.Scale * 100)..")");
+                    </OnValueChanged>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_SCALE);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Slider>            
             
             <Button name="$parent_Okay" inherits="OptionsButtonTemplate" text="Okay">
                 <Anchors>

@@ -3,6 +3,7 @@ BW_TTIP_ANCHORPOINT = "Determines which direction the window expands when resizi
 BW_TTIP_HIDEOMNICC = "Hide OmniCC text overlays";
 BW_TTIP_MODE = "Selects which players to show";
 BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire";
+BW_TTIP_SCALE = "Sets the scale of the Buffwatch window";
 BW_TTIP_SHOWALLFORPLAYER = "Always show all buffs for this player";
 BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
 BW_TTIP_SHOWDEBUFFS = "Show debuffs";
@@ -23,6 +24,7 @@ end
 
 function Buffwatch_Options_Init()
     Buffwatch_Options_ShowPets:SetChecked(BuffwatchPlayerConfig.ShowPets);
+    Buffwatch_Options_ShowOnlyMine:SetChecked(BuffwatchPlayerConfig.ShowOnlyMine);
     Buffwatch_Options_ShowOnlyCastableBuffs:SetChecked(BuffwatchPlayerConfig.ShowCastableBuffs);
     Buffwatch_Options_ShowAllForPlayer:SetChecked(BuffwatchPlayerConfig.ShowAllForPlayer);
 --    Buffwatch_Options_ShowDebuffs:SetChecked(BuffwatchPlayerConfig.ShowDebuffs);
@@ -35,6 +37,7 @@ function Buffwatch_Options_Init()
         Buffwatch_Options_HideOmniCC:Hide();
     end 
     Buffwatch_Options_Alpha:SetValue(BuffwatchConfig.Alpha);
+    Buffwatch_Options_Scale:SetValue(BuffwatchPlayerConfig.Scale);
 end
 
 function Buffwatch_Options_Mode_OnClick(self)
