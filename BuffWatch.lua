@@ -17,6 +17,8 @@
 -- Added Dalaran Brilliance to intellect buff group
 -- Added Flask (ilvl85), Battle Elixir & Guardian Elixir (ilvl80) buff groups
 --
+-- (a) Fix for some Elixir buff names
+--
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -24,7 +26,7 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.15";
+BW_VERSION = "3.15a";
 BW_RELEASE_DATE = "8 June 2009";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -98,13 +100,12 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Group[10] = { "Flask of Endless Rage", "Flask of Pure Mojo", "Flask of Stoneblood", 
       "Flask of the Frost Wyrm" };
     -- Battle Elixirs
-    GroupBuffs.Group[11] = { "Elixir of Accuracy", "Elixir of Armor Piercing", "Elixir of Deadly Strikes",
-      "Elixir of Expertise", "Elixir of Lightning Speed", "Elixir of Mighty Agility", 
-      "Elixir of Mighty Strength", "Guru's Elixir", "Spellpower Elixir", "Wrath Elixir" };
+    GroupBuffs.Group[11] = { "Accuracy", "Armor Piercing", "Deadly Strikes", "Expertise", 
+      "Lightning Speed", "Mighty Agility", "Mighty Strength", "Guru's Elixir", 
+      "Spellpower Elixir", "Wrath Elixir" };
     -- Guardian Elixirs
-    GroupBuffs.Group[12] = { "Elixir of Mighty Defense", "Elixir of Mighty Fortitude", 
-      "Elixir of Mighty Mageblood", "Elixir of Mighty Thoughts", "Elixir of Protection", 
-      "Elixir of Spirit" };
+    GroupBuffs.Group[12] = { "Mighty Defense", "Elixir of Mighty Fortitude", 
+      "Mighty Mana Regeneration", "Mighty Thoughts", "Protection", "Elixir of Spirit" };
       
     GroupBuffs.Buff = { };
     GroupBuffs.Buff["Gift of the Wild"] = 1;
@@ -130,21 +131,21 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Flask of Pure Mojo"] = 10;
     GroupBuffs.Buff["Flask of Stoneblood"] = 10;
     GroupBuffs.Buff["Flask of the Frost Wyrm"] = 10;
-    GroupBuffs.Buff["Elixir of Accuracy"] = 11;
-    GroupBuffs.Buff["Elixir of Armor Piercing"] = 11;
-    GroupBuffs.Buff["Elixir of Deadly Strikes"] = 11;
-    GroupBuffs.Buff["Elixir of Expertise"] = 11;
-    GroupBuffs.Buff["Elixir of Lightning Speed"] = 11;
-    GroupBuffs.Buff["Elixir of Mighty Agility"] = 11;
-    GroupBuffs.Buff["Elixir of Mighty Strength"] = 11;
+    GroupBuffs.Buff["Accuracy"] = 11;
+    GroupBuffs.Buff["Armor Piercing"] = 11;
+    GroupBuffs.Buff["Deadly Strikes"] = 11;
+    GroupBuffs.Buff["Expertise"] = 11;
+    GroupBuffs.Buff["Lightning Speed"] = 11;
+    GroupBuffs.Buff["Mighty Agility"] = 11;
+    GroupBuffs.Buff["Mighty Strength"] = 11;
     GroupBuffs.Buff["Guru's Elixir"] = 11;
     GroupBuffs.Buff["Spellpower Elixir"] = 11;
     GroupBuffs.Buff["Wrath Elixir"] = 11;
-    GroupBuffs.Buff["Elixir of Mighty Defense"] = 12;
+    GroupBuffs.Buff["Mighty Defense"] = 12;
     GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 12;
-    GroupBuffs.Buff["Elixir of Mighty Mageblood"] = 12;
-    GroupBuffs.Buff["Elixir of Mighty Thoughts"] = 12;
-    GroupBuffs.Buff["Elixir of Protection"] = 12;
+    GroupBuffs.Buff["Mighty Mana Regeneration"] = 12;
+    GroupBuffs.Buff["Mighty Thoughts"] = 12;
+    GroupBuffs.Buff["Protection"] = 12;
     GroupBuffs.Buff["Elixir of Spirit"] = 12;
     
 end
