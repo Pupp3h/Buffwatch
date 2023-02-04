@@ -4,7 +4,7 @@
     <Frame name="Buffwatch_Options" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent" enableKeyboard="true">
 
         <Size>
-            <AbsDimension x="300" y="220"/>
+            <AbsDimension x="300" y="250"/>
         </Size>
 
         <Anchors>
@@ -137,8 +137,10 @@
                     <OnClick>
                         if (this:GetChecked()) then
                             BuffwatchConfig.ShowCastableBuffs = true;
+                            OptionsFrame_EnableCheckBox(Buffwatch_Options_ShowAllForPlayer);
                         else
                             BuffwatchConfig.ShowCastableBuffs = false;
+                            OptionsFrame_DisableCheckBox(Buffwatch_Options_ShowAllForPlayer);
                         end
                         Buffwatch_GetAllBuffs();
                     </OnClick>
@@ -151,7 +153,40 @@
                     </OnLeave>
                 </Scripts>
             </CheckButton>
-<!--
+
+            <CheckButton name="$parent_ShowAllForPlayer" inherits="OptionsCheckButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyCastableBuffs" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show all buffs for this player");
+                    </OnLoad>
+                    <OnClick>
+                        if (this:GetChecked()) then
+                            BuffwatchConfig.ShowAllForPlayer = true;
+                        else
+                            BuffwatchConfig.ShowAllForPlayer = false;
+                        end
+                        Buffwatch_GetAllBuffs();
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_SHOWALLFORPLAYER);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
+<!--   
             <CheckButton name="$parent_ShowDebuffs" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyCastableBuffs" relativePoint="BOTTOMLEFT">
@@ -280,7 +315,7 @@
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyCastableBuffs" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowAllForPlayer" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="0" y="-20" />
                         </Offset>

@@ -75,12 +75,6 @@
           <OnClick>
             Buffwatch_Header_Clicked(button, down);
           </OnClick>
-          <OnDragStart>
-            BuffwatchFrame:StartMoving();
-          </OnDragStart>
-          <OnDragStop>
-            BuffwatchFrame:StopMovingOrSizing();
-          </OnDragStop>          
         </Scripts>
       </Button>
 
@@ -127,12 +121,12 @@
       <OnEvent>
         Buffwatch_OnEvent(event, ...);
       </OnEvent>
-      <OnDragStart>
-        this:StartMoving();
-      </OnDragStart>
-      <OnDragStop>
-        this:StopMovingOrSizing();
-      </OnDragStop>
+      <OnMouseDown>
+        Buffwatch_MouseDown(button);
+      </OnMouseDown>
+      <OnMouseUp>
+        Buffwatch_MouseUp(button);
+      </OnMouseUp>
     </Scripts>
     
   </Frame>
@@ -163,9 +157,6 @@
       <OnLoad>
         this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
       </OnLoad>
-      <PostClick>
-        Buffwatch_Name_Clicked(button, down);
-      </PostClick>
     </Scripts>
   </Button>
 
