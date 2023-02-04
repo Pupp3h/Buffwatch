@@ -13,9 +13,7 @@
 
 -- Changes
 --
--- Added Anchor Point config option, for window growth direction
--- Added Battle Shout, Mana Spring and Paladin Seals to Group Buff lists
--- Moved many of the config options to be saved per player
+-- Fixed positioning of frame when logging in
 --
 
 -- ****************************************************************************
@@ -24,8 +22,8 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_VERSION = "3.16";
-BW_RELEASE_DATE = "8 August 2009";
+BW_VERSION = "3.17";
+BW_RELEASE_DATE = "28 August 2009";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -180,9 +178,16 @@ for i = 1, select("#", ...) do
     Buffwatch_Debug("i="..i..", v="..select(i, ...));
 end
 ]]
+
+    if event == "PLAYER_LOGIN" then
+        -- Ensure correct repositioning and anchoring of the frame
+        Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], BuffwatchPlayerConfig.AnchorX, BuffwatchPlayerConfig.AnchorY);
+--Buffwatch_DebugPosition();
+    end
+
     -- Set default values, if unset
     if event == "VARIABLES_LOADED" then
-
+    
         if BuffwatchConfig.Alpha == nil then
             BuffwatchConfig.Alpha = 0.5;
         end
@@ -256,11 +261,7 @@ end
         if BuffwatchConfig.debug == nil then
             BuffwatchConfig.debug = false;
         end
-        
-        Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], BuffwatchPlayerConfig.AnchorX, BuffwatchPlayerConfig.AnchorY);
-    
---Buffwatch_DebugPosition();
-    
+            
         Buffwatch_Options_Init();
 
     end
@@ -2053,16 +2054,18 @@ function Buffwatch_Debug(msg, R, G, B)
 
 end
 
+
 -- for debugging
 --[[
+
 function Buffwatch_DebugPosition()
 
-    if BuffwatchConfig.debugleft ~= nil then
-        Buffwatch_Debug("Buffwatch Old Position Top : "..BuffwatchConfig.debugtop..", Left : "..BuffwatchConfig.debugleft, 1, 0.2, 0.2);
+    if BuffwatchPlayerConfig.debugleft ~= nil then
+        Buffwatch_Debug("Buffwatch Old Position Top : "..BuffwatchPlayerConfig.debugtop..", Left : "..BuffwatchPlayerConfig.debugleft, 1, 0.2, 0.2);
     end
-    BuffwatchConfig.debugtop = BuffwatchFrame:GetTop();
-    BuffwatchConfig.debugleft = BuffwatchFrame:GetLeft();
-    Buffwatch_Debug("Buffwatch New Position Top : "..BuffwatchConfig.debugtop..", Left : "..BuffwatchConfig.debugleft, 0.2, 1, 0.2);
+    BuffwatchPlayerConfig.debugtop = BuffwatchFrame:GetTop();
+    BuffwatchPlayerConfig.debugleft = BuffwatchFrame:GetLeft();
+    Buffwatch_Debug("Buffwatch New Position Top : "..BuffwatchPlayerConfig.debugtop..", Left : "..BuffwatchPlayerConfig.debugleft, 0.2, 1, 0.2);
 
 end
 
