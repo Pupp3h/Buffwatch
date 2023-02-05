@@ -5,8 +5,8 @@ BW_TTIP_MODE = "Selects which players to show";
 BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire";
 BW_TTIP_SCALE = "Sets the scale of the Buffwatch window";
 BW_TTIP_SHOWALLFORPLAYER = "Always show all buffs for this player";
---BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
-BW_TTIP_SHOWCASTABLEBUFFS = "This option is disabled until Blizzard fix their API";
+BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
+--BW_TTIP_SHOWCASTABLEBUFFS = "This option is disabled until Blizzard fix their API";
 BW_TTIP_SHOWDEBUFFS = "Show debuffs";
 BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell";
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire";
@@ -26,7 +26,7 @@ function Buffwatch_Options_OnLoad(self)
     self.name = BW_ADDONNAME;
     self.default = Buffwatch_Options_SetDefaults;
     self.refresh = Buffwatch_Options_Init;
-    self.okay = Buffwatch_Options_OkayButton;
+--    self.okay = Buffwatch_Options_OkayButton;
     self.cancel = Buffwatch_Options_CancelButton;
 
     InterfaceOptions_AddCategory(self);
@@ -96,7 +96,7 @@ function Buffwatch_Options_Init()
     BuffwatchTempPlayerConfig = CopyTable(BuffwatchPlayerConfig);
 
 -- Temporary disabled until the RAID filter is working again, or a new method is found
-BuffwatchPlayerConfig.ShowCastableBuffs = false;
+--BuffwatchPlayerConfig.ShowCastableBuffs = false;
 
     UIDropDownMenu_SetSelectedValue(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
     UIDropDownMenu_SetText(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
@@ -310,12 +310,12 @@ function Buffwatch_Options_SetDefaults()
     BuffwatchPlayerConfig = CopyTable(BW_PLAYER_DEFAULTS);
 end
 
-
+--[[
 function Buffwatch_Options_OkayButton()
 -- Temporary disabled until the RAID filter is working again, or a new method is found
 BuffwatchPlayerConfig.ShowCastableBuffs = false;
 end
-
+]]
 
 function Buffwatch_Options_CancelButton()
     BuffwatchConfig = CopyTable(BuffwatchTempConfig);

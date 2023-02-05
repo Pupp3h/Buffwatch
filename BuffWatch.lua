@@ -21,8 +21,8 @@
 
 -- Changes
 --
--- ToC update
--- Temporarily disabled Show Only Castable option
+-- Workaround for broken UnitAura function
+-- Re-enabled Show Only Castable option
 --
 
 -- ****************************************************************************
@@ -32,8 +32,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "4.03";
-BW_RELEASE_DATE = "05 July 2011";
+BW_VERSION = "4.04";
+BW_RELEASE_DATE = "12 July 2011";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -1204,7 +1204,17 @@ function Buffwatch_Player_GetBuffs(v)
 
             for i = 1, 32 do
 
-                local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
+                -- temporary code to get around broken RAID filter for UnitAura()
+                --local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
+                local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i);
+                if buff and showbuffs == "RAID" then
+                	local isCastable = GetSpellInfo(buff);
+                	-- If we cant cast this buff, dont show it
+                	if isCastable == nil then
+                		buff = nil;
+                	end
+                end
+                
                 local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
                 if buff and (not BuffwatchPlayerConfig.ShowOnlyMine or (caster == "player") or showallplayer) then
