@@ -16,6 +16,12 @@
 -- Performance optimisation for events that relate to specific UnitIDs
 -- Performance optimisation when trying to find player info for a specific UnitID
 
+-- 8.08
+-- Fixed this player not un-greying when getting ressurected
+-- Removed direct support for OmniCC. Use OmniCCs group functionality instead 
+--  https://github.com/tullamods/OmniCC/wiki/What-are-Groups%3F
+--  See Buffwatch++ description for more info
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -27,8 +33,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.07";
-BUFFWATCHADDON.RELEASE_DATE = "24 Oct 2018";
+BUFFWATCHADDON.VERSION = "8.08";
+BUFFWATCHADDON.RELEASE_DATE = "25 Oct 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -124,10 +130,9 @@ function BUFFWATCHADDON_G.OnLoad(self)
 
     self:RegisterEvent("PLAYER_LOGIN");
     self:RegisterEvent("GROUP_ROSTER_UPDATE");
-    self:RegisterEvent("PLAYER_DEAD");
-    self:RegisterEvent("PLAYER_UNGHOST");
     -- UNIT_FLAGS Used for connects/dcs too instead of UNIT_CONNECTED, since it also triggers on unit death
-    self:RegisterEvent("UNIT_FLAGS"); 
+    self:RegisterEvent("UNIT_FLAGS");
+    self:RegisterEvent("PLAYER_FLAGS_CHANGED");
     self:RegisterEvent("UNIT_PET");
     self:RegisterEvent("UNIT_AURA");
     self:RegisterEvent("ADDON_LOADED");
@@ -336,47 +341,27 @@ end
                 local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
                 curr_lock:Disable();
             end
-            
-        elseif event == "PLAYER_DEAD" then
-        
-            local player = Player_Info[UnitName("player")];
-            player.DeadorDC = 1;
-            BUFFWATCHADDON.Player_ColourName(player);
-            BUFFWATCHADDON.Player_GetBuffs(player);
-        
-        elseif event == "PLAYER_UNGHOST" then
-        
-            local player = Player_Info[UnitName("player")];
-            player.DeadorDC = 0;
-            BUFFWATCHADDON.Player_ColourName(player);
-            BUFFWATCHADDON.Player_GetBuffs(player);
-        
+
         -- UNIT_FLAGS fires for group members dying and ressing, 
-        --   however it only fires for the player when they die and when they release to ghost form
-        -- We have to use PLAYER_FLAGS_CHANGED or PLAYER_UNGHOST for when they res, so we manage
-        --   the player seperately from the group using PLAYER_DEAD/PLAYER_UNGHOST
-        elseif event == "UNIT_FLAGS" then
-        
-            local unit = select(1, ...);
-
-            if unit ~= "player" and UNIT_IDs_Keyed[unit] ~= nil then
+        --   however it only fires for the player when they die, get ressurected by another player
+        --   and when they release to ghost form, but not when they unghost.
+        -- We can use PLAYER_FLAGS_CHANGED or PLAYER_UNGHOST for when they unghost
+        elseif (event == "UNIT_FLAGS" or event == "PLAYER_FLAGS_CHANGED") and UNIT_IDs_Keyed[select(1, ...)] ~= nil then
             
-                local player = Player_Info[UnitName(unit)];
+            local player = Player_Info[UnitName(select(1, ...))];
+            
+            if player ~= nil then
+            
+                local DeadorDC = 0;
                 
-                if player ~= nil then
+                if UnitIsDeadOrGhost(player.UNIT_ID) or UnitIsConnected(player.UNIT_ID) == false then
+                    DeadorDC = 1;
+                end
                 
-                    local DeadorDC = 0;
-                    
-                    if UnitIsDeadOrGhost(player.UNIT_ID) or UnitIsConnected(player.UNIT_ID) == false then
-                        DeadorDC = 1;
-                    end
-
-                    if DeadorDC ~= player.DeadorDC then
-                        player.DeadorDC = DeadorDC;
-                        BUFFWATCHADDON.Player_ColourName(player);
-                        BUFFWATCHADDON.Player_GetBuffs(player);
-                    end
-
+                if DeadorDC ~= player.DeadorDC then
+                    player.DeadorDC = DeadorDC;
+                    BUFFWATCHADDON.Player_ColourName(player);
+                    BUFFWATCHADDON.Player_GetBuffs(player);
                 end
 
             end
@@ -1424,7 +1409,6 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --BUFFWATCHADDON.Debug("GetBuffs1: BuffID="..i..", expTime="..expTime..",duration="..duration)
                         curr_buff.cooldown:Show();
-                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideCooldownText; -- For OmniCC text
                         curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
                         curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
@@ -1563,7 +1547,6 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --BUFFWATCHADDON.Debug("GetBuffs2: BuffID="..i..", expTime="..expTime..",duration="..duration)
                         curr_buff.cooldown:Show();
-                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideCooldownText; -- For OmniCC text
                         curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
                         curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
@@ -1672,7 +1655,6 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
                 if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --BUFFWATCHADDON.Debug("LoadBuffs: BuffID="..i..", expTime="..expTime..",duration="..duration)
                     curr_buff.cooldown:Show();
-                    curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideCooldownText; -- For OmniCC text
                     curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
                     curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                 else

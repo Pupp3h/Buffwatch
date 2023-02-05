@@ -263,7 +263,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Hide Cooldown text");
+                        getglobal(self:GetName().."Text"):SetText("Hide cooldown text");
                     </OnLoad>
                     <OnShow>
                         if (BuffwatchConfig.Spirals == true) then
