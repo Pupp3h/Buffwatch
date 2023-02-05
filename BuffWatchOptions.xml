@@ -59,11 +59,11 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        Buffwatch_Options_Mode_OnLoad(self);
+                        BUFFWATCHADDON_G.Options_Mode_OnLoad(self);
                     </OnLoad>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_MODE);
+                        GameTooltip:SetText("Selects which players to show");
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -81,11 +81,11 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        Buffwatch_Options_SortOrder_OnLoad(self);
+                        BUFFWATCHADDON_G.Options_SortOrder_OnLoad(self);
                     </OnLoad>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SORTORDER);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SORTORDER);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -103,11 +103,11 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        Buffwatch_Options_AnchorPoint_OnLoad(self);
+                        BUFFWATCHADDON_G.Options_AnchorPoint_OnLoad(self);
                     </OnLoad>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_ANCHORPOINT);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.ANCHORPOINT);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -128,11 +128,11 @@
                         _G[self:GetName().."Text"]:SetText("Show Pets");
                     </OnLoad>
                     <OnClick>
-                        Buffwatch_Options_ShowPets_OnClick(self);
+                        BUFFWATCHADDON_G.Options_ShowPets_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SHOWPETS);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWPETS);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -153,11 +153,11 @@
                         _G[self:GetName().."Text"]:SetText("Show only buffs you cast");
                     </OnLoad>
                     <OnClick>
-                        Buffwatch_Options_ShowOnlyMine_OnClick(self);
+                        BUFFWATCHADDON_G.Options_ShowOnlyMine_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SHOWONLYMINE);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWONLYMINE);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -178,11 +178,11 @@
                         _G[self:GetName().."Text"]:SetText("Show only castable buffs");
                     </OnLoad>
                     <OnClick>
-                        Buffwatch_Options_ShowOnlyCastableBuffs_OnClick(self);
+                        BUFFWATCHADDON_G.Options_ShowOnlyCastableBuffs_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SHOWCASTABLEBUFFS);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWCASTABLEBUFFS);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -207,17 +207,17 @@
                     </OnLoad>
                     <OnShow>
                         if (BuffwatchPlayerConfig.ShowCastableBuffs == true or BuffwatchPlayerConfig.ShowOnlyMine == true) then
-                            Buffwatch_EnableCheckbox(self);
+                            BUFFWATCHADDON_G.Options_EnableCheckbox(self);
                         else
-                            Buffwatch_DisableCheckbox(self);
+                            BUFFWATCHADDON_G.Options_DisableCheckbox(self);
                         end
                     </OnShow>
                     <OnClick>
-                        Buffwatch_Options_ShowAllForPlayer_OnClick(self);
+                        BUFFWATCHADDON_G.Options_ShowAllForPlayer_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SHOWALLFORPLAYER);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWALLFORPLAYER);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -238,11 +238,11 @@
                         _G[self:GetName().."Text"]:SetText("Show cooldown spirals");
                     </OnLoad>
                     <OnClick>
-                        Buffwatch_Options_ShowSpirals_OnClick(self);
+                        BUFFWATCHADDON_G.Options_ShowSpirals_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SHOWSPIRALS);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWSPIRALS);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -267,17 +267,17 @@
                     </OnLoad>
                     <OnShow>
                         if (BuffwatchConfig.Spirals == true) then
-                            Buffwatch_EnableCheckbox(self);
+                            BUFFWATCHADDON_G.Options_EnableCheckbox(self);
                         else
-                            Buffwatch_DisableCheckbox(self);
+                            BUFFWATCHADDON_G.Options_DisableCheckbox(self);
                         end
                     </OnShow>
                     <OnClick>
-                        Buffwatch_Options_HideCooldownText_OnClick(self);
+                        BUFFWATCHADDON_G.Options_HideCooldownText_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_HIDECOOLDOWNTEXT);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.HIDECOOLDOWNTEXT);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -307,7 +307,7 @@
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SHOWEXPIREDWARNING);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWEXPIREDWARNING);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -336,7 +336,7 @@
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_PLAYEXPIREDSOUND);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.PLAYEXPIREDSOUND);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -369,7 +369,7 @@
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_ALPHA);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.ALPHA);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -402,7 +402,7 @@
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_SCALE);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SCALE);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -430,12 +430,12 @@
                     </OnLoad>
                     <OnValueChanged>
                         BuffwatchConfig.CooldownTextScale = self:GetValue();
-                        Buffwatch_Set_CooldownTextScale();
+                        BUFFWATCHADDON_G.Set_CooldownTextScale();
                         _G[self:GetName().."Text"]:SetText("Cooldown Text Scale ("..string.format("%.0f%%", BuffwatchConfig.CooldownTextScale * 100)..")");
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_COOLDOWNTEXTSCALE);
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.COOLDOWNTEXTSCALE);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -447,7 +447,7 @@
 
         <Scripts>
             <OnLoad>
-                Buffwatch_Options_OnLoad(self);
+                BUFFWATCHADDON_G.Options_OnLoad(self);
             </OnLoad>
         </Scripts>
 
@@ -477,7 +477,7 @@
 
 		<Scripts>
 			<OnLoad>
-				Buffwatch_HelpFrame_OnLoad(self);
+				BUFFWATCHADDON_G.HelpFrame_OnLoad(self);
 			</OnLoad>
 		</Scripts>
 

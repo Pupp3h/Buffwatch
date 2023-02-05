@@ -48,7 +48,7 @@
         <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
         <Scripts>
           <OnClick>
-            Buffwatch_MinimizeButton_Clicked();
+            BUFFWATCHADDON_G.MinimizeButton_Clicked(self);
           </OnClick>
           <OnEnter>
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -73,7 +73,7 @@
         </Anchors>
         <Scripts>
           <OnClick>
-            Buffwatch_Set_AllChecks(self:GetChecked());
+            BUFFWATCHADDON_G.Set_AllChecks(self:GetChecked());
           </OnClick>
         </Scripts>
       </CheckButton>
@@ -112,13 +112,13 @@
             self:RegisterForClicks("RightButtonUp");
           </OnLoad>
           <OnClick>
-            Buffwatch_Header_Clicked(button, down);
+            BUFFWATCHADDON_G.Header_Clicked(button, down);
           </OnClick>
           <OnMouseDown>
-            Buffwatch_MouseDown(self:GetParent(), button);
+            BUFFWATCHADDON_G.MouseDown(self:GetParent(), button);
           </OnMouseDown>
           <OnMouseUp>
-            Buffwatch_MouseUp(self:GetParent(), button);
+            BUFFWATCHADDON_G.MouseUp(self:GetParent(), button);
           </OnMouseUp>
         </Scripts>
       </Button>
@@ -133,7 +133,7 @@
         </Anchors>
         <Scripts>
           <OnLoad>
-            Buffwatch_HeaderDropDown_OnLoad(self);
+            BUFFWATCHADDON_G.HeaderDropDown_OnLoad(self);
           </OnLoad>
         </Scripts>
       </Frame>
@@ -160,16 +160,16 @@
     <Scripts>
 
       <OnLoad>
-        Buffwatch_OnLoad(self);
+        BUFFWATCHADDON_G.OnLoad(self);
       </OnLoad>
       <OnEvent>
-        Buffwatch_OnEvent(self, event, ...);
+        BUFFWATCHADDON_G.OnEvent(self, event, ...);
       </OnEvent>
       <OnMouseDown>
-        Buffwatch_MouseDown(self, button);
+        BUFFWATCHADDON_G.MouseDown(self, button);
       </OnMouseDown>
       <OnMouseUp>
-        Buffwatch_MouseUp(self, button);
+        BUFFWATCHADDON_G.MouseUp(self, button);
       </OnMouseUp>
     </Scripts>
 
@@ -183,7 +183,7 @@
     </Size>
     <Scripts>
       <OnClick>
-        Buffwatch_Check_Clicked(self, button, down);
+        BUFFWATCHADDON_G.Check_Clicked(self, button, down);
       </OnClick>
     </Scripts>
   </CheckButton>
@@ -218,10 +218,10 @@
         self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
       </OnLoad>
       <PostClick>
-        Buffwatch_Buff_Clicked(self, button, down);
+        BUFFWATCHADDON_G.Buff_Clicked(self, button, down);
       </PostClick>
       <OnEnter>
-        Buffwatch_Buff_Tooltip(self, motion);
+        BUFFWATCHADDON_G.Buff_Tooltip(self, motion);
       </OnEnter>
       <OnLeave>
         GameTooltip:Hide();
