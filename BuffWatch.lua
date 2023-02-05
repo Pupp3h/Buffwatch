@@ -21,7 +21,8 @@
 
 -- Changes
 --
--- WoW v5.0.4 fixes
+-- Updated Buff Groupings for 5.0.4
+-- Fixed display in a party with raid mode selected
 --
 
 -- ****************************************************************************
@@ -31,8 +32,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "5.00";
-BW_RELEASE_DATE = "29 Aug 2012";
+BW_VERSION = "5.01";
+BW_RELEASE_DATE = "30 Aug 2012";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -136,21 +137,22 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.GroupName = { };
 
     -- Class Group Buffs
-    GroupBuffs.GroupName[1] = "Agility and Strength"
-    GroupBuffs.Buff["Horn of Winter"] = 1;
-    GroupBuffs.Buff["Strength of Earth"] = 1;
-    GroupBuffs.Buff["Battle Shout"] = 1;
+    GroupBuffs.GroupName[1] = "Mastery"
+    GroupBuffs.Buff["Blessing of Might"] = 1;
+    GroupBuffs.Buff["Grace of Air"] = 1;
     GroupBuffs.Buff["Roar of Courage"] = 1;
+    GroupBuffs.Buff["Spirit Beast Blessing"] = 1;
 
-    GroupBuffs.GroupName[2] = "Armor"
-    GroupBuffs.Buff["Devotion Aura"] = 2;
-    GroupBuffs.Buff["Stoneskin Totem"] = 2;
-
+    GroupBuffs.GroupName[2] = "5% stats"
+    GroupBuffs.Buff["Blessing of Kings"] = 2;
+    GroupBuffs.Buff["Mark of the Wild"] = 2;
+    GroupBuffs.Buff["Legacy of the Emperor"] = 2;
+    GroupBuffs.Buff["Embrace of the Shale Spider"] = 2;
+    
     GroupBuffs.GroupName[3] = "10% AP"
-    GroupBuffs.Buff["Blessing of Might"] = 3;  -- this also includes mana regen
-    GroupBuffs.Buff["Abomination's Might"] = 3;
-    GroupBuffs.Buff["Unleashed Rage"] = 3;
     GroupBuffs.Buff["Trueshot Aura"] = 3;
+    GroupBuffs.Buff["Horn of Winter"] = 3;
+    GroupBuffs.Buff["Battle Shout"] = 3;
 
     GroupBuffs.GroupName[4] = "Burst Haste"
     GroupBuffs.Buff["Bloodlust"] = 4;
@@ -164,29 +166,35 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Blood Pact"] = 5;
     GroupBuffs.Buff["Qiraji Fortitude"] = 5;
 
-    GroupBuffs.GroupName[6] = "Mana Pool"
+    GroupBuffs.GroupName[6] = "10% Spell Power"
     GroupBuffs.Buff["Dalaran Brilliance"] = 6;
     GroupBuffs.Buff["Arcane Brilliance"] = 6;
+    GroupBuffs.Buff["Burning Wrath"] = 6;
+    GroupBuffs.Buff["Dark Intent"] = 6;
+    GroupBuffs.Buff["Still Water"] = 6;
 
     GroupBuffs.GroupName[7] = "5% Crit"
-    GroupBuffs.Buff["Rampage"] = 7;
+    --GroupBuffs.Buff["Dalaran Brilliance"] = 7; Need to redesign auto buff replacements
+    --GroupBuffs.Buff["Arcane Brilliance"] = 7;   to get these to work
     GroupBuffs.Buff["Leader of the Pack"] = 7;
-    GroupBuffs.Buff["Honor Among Thieves"] = 7;
-    GroupBuffs.Buff["Elemental Oath"] = 7;
+    GroupBuffs.Buff["Legacy of the White Tiger"] = 7;
+    GroupBuffs.Buff["Bellowing Roar"] = 7;
+    GroupBuffs.Buff["Furious Howl"] = 7;
+    GroupBuffs.Buff["Terrifying Roar"] = 7;
+    GroupBuffs.Buff["Fearless Roar"] = 7;
+    GroupBuffs.Buff["Still Water"] = 7; -- same as AB/DB
 
-    GroupBuffs.GroupName[8] = "10% Melee Attack Speed"
-    GroupBuffs.Buff["Windfury Totem"] = 8;
-    GroupBuffs.Buff["Improved Icy Talons"] = 8;
-    GroupBuffs.Buff["Hunting Party"] = 8;
-
+    GroupBuffs.GroupName[8] = "10% Haste"
+    GroupBuffs.Buff["Unholy Aura"] = 8;
+    GroupBuffs.Buff["Swiftblade's Cunning"] = 8;
+    GroupBuffs.Buff["Unleashed Rage"] = 8;
+    GroupBuffs.Buff["Cackling Howl"] = 8;
+    GroupBuffs.Buff["Serpent's Swiftness"] = 8;
+    
     GroupBuffs.GroupName[9] = "5% Spell Haste"
-    GroupBuffs.Buff["Wrath of Air Totem"] = 9;
     GroupBuffs.Buff["Moonkin Aura"] = 9;
-    --GroupBuffs.Buff["Shadowform"] = 9; -- moo, whats the buff for this? is there one?
-
-    GroupBuffs.GroupName[12] = "5% stats"
-    GroupBuffs.Buff["Blessing of Kings"] = 12;
-    GroupBuffs.Buff["Mark of the Wild"] = 12;
+    GroupBuffs.Buff["Shadowform"] = 9;
+    GroupBuffs.Buff["Elemental Oath"] = 9;
 
     GroupBuffs.GroupName[13] = "Mage Armor"
     GroupBuffs.Buff["Mage Armor"] = 13;
@@ -707,7 +715,7 @@ function Buffwatch_Set_UNIT_IDs(forced)
 
     else
 
-        if GetNumGroupMembers() > 0 and BuffwatchPlayerConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
+        if GetNumGroupMembers() > 5 and BuffwatchPlayerConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
 
             if grouptype ~= "raid" or forced == true then
 
