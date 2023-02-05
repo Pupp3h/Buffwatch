@@ -4,9 +4,7 @@
 
 -- Changes
 --
--- ToC update for Legion
--- Removed old group buffs
--- Added new legion flasks
+-- ToC update for 7.3.5
 --
 
 -- ****************************************************************************
@@ -16,8 +14,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "7.00";
-BW_RELEASE_DATE = "22 Jul 2016";
+BW_VERSION = "7.01";
+BW_RELEASE_DATE = "4 May 2018";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
