@@ -9,6 +9,9 @@
 -- Optimisation when checking buffs
 -- Fixed toggling Hide cooldown text when OmniCC is installed
 
+-- 8.13
+-- Hotfix for buff frames not hiding correctly
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -20,7 +23,7 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.12";
+BUFFWATCHADDON.VERSION = "8.13";
 BUFFWATCHADDON.RELEASE_DATE = "31 Aug 2019";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
@@ -1296,18 +1299,17 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
 
                 -- temporary code to get around broken RAID filter for UnitAura()
                 local buff, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i);
-
-                if not buff then break; end
-
-                if showbuffs == "RAID" then
+                local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
+                
+                if not buff and not curr_buff then break; end
+                
+                if buff and showbuffs == "RAID" then
                     local isCastable = GetSpellInfo(buff);
                     -- If we cant cast this buff, dont show it
                     if isCastable == nil then
                         buff = nil;
                     end
                 end
-                
-                local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
                 if buff and (not BuffwatchPlayerConfig.ShowOnlyMine or (caster == "player") or showallplayer) then
 
