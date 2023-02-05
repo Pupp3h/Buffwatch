@@ -4,29 +4,15 @@
 
 -- Changes
 -- 
--- 8.01
--- Added support for blizzards own cooldown text
--- Added scaling for cooldown text
--- Added versioning for config
--- Resolved issue of missing unit(s) if they hadn't yet fully loaded into the world
--- Fixed hide cooldown text checkbox error when OmniCC is installed
---
--- 8.02
--- Fix for handling new config options over multiple chars
---
--- 8.03
--- Updated version number for live release
---
--- 8.04
--- Minor fix in config version updates
---
--- 8.05
--- Added BfA flasks & Netherwinds burst haste to group buffs
--- Cleaned up some variable and function scope
---
--- 8.06
--- Fixed nil expTime variable error when a known player joins the group
---
+-- 8.07
+-- Hide unmonitored toggle moved from header dropdown menu to button on main window
+-- Quick workaround to make sure correct options panel appears on first try
+-- Moved combat icon to top left of window to provide room for new hide button
+-- Show combat icon even if window is minimised
+-- Prevent Min/Max while in combat
+-- Fixed greying of player buffs for dead or disconnected
+-- Added greying of player names for dead or disconnected
+-- Fixed window sometimes not sizing correctly when a player/pet doesn't load in quickly
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -39,8 +25,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.06";
-BUFFWATCHADDON.RELEASE_DATE = "31 Aug 2018";
+BUFFWATCHADDON.VERSION = "8.07b1";
+BUFFWATCHADDON.RELEASE_DATE = "17 Oct 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -133,6 +119,7 @@ function BUFFWATCHADDON_G.OnLoad(self)
 
     self:RegisterEvent("PLAYER_LOGIN");
     self:RegisterEvent("GROUP_ROSTER_UPDATE");
+    self:RegisterEvent("UNIT_FLAGS"); -- Used for connects/dcs too instead of UNIT_CONNECTED, since UNIT_FLAGS also triggers on unit death
     self:RegisterEvent("UNIT_PET");
     self:RegisterEvent("UNIT_AURA");
     self:RegisterEvent("ADDON_LOADED");
@@ -325,6 +312,14 @@ end
             end
         end
     end
+    
+    if event == "PLAYER_REGEN_ENABLED" then
+        BuffwatchFrame_HeaderCombatIcon:Hide();
+        BuffwatchFrame_LockAll:Show();
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        BuffwatchFrame_HeaderCombatIcon:Show();
+        BuffwatchFrame_LockAll:Hide();
+    end
 
     if BuffwatchFrame_PlayerFrame:IsVisible() then
 
@@ -357,10 +352,6 @@ end
         elseif event == "PLAYER_REGEN_ENABLED" then
 
             -- We have come out of combat, remove combat restrictions and process any pending events
-            BuffwatchFrame_HeaderCombatIcon:Hide();
-            BuffwatchFrame_LockAll:Enable();
-            BuffwatchFrame_MinimizeButton:Enable();
-
             for k, v in pairs(Player_Info) do
                 local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
                 curr_lock:Enable();
@@ -371,19 +362,38 @@ end
         elseif event == "PLAYER_REGEN_DISABLED" then
 
             -- We have entered combat, enforce combat restrictions
-            BuffwatchFrame_HeaderCombatIcon:Show();
-            BuffwatchFrame_LockAll:Disable();
-            BuffwatchFrame_MinimizeButton:Disable();
-
             for k, v in pairs(Player_Info) do
                 local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
                 curr_lock:Disable();
+            end
+        
+        elseif event == "UNIT_FLAGS" then
+        
+            for k, v in pairs(Player_Info) do
+
+                if select(1, ...) == v.UNIT_ID then
+                
+                    local DeadorDC = 0;
+                    
+                    if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == false then
+                        DeadorDC = 1;
+                    end
+
+                    if DeadorDC ~= v.DeadorDC then
+                        v.DeadorDC = DeadorDC;
+                        BUFFWATCHADDON.Player_ColourName(v);
+                        BUFFWATCHADDON.Player_GetBuffs(v);
+                    end
+                    
+                    break;
+                end
+
             end
 
         end
 
     end
-
+    
 end
 
 
@@ -479,15 +489,6 @@ function BUFFWATCHADDON.Buffwatch_HeaderDropDown_Initialize()
     dropdowninfo.func = BUFFWATCHADDON_G.OptionsToggle;
     UIDropDownMenu_AddButton(dropdowninfo);
 
-    if HideUnmonitored == true then
-        dropdowninfo.text = "Show Unmonitored"
-    else
-        dropdowninfo.text = "Hide Unmonitored"
-    end
-
-    dropdowninfo.func = BUFFWATCHADDON.HideUnmonitored_Clicked
-    UIDropDownMenu_AddButton(dropdowninfo)
-
     dropdowninfo.text = "Help";
     dropdowninfo.func = BUFFWATCHADDON_G.ShowHelp;
     UIDropDownMenu_AddButton(dropdowninfo);
@@ -513,22 +514,81 @@ end
 
 function BUFFWATCHADDON_G.MinimizeButton_Clicked(self)
 
-    minimized = not minimized;
+    if InCombatLockdown() then
 
-    if minimized == true then
-        BuffwatchFrame_PlayerFrame:Hide();
-        BuffwatchFrame_LockAll:Disable();
-        self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Max");
+        BUFFWATCHADDON.Print("Cannot hide or show buffs while in combat.");
+
     else
-        BuffwatchFrame_PlayerFrame:Show();
-        BuffwatchFrame_LockAll:Enable();
-        self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Min");
-        -- Do a refresh
-        BUFFWATCHADDON.GetPlayerInfo();
-        BUFFWATCHADDON.GetAllBuffs();
+        minimized = not minimized;
+
+        if minimized then
+            BuffwatchFrame_PlayerFrame:Hide();
+            BuffwatchFrame_LockAll:Disable();
+            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Max");
+            GameTooltip:SetText("Max");
+        else
+            BuffwatchFrame_PlayerFrame:Show();
+            BuffwatchFrame_LockAll:Enable();
+            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Min");
+            GameTooltip:SetText("Min");
+            -- Do a refresh
+            BUFFWATCHADDON.GetPlayerInfo();
+            BUFFWATCHADDON.GetAllBuffs();
+        end
+
+        BUFFWATCHADDON.ResizeWindow();
+        
     end
 
-    BUFFWATCHADDON.ResizeWindow();
+end
+
+
+function BUFFWATCHADDON_G.MinimizeButton_Enter(self)
+
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+    if minimized then
+        GameTooltip:SetText("Max");
+    else
+        GameTooltip:SetText("Min");
+    end
+    
+end
+
+
+function BUFFWATCHADDON_G.HideButton_Clicked(self)
+
+    if InCombatLockdown() then
+
+        BUFFWATCHADDON.Print("Cannot hide or show buffs while in combat.");
+
+    else
+
+        HideUnmonitored = not HideUnmonitored;
+        
+        if HideUnmonitored == true then
+            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Show");
+            GameTooltip:SetText("Show All");
+        else
+            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Hide");
+            GameTooltip:SetText("Hide Unmonitored");
+        end
+
+        BUFFWATCHADDON.PositionAllPlayerFrames();
+        BUFFWATCHADDON.ResizeWindow();
+
+    end
+
+end
+
+
+function BUFFWATCHADDON_G.HideButton_Enter(self)
+
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+    if HideUnmonitored then
+        GameTooltip:SetText("Show All");
+    else
+        GameTooltip:SetText("Hide Unmonitored");
+    end
 
 end
 
@@ -801,6 +861,7 @@ end
     Class - Players Class (for colouring name and sorting)
     IsPet - true if a pet (pets are sorted last, and can be hidden)
     SubGroup - 1 if in party, or 1-8 if in raid (Used for sorting)
+    DeadorDC - For greying out player frames if dead or disconnected
     Checked - Used only in this function to determine players that are no longer present
 ]]--
 function BUFFWATCHADDON.GetPlayerInfo()
@@ -855,6 +916,8 @@ function BUFFWATCHADDON.GetPlayerInfo()
                     else
                         Player_Info[unitname]["IsPet"] = 0;
                     end
+                    
+                    Player_Info[unitname]["DeadorDC"] = 0;
 
                     local namebutton = _G["BuffwatchFrame_PlayerFrame"..id.."_Name"];
                     local nametext = _G["BuffwatchFrame_PlayerFrame"..id.."_NameText"];
@@ -930,7 +993,7 @@ function BUFFWATCHADDON.GetPlayerInfo()
                 else
                     Player_Info[unitname]["SubGroup"] = 1;
                 end
-
+                
                 Player_Info[unitname]["Checked"] = 1;
                 
             elseif (unitname == "Unknown") then
@@ -948,6 +1011,7 @@ function BUFFWATCHADDON.GetPlayerInfo()
         if foundunknownunit == true then
 --BUFFWATCHADDON.Debug("Found an unknown unit, firing off a refresh in 5sec...");        
             BUFFWATCHADDON.Wait(5, BUFFWATCHADDON.GetPlayerInfo);
+            BUFFWATCHADDON.Wait(5, BUFFWATCHADDON.ResizeWindow);
         end
         
         -- Remove players that are no longer in the group
@@ -1102,7 +1166,7 @@ end
 
 function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
 
-    local count = 0;
+    local hiddencount = 0;
 
     BUFFWATCHADDON.GetPlayerSortOrder();
 
@@ -1112,7 +1176,7 @@ function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
 
             -- Adjust final player count, if any frames are hidden
             if _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked() and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
-                count = count + 1;
+                hiddencount = hiddencount + 1;
             end
 
         end
@@ -1120,7 +1184,7 @@ function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
         if playerid == v.ID then
 
             -- Return adjusted player frame position with player data
-            return (k - count), v;
+            return (k - hiddencount), v;
 
         end
 
@@ -1336,7 +1400,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
             if curr_buff and curr_buff:IsShown() then
 
                 -- Set buff icon to grey if player is dead or offline
-                if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == nil then
+                if v.DeadorDC == 1 then
 
                     curr_buff_icon:SetVertexColor(0.4,0.4,0.4);
 
@@ -1359,7 +1423,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                         if buffGroup then
 
                             -- Iterate Group for this buff
-                            for index, val in ipairs(GroupBuffs.Group[buffGroup]) do
+                            for index, val in pairs(GroupBuffs.Group[buffGroup]) do
 
                               if val ~= buff then
 
@@ -1434,6 +1498,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                         end
 ]]
                     end
+                    
 --BUFFWATCHADDON.Debug("GetBuffs2: Player="..v.Name)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --BUFFWATCHADDON.Debug("GetBuffs2: BuffID="..i..", expTime="..expTime..",duration="..duration)
@@ -1739,6 +1804,7 @@ function BUFFWATCHADDON_G.Toggle()
 
         if BuffwatchFrame:IsVisible() then
             BuffwatchFrame:Hide();
+            BUFFWATCHADDON.Print("Type '/bfw toggle' to show the Buffwatch window again.");
         else
             BUFFWATCHADDON.Set_UNIT_IDs();
             BuffwatchFrame:Show();
@@ -1751,6 +1817,8 @@ end
 
 function BUFFWATCHADDON_G.OptionsToggle()
 
+    -- Call twice to get around issue of correct panel not opening on first try
+    InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
     InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
 
 end
@@ -1758,25 +1826,9 @@ end
 
 function BUFFWATCHADDON_G.ShowHelp()
 
+    -- Call twice to get around issue of correct panel not opening on first try
     InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
-
-end
-
-
-function BUFFWATCHADDON.HideUnmonitored_Clicked(self)
-
-    if InCombatLockdown() then
-
-        BUFFWATCHADDON.Print("Cannot hide or show buffs while in combat.");
-
-    else
-
-        HideUnmonitored = not HideUnmonitored;
-
-        BUFFWATCHADDON.PositionAllPlayerFrames();
-        BUFFWATCHADDON.ResizeWindow();
-
-    end
+    InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
 
 end
 
@@ -1911,27 +1963,21 @@ function BUFFWATCHADDON.Player_ColourName(v)
 
     local nametext = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_NameText"];
 
---    if BuffwatchConfig.HighlightPvP and UnitIsPVP(v.UNIT_ID) then
+    if v.DeadorDC == 1 then
+        nametext:SetTextColor(0.4, 0.4, 0.4);    
+    elseif v.Class ~= "" then
 
---        nametext:SetTextColor(0.0, 1.0, 0.0);
+        local color = RAID_CLASS_COLORS[v.Class];
 
---    else
-
-        if v.Class ~= "" then
-
-            local color = RAID_CLASS_COLORS[v.Class];
-
-            if color then
-                nametext:SetTextColor(color.r, color.g, color.b);
-            else
-                nametext:SetTextColor(1.0, 0.9, 0.8);
-            end
-
+        if color then
+            nametext:SetTextColor(color.r, color.g, color.b);
         else
             nametext:SetTextColor(1.0, 0.9, 0.8);
         end
 
---    end
+    else
+        nametext:SetTextColor(1.0, 0.9, 0.8);
+    end
 
 end
 

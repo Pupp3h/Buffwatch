@@ -32,34 +32,7 @@
         </Backdrop>
 
       </Frame>
-
-      <Button name="$parent_MinimizeButton" hidden="false">
-        <Size>
-          <AbsDimension x="16" y="16"/>
-        </Size>
-        <Anchors>
-          <Anchor point="TOPRIGHT" relativeTo="$parent_Background" relativePoint="TOPRIGHT">
-            <Offset>
-              <AbsDimension x="-1" y="-1"/>
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <NormalTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Min"/>
-        <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
-        <Scripts>
-          <OnClick>
-            BUFFWATCHADDON_G.MinimizeButton_Clicked(self);
-          </OnClick>
-          <OnEnter>
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-            GameTooltip:SetText("Min/Max");
-          </OnEnter>
-          <OnLeave>
-            GameTooltip:Hide();
-          </OnLeave>
-        </Scripts>
-      </Button>
-
+	  
       <CheckButton name="$parent_LockAll" inherits="UICheckButtonTemplate">
         <Size>
           <AbsDimension x="18" y="18"/>
@@ -80,7 +53,7 @@
 
       <Button name="$parent_Header">
         <Size>
-          <AbsDimension x="95" y="12"/>
+          <AbsDimension x="59" y="12"/>
         </Size>
         <Anchors>
           <Anchor point="TOP">
@@ -94,16 +67,16 @@
             <FontString inherits="GameFontNormalSmall" setAllPoints="true" text="Buffwatch" />
             <Texture name="$parentCombatIcon" file="Interface\CharacterFrame\UI-StateIcon" hidden="true">
               <Size>
-                <AbsDimension x="24" y="24"/>
+                <AbsDimension x="18" y="18"/>
               </Size>
               <Anchors>
-                <Anchor point="TOPRIGHT" relativeTo="$parent">
+                <Anchor point="TOPLEFT" relativeTo="BuffwatchFrame">
                   <Offset>
-                    <AbsDimension x="0" y="6"/>
+                    <AbsDimension x="5" y="-2"/>
                   </Offset>
                 </Anchor>
               </Anchors>
-              <TexCoords left="0.5" right="1.0" top="0" bottom="0.5"/>
+              <TexCoords left="0.546875" right="0.921875" top="0.0625" bottom="0.4375"/>
             </Texture>
           </Layer>
         </Layers>
@@ -137,7 +110,55 @@
           </OnLoad>
         </Scripts>
       </Frame>
+	  
+      <Button name="$parent_MinimizeButton" hidden="false">
+        <Size>
+          <AbsDimension x="16" y="16"/>
+        </Size>
+        <Anchors>
+          <Anchor point="TOPRIGHT" relativeTo="$parent_Background" relativePoint="TOPRIGHT">
+            <Offset>
+              <AbsDimension x="-1" y="-1"/>
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <NormalTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Min"/>
+        <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
+        <Scripts>
+          <OnClick>
+            BUFFWATCHADDON_G.MinimizeButton_Clicked(self);
+          </OnClick>
+          <OnEnter>
+		    BUFFWATCHADDON_G.MinimizeButton_Enter(self);
+          </OnEnter>
+          <OnLeave>
+            GameTooltip:Hide();
+          </OnLeave>
+        </Scripts>
+      </Button>
 
+      <Button name="$parent_HideButton" hidden="false">
+        <Size>
+          <AbsDimension x="16" y="16"/>
+        </Size>
+        <Anchors>
+          <Anchor point="TOPRIGHT" relativeTo="$parent_MinimizeButton" relativePoint="TOPLEFT"/>
+        </Anchors>
+        <NormalTexture file="Interface\AddOns\Buffwatch\MinimizeButton-Hide"/>
+        <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
+        <Scripts>
+          <OnClick>
+            BUFFWATCHADDON_G.HideButton_Clicked(self);
+          </OnClick>
+          <OnEnter>
+			BUFFWATCHADDON_G.HideButton_Enter(self);
+          </OnEnter>
+          <OnLeave>
+            GameTooltip:Hide();
+          </OnLeave>
+        </Scripts>
+      </Button>
+	  
       <Frame name="$parent_PlayerFrame">
 
         <Anchors>
