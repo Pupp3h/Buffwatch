@@ -4,7 +4,7 @@
 
 -- Changes
 -- 
--- 8.07b1
+-- 8.07
 -- Hide unmonitored toggle moved from header dropdown menu to button on main window
 -- Quick workaround to make sure correct options panel appears on first try
 -- Moved combat icon to top left of window to provide room for new hide button
@@ -13,11 +13,7 @@
 -- Fixed greying of player buffs for dead or disconnected
 -- Added greying of player names for dead or disconnected
 -- Fixed window sometimes not sizing correctly when a player/pet doesn't load in quickly
--- 8.07b2
--- Fixed this player not un-greying when ressing
--- Fixed greying of players when they join group or we login or reloadui
--- Some performance optimisation for events that relate to specific UnitIDs
--- 8.07b3
+-- Performance optimisation for events that relate to specific UnitIDs
 -- Performance optimisation when trying to find player info for a specific UnitID
 
 -- ****************************************************************************
@@ -31,8 +27,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.07b3";
-BUFFWATCHADDON.RELEASE_DATE = "23 Oct 2018";
+BUFFWATCHADDON.VERSION = "8.07";
+BUFFWATCHADDON.RELEASE_DATE = "24 Oct 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -781,13 +777,16 @@ function BUFFWATCHADDON.SlashHandler(msg)
 
 end
 
-
+-- Config changes :
+--  7.02 - Added versioning for config, Renamed HideOmniCC to HideCooldownText, Added CooldownTextScale to player config
+--  7.03 - Added versioning for player config, Moved CooldownTextScale to config
 function BUFFWATCHADDON.VersionCheck()
 
     if BuffwatchConfig.Version == BUFFWATCHADDON.VERSION then
         -- Nothing to do
     else
     
+        -- pre 7.02
         if BuffwatchConfig.Version == nil then
 
             -- Update old setting name
@@ -797,7 +796,8 @@ function BUFFWATCHADDON.VersionCheck()
             end
         
         end
-            
+        
+        -- pre 7.03
         if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "7.02" then 
 
             if BuffwatchConfig.CooldownTextScale == nil then
