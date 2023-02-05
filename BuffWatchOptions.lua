@@ -86,10 +86,10 @@ function BUFFWATCHADDON_G.HelpFrame_OnLoad(self)
 
     InterfaceOptions_AddCategory(self);
 
-	Buffwatch_HelpFrameText:ClearAllPoints();
-	--Buffwatch_HelpFrameText:SetPoint("TOPLEFT", "Buffwatch_HelpScrollFrame", "TOPLEFT", 10, 0);
-	Buffwatch_HelpFrameText:SetPoint("TOPLEFT", 10, -4);
-	Buffwatch_HelpFrameText:SetPoint("BOTTOMRIGHT", -55, 5);
+    Buffwatch_HelpFrameText:ClearAllPoints();
+    --Buffwatch_HelpFrameText:SetPoint("TOPLEFT", "Buffwatch_HelpScrollFrame", "TOPLEFT", 10, 0);
+    Buffwatch_HelpFrameText:SetPoint("TOPLEFT", 10, -4);
+    Buffwatch_HelpFrameText:SetPoint("BOTTOMRIGHT", -55, 5);
 
 end
 
@@ -289,10 +289,6 @@ function BUFFWATCHADDON_G.Options_HideCooldownText_OnClick(self)
     end
 
     BUFFWATCHADDON.GetAllBuffs();
-
-    if (OmniCC) then
-        OmniCC.Timer:ForAll('UpdateShown');
-    end
 
 end
 

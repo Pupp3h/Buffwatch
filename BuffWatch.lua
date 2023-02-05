@@ -1,35 +1,13 @@
-
 -- ** Buffwatch++
 -- **
 
 -- Changes
 -- 
--- 8.07
--- Hide unmonitored toggle moved from header dropdown menu to button on main window
--- Quick workaround to make sure correct options panel appears on first try
--- Moved combat icon to top left of window to provide room for new hide button
--- Show combat icon even if window is minimised
--- Prevent Min/Max while in combat
--- Fixed greying of player buffs for dead or disconnected
--- Added greying of player names for dead or disconnected
--- Fixed window sometimes not sizing correctly when a player/pet doesn't load in quickly
--- Performance optimisation for events that relate to specific UnitIDs
--- Performance optimisation when trying to find player info for a specific UnitID
-
--- 8.08
--- Fixed this player not un-greying when getting ressurected
--- Removed direct support for OmniCC. Use OmniCCs group functionality instead 
---  https://github.com/tullamods/OmniCC/wiki/What-are-Groups%3F
---  See Buffwatch++ description for more info
-
--- 8.09
--- ToC update
-
--- 8.10
--- Persist Hide Unmonitored / Minimised state
-
--- 8.11
--- ToC update to 80200
+-- 8.12
+-- Fixed checking buff events after combat
+-- Updated buff limit from 32 to 255
+-- Optimisation when checking buffs
+-- Fixed toggling Hide cooldown text when OmniCC is installed
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -42,8 +20,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.11";
-BUFFWATCHADDON.RELEASE_DATE = "19 Jul 2019";
+BUFFWATCHADDON.VERSION = "8.12";
+BUFFWATCHADDON.RELEASE_DATE = "31 Aug 2019";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -276,11 +254,9 @@ end
 
     -- Set default values, if unset
     if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
-    
         -- Check version and setup config
-        BUFFWATCHADDON.VersionCheck();        
+        BUFFWATCHADDON.VersionCheck();
         BUFFWATCHADDON.Options_Init();
-        
     end
 
     if event == "PLAYER_LOGIN" then
@@ -600,7 +576,7 @@ function BUFFWATCHADDON_G.Buff_Clicked(self, button, down)
             if button == "LeftButton" then
 
                 -- Hide all but the clicked buff and adjust positions
-                for i = 1, 32 do
+                for i = 1, 255 do
                     if _G[playerframe.."_Buff"..i] then
                         if i ~= buffid then
                             _G[playerframe.."_Buff"..i]:Hide();
@@ -683,8 +659,8 @@ function BUFFWATCHADDON_G.Buff_Tooltip(self)
     end
     
     if GroupBuffs.Buff[buff] ~= nil then
-    	GameTooltip:AddLine("Group: "..GroupBuffs.GroupName[GroupBuffs.Buff[buff]], 0.2, 1, 0.2);
-    	GameTooltip:Show();
+        GameTooltip:AddLine("Group: "..GroupBuffs.GroupName[GroupBuffs.Buff[buff]], 0.2, 1, 0.2);
+        GameTooltip:Show();
     end
 
 end
@@ -971,17 +947,15 @@ function BUFFWATCHADDON.GetPlayerInfo()
 
                 -- Update any information that may have changed about this person,
                 --    whether we captured before, or are taking for first time
-
                 if Player_Info[unitname]["UNIT_ID"] ~= UNIT_IDs[i] then
 
                     -- UNIT_ID has changed, so update secure button attributes
-
                     local namebutton = _G["BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Name"];
 
                     Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
                     namebutton:SetAttribute("unit", UNIT_IDs[i]);
 
-                    for j = 1, 32 do
+                    for j = 1, 255 do
                         local curr_buff = _G["BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Buff"..j];
 
                         if curr_buff then
@@ -1318,17 +1292,19 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
 
             local lastshownid = 0;
 
-            for i = 1, 32 do
+            for i = 1, 255 do
 
                 -- temporary code to get around broken RAID filter for UnitAura()
                 local buff, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i);
-			
-                if buff and showbuffs == "RAID" then
-                	local isCastable = GetSpellInfo(buff);
-                	-- If we cant cast this buff, dont show it
-                	if isCastable == nil then
-                		buff = nil;
-                	end
+
+                if not buff then break; end
+
+                if showbuffs == "RAID" then
+                    local isCastable = GetSpellInfo(buff);
+                    -- If we cant cast this buff, dont show it
+                    if isCastable == nil then
+                        buff = nil;
+                    end
                 end
                 
                 local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
@@ -1402,12 +1378,13 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
     else
 
         -- Refresh currently locked buffs
-        for i = 1, 32 do
+        for i = 1, 255 do
 
             local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
+            if not curr_buff then break; end
             local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
-            if curr_buff and curr_buff:IsShown() then
+            if curr_buff:IsShown() then
 
                 -- Set buff icon to grey if player is dead or offline
                 if v.DeadorDC == 1 then
@@ -1573,7 +1550,7 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
 
         BuffwatchPlayerBuffs[v.Name]["Buffs"] = BuffwatchSaveBuffs[v.Name]["Buffs"];
 
-        for i = 1, 32 do
+        for i = 1, 255 do
 
             local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
@@ -1635,6 +1612,8 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
                     curr_buff:Hide();
                     curr_buff_icon:SetTexture(nil);
 
+                else
+                    break;
                 end
 
             end
@@ -1643,12 +1622,12 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
 
         _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:SetChecked(true);
 
-     else
+    else
 
         _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:SetChecked(false);
         BuffwatchFrame_LockAll:SetChecked(false);
 
-     end
+    end
 
 end
 
@@ -1823,8 +1802,8 @@ function BUFFWATCHADDON.Process_InCombat_Events()
 
         elseif t[1] == "GetBuffs" then
 
-            if Player_Info[t[2]] ~= nil then
-            	BUFFWATCHADDON.Player_GetBuffs(t[2]);
+            if Player_Info[t[2].Name] ~= nil then
+                BUFFWATCHADDON.Player_GetBuffs(t[2]);
             end
 
         end
@@ -1951,14 +1930,14 @@ function BUFFWATCHADDON.UnitHasBuff(unit, buff)
 
   local thisbuff, duration, expTime;
 
-  for i = 1, 32 do
+  for i = 1, 255 do
 
     thisbuff, _, _, _, duration, expTime = UnitBuff(unit, i);
 
     if not thisbuff then break; end
 
     if thisbuff == buff then
-	
+
       return i, duration, expTime;
 
     end
@@ -1973,7 +1952,7 @@ function BUFFWATCHADDON.UnitHasDebuff(unit, buff)
 
   local thisbuff;
 
-  for i = 1, 16 do
+  for i = 1, 255 do
 
     thisbuff = UnitDebuff(unit, i);
 
@@ -2024,17 +2003,19 @@ end
 function BUFFWATCHADDON_G:Set_CooldownTextScale()
 
     for k, v in pairs(Player_Info) do
-        
-        for i = 1, 32 do
+
+        for i = 1, 255 do
 
             local cooldown = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown"];
-			
+
             if cooldown then
                 cooldown:SetScale(BuffwatchConfig.CooldownTextScale);
+            else
+                break;
             end
-			
+
         end
-		
+
     end
 
 end
@@ -2140,18 +2121,18 @@ function BUFFWATCHADDON.Wait(delay, func, ...)
 end
 
 function BUFFWATCHADDON.CopyDefaults(from, to)
-	if not from then return { } end
-	if not to then to = { } end
+    if not from then return { } end
+    if not to then to = { } end
     
-	for k, v in pairs(from) do
-		if type(v) == "table" then
-			to[k] = BUFFWATCHADDON.CopyDefaults(v, to[k]);
-		elseif type(v) ~= type(to[k]) then
-			to[k] = v;
-		end
-	end
+    for k, v in pairs(from) do
+        if type(v) == "table" then
+            to[k] = BUFFWATCHADDON.CopyDefaults(v, to[k]);
+        elseif type(v) ~= type(to[k]) then
+            to[k] = v;
+        end
+    end
     
-	return to;
+    return to;
 end
 
 function BUFFWATCHADDON.Print(msg, R, G, B)
@@ -2174,6 +2155,55 @@ end
 
 -- for debugging
 --[[
+
+function BUFFWATCHADDON_G.CheckBuffs(detail)
+
+    BUFFWATCHADDON.Debug("Checking player buffs and frames...");
+    for k, v in pairs(Player_Info) do
+        if detail == 1 then
+            BUFFWATCHADDON.Debug("Checking buffs for "..v.Name.."...");
+        end
+        local buffCount = 0;
+        local lastBuff = 0;
+        for i = 1, 32 do
+            local buff = UnitBuff(v.UNIT_ID, i);
+            if buff then
+                if detail == 1 then
+                    BUFFWATCHADDON.Debug("Found buff "..i.." : "..buff);
+                end
+                buffCount = buffCount + 1;
+                lastBuff = i;
+            end
+        end
+        if buffCount == lastBuff then
+            BUFFWATCHADDON.Debug("All buffs ("..buffCount..") for "..v.Name.." were sequential", 100, 215, 130);
+        else
+            BUFFWATCHADDON.Debug("Non sequential player buffs for "..v.Name.."! There were "..buffCount.." buffs, but last buffId was "..lastBuff, 215, 130, 100);
+        end
+
+        if detail == 1 then
+            BUFFWATCHADDON.Debug("Checking buffframes for "..v.Name.."...");
+        end
+        local frameCount = 0;
+        local lastFrame = 0;
+        for i = 1, 32 do
+            local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
+            if curr_buff then
+                if detail == 1 then
+                    BUFFWATCHADDON.Debug("Found buffframe "..i.." : "..curr_buff:GetAttribute("spell1"));
+                end
+                frameCount = frameCount + 1;
+                lastFrame = i;
+            end
+        end
+        if frameCount == lastFrame then
+            BUFFWATCHADDON.Debug("All buffframes ("..frameCount..") for "..v.Name.." were sequential", 100, 215, 130);
+        else
+            BUFFWATCHADDON.Debug("Non sequential player buffframes for "..v.Name.."! There were "..frameCount.." buffs, but last buffId was "..lastFrame, 215, 130, 100);
+        end
+    end
+
+end
 
 function BUFFWATCHADDON_G.DebugPosition()
 

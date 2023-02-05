@@ -32,7 +32,7 @@
         </Backdrop>
 
       </Frame>
-	  
+      
       <CheckButton name="$parent_LockAll" inherits="UICheckButtonTemplate">
         <Size>
           <AbsDimension x="18" y="18"/>
@@ -110,7 +110,7 @@
           </OnLoad>
         </Scripts>
       </Frame>
-	  
+      
       <Button name="$parent_MinimizeButton" hidden="false">
         <Size>
           <AbsDimension x="16" y="16"/>
@@ -129,7 +129,7 @@
             BUFFWATCHADDON_G.MinimizeButton_Clicked(self);
           </OnClick>
           <OnEnter>
-		    BUFFWATCHADDON_G.MinimizeButton_Enter(self);
+            BUFFWATCHADDON_G.MinimizeButton_Enter(self);
           </OnEnter>
           <OnLeave>
             GameTooltip:Hide();
@@ -151,14 +151,14 @@
             BUFFWATCHADDON_G.HideButton_Clicked(self);
           </OnClick>
           <OnEnter>
-			BUFFWATCHADDON_G.HideButton_Enter(self);
+            BUFFWATCHADDON_G.HideButton_Enter(self);
           </OnEnter>
           <OnLeave>
             GameTooltip:Hide();
           </OnLeave>
         </Scripts>
       </Button>
-	  
+      
       <Frame name="$parent_PlayerFrame">
 
         <Anchors>
