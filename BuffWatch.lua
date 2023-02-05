@@ -14,6 +14,9 @@
 -- 8.02
 -- Fix for handling new config options over multiple chars
 --
+-- 8.03
+-- Updated version number for live release
+--
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -22,7 +25,7 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "8.02";
+BW_VERSION = "8.03";
 BW_RELEASE_DATE = "14 Jun 2018";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
