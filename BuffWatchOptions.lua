@@ -27,9 +27,67 @@ function Buffwatch_Options_OnLoad(self)
     self.refresh = Buffwatch_Options_Init;
 --    self.okay = Buffwatch_Options_OkayButton;
     self.cancel = Buffwatch_Options_CancelButton;
+
     InterfaceOptions_AddCategory(self);
 
 end
+
+function Buffwatch_HelpFrame_OnLoad(self)
+    Buffwatch_HelpFrameText:SetText(
+    "  - |cff5555ffBuffwatch Usage|cffffffff - v|cffff5555" .. BW_VERSION .. " |cffffffff- " .. [[
+
+
+  1) Make sure the buffs you want to monitor are on the relevant 
+       players
+
+  2) Tick the checkbox next to each player which locks those buffs 
+       to the player (alternatively tick the checkbox at the top to lock 
+       them all)
+
+  3) Remove monitoring of the buffs you are not interested in, using 
+       the following methods :
+
+     * |cffff5555Alt|cffffffff-|cffff5555Right Click|cffffffff to remove the selected buff
+
+     * |cffff5555Alt|cffffffff-|cffff5555Left Click|cffffffff to remove all buffs but the selected one
+
+  4) Buffs that have expired will turn red, and clicking on them will 
+       recast the buff on the player (if you have the spell)
+
+
+  Other features :
+
+     - Left click a player name to target that player
+
+     - Right click a player name to assist that player (target their target)
+
+
+  Buffwatch commands (/buffwatch or /bfw):
+
+     /bfw toggle - Toggle the Buffwatch window on or off
+
+     /bfw options - Toggle the options window on or off
+
+     /bfw reset - Reset the window position
+
+     /bfw help - Show this help page
+
+
+  Right click the Buffwatch header for more options
+]] );
+
+    self.name = BW_HELPFRAMENAME;
+    self.parent = BW_ADDONNAME;
+
+    InterfaceOptions_AddCategory(self);
+    
+	Buffwatch_HelpFrameText:ClearAllPoints();
+	--Buffwatch_HelpFrameText:SetPoint("TOPLEFT", "Buffwatch_HelpScrollFrame", "TOPLEFT", 10, 0);
+	Buffwatch_HelpFrameText:SetPoint("TOPLEFT", 10, -4);
+	Buffwatch_HelpFrameText:SetPoint("BOTTOMRIGHT", -55, 5);    
+
+end
+
 
 function Buffwatch_Options_Init()
 
@@ -238,10 +296,10 @@ function Buffwatch_Options_HideOmniCC_OnClick(self, suppressRefresh)
     if (suppressRefresh ~= true) then
         Buffwatch_GetAllBuffs();
     end
-    
+
     if (OmniCC) then
         OmniCC.Timer:ForAllShown('UpdateShown');
-    end    
+    end
 
 end
 

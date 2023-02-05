@@ -175,43 +175,6 @@
 
   </Frame>
 
-  <Frame name="Buffwatch_HelpFrame" inherits="DialogBoxFrame" movable="true" enableMouse="true">
-
-    <Size>
-        <AbsDimension x="540" y="420"/>
-    </Size>
-
-    <Layers>
-      <Layer level="OVERLAY">
-        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="CENTER">
-          <Size>
-            <AbsDimension x="500" y="0"/>
-          </Size>
-          <Anchors>
-            <Anchor point="CENTER"/>
-          </Anchors>
-        </FontString>
-      </Layer>
-    </Layers>
-
-    <Scripts>
-
-      <OnLoad>
-        self:RegisterForDrag("LeftButton");
-        _G[self:GetName().."Button"]:ClearAllPoints();
-        _G[self:GetName().."Button"]:SetPoint("BOTTOM", 180, 16);
-      </OnLoad>
-      <OnDragStart>
-        self:StartMoving();
-      </OnDragStart>
-      <OnDragStop>
-        self:StopMovingOrSizing();
-      </OnDragStop>
-
-    </Scripts>
-
-  </Frame>
-
   <!--== Inherited Frames ==============================================================-->
 
   <CheckButton name="Buffwatch_LockButton_Template" inherits="UICheckButtonTemplate" hidden="false" virtual="true">

@@ -4,6 +4,10 @@
 -- ** TODO:
 -- **
 
+-- ** Figure out why spirals dont show on reload
+-- ** Add back in option to only show players that have missing buffs,
+-- **   with warning that it will only update in combat
+
 -- ** Alt click for Lesser/Greater Buffs (?)
 -- ** Timers for buffs expiring
 -- ** Warning message for buff expiring (toggle option for each buff)
@@ -14,13 +18,14 @@
 -- ** Range checking and dead player greying.
 -- ** Load / Save templates
 -- ** Weapon Buffs
-
 -- ** change anchor point temporarily to centre which changing scale?
 
 -- Changes
 --
--- Fixed integration with OmniCC
--- Further updates to Buff Groupings
+-- Fix for 'Check All' checkbox being unticked when all players are locked
+-- Fix for rare error when lots of buff changes occur on an unlocked player
+-- Tidied and moved help page to interface options panel
+-- Moved Elixir of the Naga to the Battle Elixir Buff Group
 --
 
 -- ****************************************************************************
@@ -29,9 +34,10 @@
 -- **                                                                        **
 -- ****************************************************************************
 
-BW_ADDONNAME = "Buffwatch++"
-BW_VERSION = "4.01";
-BW_RELEASE_DATE = "26 October 2010";
+BW_ADDONNAME = "Buffwatch++";
+BW_VERSION = "4.02";
+BW_RELEASE_DATE = "29 November 2010";
+BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -77,8 +83,6 @@ BW_PLAYER_DEFAULTS = {
     ShowOnlyMine            = false,
     ShowCastableBuffs       = false,
     ShowAllForPlayer        = false,
-    ShowDebuffs             = true,
-    ShowDispellableDebuffs  = false,
     ShowPets                = true,
     SortOrder               = BW_SORTORDER_DROPDOWN_LIST[1],
     WindowLocked            = false
@@ -134,66 +138,67 @@ function Buffwatch_OnLoad(self)
     SLASH_BUFFWATCH2 = "/bfw";
 
     GroupBuffs.Buff = { };
+    GroupBuffs.GroupName = { };
 
     -- Class Group Buffs
-    -- Agility and Strength
+    GroupBuffs.GroupName[1] = "Agility and Strength"
     GroupBuffs.Buff["Horn of Winter"] = 1;
     GroupBuffs.Buff["Strength of Earth"] = 1;
     GroupBuffs.Buff["Battle Shout"] = 1;
     GroupBuffs.Buff["Roar of Courage"] = 1;
-    
-    -- Armor
+
+    GroupBuffs.GroupName[2] = "Armor"
     GroupBuffs.Buff["Devotion Aura"] = 2;
     GroupBuffs.Buff["Stoneskin Totem"] = 2;
-    
-    -- 10% AP
+
+    GroupBuffs.GroupName[3] = "10% AP"
     GroupBuffs.Buff["Blessing of Might"] = 3;  -- this also includes mana regen
     GroupBuffs.Buff["Abomination's Might"] = 3;
     GroupBuffs.Buff["Unleashed Rage"] = 3;
-    GroupBuffs.Buff["Trueshot Aura"] = 3;    
-    
-    -- Burst Haste
+    GroupBuffs.Buff["Trueshot Aura"] = 3;
+
+    GroupBuffs.GroupName[4] = "Burst Haste"
     GroupBuffs.Buff["Bloodlust"] = 4;
     GroupBuffs.Buff["Heroism"] = 4;
     GroupBuffs.Buff["Time Warp"] = 4;
     GroupBuffs.Buff["Ancient Hysteria"] = 4;
-    
-    -- Health
+
+    GroupBuffs.GroupName[5] = "Health"
     GroupBuffs.Buff["Power Word: Fortitude"] = 5;
     GroupBuffs.Buff["Commanding Shout"] = 5;
     GroupBuffs.Buff["Blood Pact"] = 5;
-    GroupBuffs.Buff["Qiraji Fortitude"] = 5;    
-    
-    -- Mana Pool
+    GroupBuffs.Buff["Qiraji Fortitude"] = 5;
+
+    GroupBuffs.GroupName[6] = "Mana Pool"
     GroupBuffs.Buff["Dalaran Brilliance"] = 6;
     GroupBuffs.Buff["Arcane Brilliance"] = 6;
-    
-    -- 5% Crit
+
+    GroupBuffs.GroupName[7] = "5% Crit"
     GroupBuffs.Buff["Rampage"] = 7;
     GroupBuffs.Buff["Leader of the Pack"] = 7;
     GroupBuffs.Buff["Honor Among Thieves"] = 7;
     GroupBuffs.Buff["Elemental Oath"] = 7;
-    
-    -- 10% Melee Attack Speed
+
+    GroupBuffs.GroupName[8] = "10% Melee Attack Speed"
     GroupBuffs.Buff["Windfury Totem"] = 8;
     GroupBuffs.Buff["Improved Icy Talons"] = 8;
     GroupBuffs.Buff["Hunting Party"] = 8;
-    
-    -- 5% Spell Haste
+
+    GroupBuffs.GroupName[9] = "5% Spell Haste"
     GroupBuffs.Buff["Wrath of Air Totem"] = 9;
     GroupBuffs.Buff["Moonkin Aura"] = 9;
     --GroupBuffs.Buff["Shadowform"] = 9; -- moo, whats the buff for this? is there one?
-    
-    -- 5% stats
+
+    GroupBuffs.GroupName[12] = "5% stats"
     GroupBuffs.Buff["Blessing of Kings"] = 12;
     GroupBuffs.Buff["Mark of the Wild"] = 12;
 
-    -- Mage Armor
+    GroupBuffs.GroupName[13] = "Mage Armor"
     GroupBuffs.Buff["Mage Armor"] = 13;
     GroupBuffs.Buff["Frost Armor"] = 13;
     GroupBuffs.Buff["Molten Armor"] = 13;
-    
-    -- Flasks
+
+    GroupBuffs.GroupName[14] = "Flasks"
     GroupBuffs.Buff["Flask of Endless Rage"] = 14;
     GroupBuffs.Buff["Flask of Pure Mojo"] = 14;
     GroupBuffs.Buff["Flask of Stoneblood"] = 14;
@@ -206,6 +211,7 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Flask of the Winds"] = 14;
 
     -- Lvl80 Battle Elixirs
+    GroupBuffs.GroupName[15] = "Battle Elixirs"
     GroupBuffs.Buff["Accuracy"] = 15;
     GroupBuffs.Buff["Armor Piercing"] = 15;
     GroupBuffs.Buff["Deadly Strikes"] = 15;
@@ -224,9 +230,11 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Mighty Speed"] = 15;
     GroupBuffs.Buff["Elixir of the Cobra"] = 15;
     GroupBuffs.Buff["Elixir of the Master"] = 15;
+    GroupBuffs.Buff["Elixir of the Naga"] = 15;
     GroupBuffs.Buff["Ghost Elixir"] = 15;
 
     -- Lvl80 Guardian Elixirs
+    GroupBuffs.GroupName[16] = "Guardian Elixirs"
     GroupBuffs.Buff["Mighty Defense"] = 16;
     GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 16;
     GroupBuffs.Buff["Mighty Thoughts"] = 16;
@@ -234,10 +242,9 @@ function Buffwatch_OnLoad(self)
 
     -- Lvl85 Guardian Elixirs
     GroupBuffs.Buff["Elixir of Deep Earth"] = 16;
-    GroupBuffs.Buff["Elixir of the Naga"] = 16;
     GroupBuffs.Buff["Prismatic Elixir"] = 16;
 
-    -- Seals
+    GroupBuffs.GroupName[17] = "Seals"
     GroupBuffs.Buff["Seal of Truth"] = 17;
     GroupBuffs.Buff["Seal of Justice"] = 17;
     GroupBuffs.Buff["Seal of Insight"] = 17;
@@ -260,9 +267,11 @@ end
 
 function Buffwatch_OnEvent(self, event, ...)
 --[[
-Buffwatch_Debug("Event vars for "..event..":");
-for i = 1, select("#", ...) do
-    Buffwatch_Debug("i="..i..", v="..select(i, ...));
+if event ~= "ADDON_LOADED" or select(1, ...) == "Buffwatch" then
+    Buffwatch_Debug("Event vars for "..event..":");
+    for i = 1, select("#", ...) do
+        Buffwatch_Debug("i="..i..", v="..select(i, ...));
+    end
 end
 ]]
 
@@ -275,7 +284,6 @@ end
         -- Ensure correct repositioning and anchoring of the frame
         Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], BuffwatchPlayerConfig.AnchorX, BuffwatchPlayerConfig.AnchorY);
         framePositioned = true;
---Buffwatch_DebugPosition();
 
         -- Look for a chatframe called 'BWDebug' on login for sending debug messsages to
         local windowname;
@@ -298,9 +306,10 @@ end
             Buffwatch_ResizeWindow();
 
             if event == "PLAYER_LOGIN" then
-
-                Buffwatch_Check_Clicked(_, _, _, _G["BuffwatchFrame_PlayerFrame"..Player_Info[next(Player_Info)].ID.."_Lock"]);
-
+                -- Check the 'Check All' checkbox, if all players are now locked
+                if Buffwatch_InspectPlayerLocks() then
+                    BuffwatchFrame_LockAll:SetChecked(true);
+                end
             end
 
         elseif event == "UNIT_AURA" and select(1, ...) ~= "target" then
@@ -495,20 +504,10 @@ function Buffwatch_MinimizeButton_Clicked()
 end
 
 
-function Buffwatch_Check_Clicked(self, button, down, obj)
+function Buffwatch_Check_Clicked(self, button, down)
 
-    local playerid;
-    local checked;
-
-    -- Find out which checkbox was clicked
-    if obj then
-        checked = obj:GetChecked();
-        playerid = obj:GetParent():GetID();
-    else
-        checked = self:GetChecked();
-        playerid = self:GetParent():GetID();
-    end
-
+    local playerid = self:GetParent():GetID();
+    local checked = self:GetChecked();
     local playername = _G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:GetText();
 
     if checked then
@@ -517,20 +516,8 @@ function Buffwatch_Check_Clicked(self, button, down, obj)
         BuffwatchSaveBuffs[playername] = { };
         BuffwatchSaveBuffs[playername]["Buffs"] = BuffwatchPlayerBuffs[playername]["Buffs"];
 
-        -- Check to see if they are all now checked
-        for k, v in pairs(Player_Info) do
-
-            local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"];
-
-            if not curr_lock:GetChecked() then
-                checked = nil;
-                break;
-            end
-
-        end
-
-        -- If so, check the 'Check All' checkbox
-        if checked then
+        -- Check the 'Check All' checkbox, if all players are now locked
+        if Buffwatch_InspectPlayerLocks() then
             BuffwatchFrame_LockAll:SetChecked(true);
         end
 
@@ -636,23 +623,14 @@ function Buffwatch_Buff_Tooltip(self)
     local buff = BuffwatchPlayerBuffs[playername]["Buffs"][self:GetID()]["Buff"];
     local rank = BuffwatchPlayerBuffs[playername]["Buffs"][self:GetID()]["Rank"];
     local buffbuttonid = nil;
-    local debuffbuttonid = nil;
 
     buffbuttonid = UnitHasBuff(unit, buff, rank);
-
---    if buffbuttonid == 0 then
---        debuffbuttonid = UnitHasDebuff(unit, buff, rank);
---    end
-
 
     if buffbuttonid ~= 0 then
 
         -- If the buff is present, show the tooltip for it
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
         GameTooltip:SetUnitBuff(unit, buffbuttonid);
---    elseif debuffbuttonid then
---        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
---        GameTooltip:SetUnitDebuff(unit, debuffbuttonid);
 
     else
 
@@ -738,7 +716,6 @@ function Buffwatch_Set_UNIT_IDs(forced)
 
             if grouptype ~= "raid" or forced == true then
 
-                --UNIT_IDs = { };
                 UNIT_IDs = table.wipe(UNIT_IDs);
 
                 for i = 1, 40 do
@@ -892,8 +869,6 @@ function Buffwatch_GetPlayerInfo()
                     local namebutton = _G["BuffwatchFrame_PlayerFrame"..Player_Info[unitname]["ID"].."_Name"];
 
                     Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
---                    namebutton:SetAttribute("type1", "target");
---                    namebutton:SetAttribute("type2", "assist");
                     namebutton:SetAttribute("unit", UNIT_IDs[i]);
 
                     for j = 1, 32 do
@@ -912,12 +887,10 @@ function Buffwatch_GetPlayerInfo()
 
                 if grouptype == "raid" then
                     local subgroup;
---                    local lastsubgroup = Player_Info[unitname]["SubGroup"];
                     local j = math.fmod(i, 40);
                     if j == 0 then j = 40 end;
                     _, _, subgroup = GetRaidRosterInfo(j);
 
---                    if not lastsubgroup or subgroup ~= lastsubgroup then -- ***** Check logic or if needed
                     if subgroup ~= Player_Info[unitname]["SubGroup"] then
                         Player_Info[unitname]["SubGroup"] = subgroup;
                         if BuffwatchPlayerConfig.SortOrder == BW_SORTORDER_DROPDOWN_LIST[1] then  -- "Raid Order"
@@ -1069,11 +1042,21 @@ function Buffwatch_PositionPlayerFrame(playerid)
         end
 
         playerframe:Show();
--- Buffwatch_Debug("Showing player frame "..playerid.." for ".._G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:GetText());
+
     else
+
         playerframe:Hide();
--- Buffwatch_Debug("Hiding player frame "..playerid.." for ".._G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:GetText());
---        _G["BuffwatchFrame_PlayerFrame"..playerid.."_NameText"]:SetText(nil);
+
+        -- If the LockAll checkbox is unchecked and the player we are hiding was unchecked, check whether all players are now checked
+        if not BuffwatchFrame_LockAll:GetChecked() and not _G["BuffwatchFrame_PlayerFrame"..playerid.."_Lock"]:GetChecked() then
+
+            -- Check the 'Check All' checkbox, if all players are now locked
+            if Buffwatch_InspectPlayerLocks() then
+                BuffwatchFrame_LockAll:SetChecked(true);
+            end
+
+        end
+
     end
 
 end
@@ -1220,14 +1203,12 @@ function Buffwatch_Player_GetBuffs(v)
                 showallplayer = true;
             end
 
+            local lastshownid = 0;
+
             for i = 1, 32 do
 
                 local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
                 local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
-
---[[if buff then
-    Buffwatch_Debug(i.." : buff="..buff);
-end]]
 
                 if buff and (not BuffwatchPlayerConfig.ShowOnlyMine or (caster == "player") or showallplayer) then
 
@@ -1246,13 +1227,13 @@ end]]
 
                     end
 
-                    if i == 1 then
+                    if lastshownid == 0 then
                         curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                     else
-                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1),
-                            "TOPRIGHT");
+                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..lastshownid, "TOPRIGHT");
                     end
 
+                    lastshownid = i;
 
                     local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
@@ -1268,12 +1249,14 @@ end]]
                     curr_buff:SetAttribute("type", "spell");
                     curr_buff:SetAttribute("unit1", v.UNIT_ID);
                     curr_buff:SetAttribute("spell1", buff.."("..rank..")");
-
+--Buffwatch_Debug("GetBuffs1: Player="..v.Name)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
+--Buffwatch_Debug("GetBuffs1: BuffID="..i..", expTime="..expTime..",duration="..duration)
                         curr_buff.cooldown:Show();
                         curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
                         curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
+--Buffwatch_Debug("GetBuffs1: BuffID="..i..", Hiding")
                         curr_buff.cooldown:Hide();
                     end
 
@@ -1405,12 +1388,14 @@ end]]
                         end
 ]]
                     end
-
+--Buffwatch_Debug("GetBuffs2: Player="..v.Name)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
+--Buffwatch_Debug("GetBuffs2: BuffID="..i..", expTime="..expTime..",duration="..duration)
                         curr_buff.cooldown:Show();
                         curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
                         curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
+--Buffwatch_Debug("GetBuffs2: BuffID="..i..", Hiding")
                         curr_buff.cooldown:Hide();
                     end
 
@@ -1422,44 +1407,6 @@ end]]
 
     end
 
---[[
-    for i = 1, 8 do
-
-        local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i];
-
-        if BuffwatchPlayerConfig.ShowDebuffs == false then
-
-            if curr_buff then curr_buff:Hide(); end
-
-        else
-
-            local _, _, icon = UnitDebuff(v.UNIT_ID, i, BuffwatchPlayerConfig.ShowDispellableDebuffs);
-
-            if icon then
-
-                -- Check if buff button has been created
-                if not curr_buff then
-
-                    curr_buff = CreateFrame("Button", "BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i,
-                        _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
-
-                end
-
-                local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Debuff"..i.."Icon"];
-
-                curr_buff:Show();
-                curr_buff_icon:SetTexture(icon);
-
-            else
-
-                if curr_buff then curr_buff:Hide(); end
-
-            end
-
-        end
-
-    end
-]]
 end
 
 
@@ -1520,7 +1467,7 @@ function Buffwatch_Player_LoadBuffs(v)
                         _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
                     curr_buff:SetID(i);
 
-                    local cooldown = CreateFrame("Cooldown", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown", 
+                    local cooldown = CreateFrame("Cooldown", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown",
                         curr_buff, "CooldownFrameTemplate");
                     curr_buff.cooldown = cooldown;
                     cooldown:SetAllPoints(curr_buff);
@@ -1531,8 +1478,7 @@ function Buffwatch_Player_LoadBuffs(v)
                 if i == 1 then
                     curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                 else
-                    curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1),
-                        "TOPRIGHT");
+                    curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..(i-1), "TOPRIGHT");
                 end
 
                 local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
@@ -1544,12 +1490,14 @@ function Buffwatch_Player_LoadBuffs(v)
                 curr_buff:SetAttribute("type", "spell");
                 curr_buff:SetAttribute("unit1", v.UNIT_ID);
                 curr_buff:SetAttribute("spell1", BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Buff"].."("..BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Rank"]..")");
-
+--Buffwatch_Debug("LoadBuffs: Player="..v.Name)
                 if BuffwatchConfig.Spirals == true and duration and duration > 0 then
+--Buffwatch_Debug("LoadBuffs: BuffID="..i..", expTime="..expTime..",duration="..duration)
                     curr_buff.cooldown:Show();
                     curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
                     curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                 else
+--Buffwatch_Debug("LoadBuffs: BuffID="..i..", Hiding")
                     curr_buff.cooldown:Hide();
                 end
 
@@ -1571,16 +1519,9 @@ function Buffwatch_Player_LoadBuffs(v)
         _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:SetChecked(true);
 
      else
---[[
-        local moo = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"];
 
-        if moo then
-Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerID from frame="..moo:GetParent():GetID());
-        else
-Buffwatch_Debug("Buffwatch_Player_LoadBuffs: v.ID="..v.ID..", PlayerFrame"..v.ID.."_Lock=nil");
-        end
-]]
-        Buffwatch_Check_Clicked(_, _, _, _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]);
+        _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:SetChecked(false);
+        BuffwatchFrame_LockAll:SetChecked(false);
 
      end
 
@@ -1628,12 +1569,7 @@ function Buffwatch_ResizeWindow()
             end
 
             width = math.max(32 + maxnamewidth + (maxbuffs * 18), 115);
-          --  BuffwatchFrame_Header:ClearAllPoints();
-          --  if width < 125 then
-          --      BuffwatchFrame_Header:SetPoint("LEFT", BuffwatchFrame_LockAll);
-          --  else
-          --      BuffwatchFrame_Header:SetPoint("TOP", BuffwatchFrame, "TOP", 0, -4);
-          --  end
+
             BuffwatchFrame:SetWidth(width);
 
         else
@@ -1646,6 +1582,27 @@ function Buffwatch_ResizeWindow()
         Buffwatch_SetPoint(BuffwatchFrame, BW_ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint], x, y);
 
     end
+
+end
+
+-- Inspect all visible player locks, return true if they are all checked
+function Buffwatch_InspectPlayerLocks()
+
+        local allchecked = true;
+
+        -- Iterate through each player
+        for k, v in pairs(Player_Info) do
+
+            local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"];
+
+            if not curr_lock:GetChecked() then
+                allchecked = false;
+                break;
+            end
+
+        end
+
+        return allchecked;
 
 end
 
@@ -1663,13 +1620,11 @@ function Buffwatch_Add_InCombat_Events(value)
 
                 if value[2].ID == v[2].ID then
                     found = true;
---Buffwatch_Debug("InCombat_Event GetBuffs for ID "..value[2].ID.." found");
                     break;
                 end
 
             elseif value[1] == "GetPlayerInfo" then
                 found = true;
---Buffwatch_Debug("InCombat_Event GetPlayerInfo found");
                 break;
 
             end
@@ -1680,7 +1635,6 @@ function Buffwatch_Add_InCombat_Events(value)
 
     -- Add it to the queue, if its not already on it
     if not found then
-Buffwatch_Debug("Adding InCombat_Event "..value[1]);
         table.insert(InCombat_Events, value);
     end
 
@@ -1721,57 +1675,6 @@ function Buffwatch_Process_InCombat_Events()
 end
 
 
-function Buffwatch_ShowHelp()
-
-    Buffwatch_HelpFrame:Show()
-    Buffwatch_HelpFrame:ClearAllPoints()
-    Buffwatch_HelpFrame:SetPoint("CENTER","UIParent","CENTER",0,-32)
-
-    Buffwatch_HelpFrameText:SetText(
-"        - BuffWatch Usage - v " .. BW_VERSION .. " - " .. [[
-
-
-
-        1) Make sure the buffs you want to monitor are on the relevant players
-
-        2) Tick the checkbox next to each player which locks those buffs to the player
-             (alternatively tick the checkbox at the top to lock them all)
-
-        3) Remove monitoring of the buffs you are not interested in, using the following methods :
-
-           * Alt-Right Click to remove the selected buff
-
-           * Alt-Left Click to remove all buffs but the selected one
-
-        4) Buffs that have expired will turn red, and clicking on them will recast the buff on the player
-             (if you have the spell)
-
-
-        Other features :
-
-        - Left click a player name to target that player
-
-        - Right click a player name to assist that player (target their target)
-
-
-        Buffwatch commands (/buffwatch or /bfw):
-
-        /bfw toggle - Toggle the Buffwatch window on or off
-
-        /bfw options - Toggle the options window on or off
-
-        /bfw reset - Reset the window position
-
-        /bfw help - Show this help page
-
-
-        Right click the Buffwatch header for more options
-
-        ]] )
-
-end
-
-
 function Buffwatch_Toggle()
 
     if InCombatLockdown() then
@@ -1795,6 +1698,13 @@ end
 function Buffwatch_OptionsToggle()
 
     InterfaceOptionsFrame_OpenToCategory(BW_ADDONNAME);
+
+end
+
+
+function Buffwatch_ShowHelp()
+
+    InterfaceOptionsFrame_OpenToCategory(BW_HELPFRAMENAME);
 
 end
 
@@ -1854,7 +1764,6 @@ function Buffwatch_GetNextID(unitname)
             Player_Left[unitname] = nil;
 
             if found == false then
---                _G["BuffwatchFrame_PlayerFrame"..oldID]:Show();
                 return oldID;
             end
 
@@ -1883,12 +1792,6 @@ function Buffwatch_GetNextID(unitname)
         Player_Copy = nil;
 
     end
-
-    if _G["BuffwatchFrame_PlayerFrame"..i.."_Lock"] then
-        _G["BuffwatchFrame_PlayerFrame"..i.."_Lock"]:SetChecked(false);
-    end
-
-    BuffwatchFrame_LockAll:SetChecked(false);
 
     return i;
 
