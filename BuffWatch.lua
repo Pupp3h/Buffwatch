@@ -17,6 +17,8 @@
 -- 8.03
 -- Updated version number for live release
 --
+-- 8.04
+-- Minor fix in config version updates
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -25,7 +27,7 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "8.03";
+BW_VERSION = "8.04";
 BW_RELEASE_DATE = "14 Jun 2018";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
@@ -262,7 +264,7 @@ end
             
             end
                 
-            if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "8.01" then 
+            if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "7.02" then 
 
                 if BuffwatchConfig.CooldownTextScale == nil then
                     BuffwatchConfig.CooldownTextScale = BW_DEFAULTS.CooldownTextScale;
@@ -277,7 +279,7 @@ end
             -- Nothing to do
         else
         
-            if BuffwatchPlayerConfig.Version == "8.01" then
+            if BuffwatchPlayerConfig.Version == "7.02" then
                 BuffwatchPlayerConfig.CooldownTextScale = nil;
             end
         
