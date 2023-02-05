@@ -4,7 +4,7 @@
 
 -- Changes
 -- 
--- 8.07
+-- 8.07b1
 -- Hide unmonitored toggle moved from header dropdown menu to button on main window
 -- Quick workaround to make sure correct options panel appears on first try
 -- Moved combat icon to top left of window to provide room for new hide button
@@ -13,6 +13,10 @@
 -- Fixed greying of player buffs for dead or disconnected
 -- Added greying of player names for dead or disconnected
 -- Fixed window sometimes not sizing correctly when a player/pet doesn't load in quickly
+-- 8.07b2
+-- Fixed this player not un-greying when ressing
+-- Fixed greying of players when they join group or we login or reloadui
+-- Some performance optimisation for events that relate to specific UnitIDs
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -25,8 +29,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.07b1";
-BUFFWATCHADDON.RELEASE_DATE = "17 Oct 2018";
+BUFFWATCHADDON.VERSION = "8.07b2";
+BUFFWATCHADDON.RELEASE_DATE = "22 Oct 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -94,6 +98,7 @@ local Player_Left = { };        -- Retained Player_Info for players that have le
 local Player_Order = { };       -- Sorted order of players
 local Current_Order = { };      -- Currently visible order of players
 local UNIT_IDs = { };           -- UnitIDs, based on grouptype and whether we want pets
+local UNIT_IDs_Keyed = { };     -- Same as above but keyed by UnitID
 local InCombat_Events = { };    -- Events that occur in combat lockdown, to sort out after combat
 local GroupBuffs = { };         -- Relationship list of buffs that can automatically replace each other
 local dropdowninfo = { };       -- Info for dropdown menu buttons
@@ -119,7 +124,10 @@ function BUFFWATCHADDON_G.OnLoad(self)
 
     self:RegisterEvent("PLAYER_LOGIN");
     self:RegisterEvent("GROUP_ROSTER_UPDATE");
-    self:RegisterEvent("UNIT_FLAGS"); -- Used for connects/dcs too instead of UNIT_CONNECTED, since UNIT_FLAGS also triggers on unit death
+    self:RegisterEvent("PLAYER_DEAD");
+    self:RegisterEvent("PLAYER_UNGHOST");
+    -- UNIT_FLAGS Used for connects/dcs too instead of UNIT_CONNECTED, since it also triggers on unit death
+    self:RegisterEvent("UNIT_FLAGS"); 
     self:RegisterEvent("UNIT_PET");
     self:RegisterEvent("UNIT_AURA");
     self:RegisterEvent("ADDON_LOADED");
@@ -256,42 +264,7 @@ end
     if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
     
         -- Check version and setup config
-        if BuffwatchConfig.Version == BUFFWATCHADDON.VERSION then
-            -- Nothing to do
-        else
-        
-            if BuffwatchConfig.Version == nil then
-
-                -- Update old setting name
-                if BuffwatchConfig.HideOmniCC ~= nil then
-                    BuffwatchConfig.HideCooldownText = BuffwatchConfig.HideOmniCC;
-                    BuffwatchConfig.HideOmniCC = nil;
-                end
-            
-            end
-                
-            if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "7.02" then 
-
-                if BuffwatchConfig.CooldownTextScale == nil then
-                    BuffwatchConfig.CooldownTextScale = BUFFWATCHADDON.DEFAULTS.CooldownTextScale;
-                end    
-            end
-           
-            BuffwatchConfig.Version = BUFFWATCHADDON.VERSION;
-
-        end
-        
-        if BuffwatchPlayerConfig.Version == BUFFWATCHADDON.VERSION then
-            -- Nothing to do
-        else
-        
-            if BuffwatchPlayerConfig.Version == "7.02" then
-                BuffwatchPlayerConfig.CooldownTextScale = nil;
-            end
-        
-            BuffwatchPlayerConfig.Version = BUFFWATCHADDON.VERSION;
-        end
-        
+        BUFFWATCHADDON.VersionCheck();        
         BUFFWATCHADDON:Options_Init();
         
     end
@@ -336,7 +309,7 @@ end
                 end
             end
 
-        elseif event == "UNIT_AURA" and select(1, ...) ~= "target" then
+        elseif event == "UNIT_AURA" and UNIT_IDs_Keyed[select(1, ...)] ~= nil then
 
             -- Someone gained or lost a buff
             for k, v in pairs(Player_Info) do
@@ -366,28 +339,52 @@ end
                 local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
                 curr_lock:Disable();
             end
+            
+        elseif event == "PLAYER_DEAD" then
         
+            local player = Player_Info[UnitName("player")];
+            player.DeadorDC = 1;
+            BUFFWATCHADDON.Player_ColourName(player);
+            BUFFWATCHADDON.Player_GetBuffs(player);
+        
+        elseif event == "PLAYER_UNGHOST" then
+        
+            local player = Player_Info[UnitName("player")];
+            player.DeadorDC = 0;
+            BUFFWATCHADDON.Player_ColourName(player);
+            BUFFWATCHADDON.Player_GetBuffs(player);
+        
+        -- UNIT_FLAGS fires for group members dying and ressing, 
+        --   however it only fires for the player when they die and when they release to ghost form
+        -- We have to use PLAYER_FLAGS_CHANGED or PLAYER_UNGHOST for when they res, so we manage
+        --   the player seperately from the group using PLAYER_DEAD/PLAYER_UNGHOST
         elseif event == "UNIT_FLAGS" then
         
-            for k, v in pairs(Player_Info) do
+            local unit = select(1, ...);
 
-                if select(1, ...) == v.UNIT_ID then
-                
-                    local DeadorDC = 0;
+            if unit ~= "player" and UNIT_IDs_Keyed[unit] ~= nil then
+        
+                for k, v in pairs(Player_Info) do
+
+                    if select(1, ...) == v.UNIT_ID then
                     
-                    if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == false then
-                        DeadorDC = 1;
+                        local DeadorDC = 0;
+                        
+                        if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == false then
+                            DeadorDC = 1;
+                        end
+
+                        if DeadorDC ~= v.DeadorDC then
+                            v.DeadorDC = DeadorDC;
+                            BUFFWATCHADDON.Player_ColourName(v);
+                            BUFFWATCHADDON.Player_GetBuffs(v);
+                        end
+                        
+                        break;
                     end
 
-                    if DeadorDC ~= v.DeadorDC then
-                        v.DeadorDC = DeadorDC;
-                        BUFFWATCHADDON.Player_ColourName(v);
-                        BUFFWATCHADDON.Player_GetBuffs(v);
-                    end
-                    
-                    break;
                 end
-
+            
             end
 
         end
@@ -787,16 +784,63 @@ function BUFFWATCHADDON.SlashHandler(msg)
 end
 
 
+function BUFFWATCHADDON.VersionCheck()
+
+    if BuffwatchConfig.Version == BUFFWATCHADDON.VERSION then
+        -- Nothing to do
+    else
+    
+        if BuffwatchConfig.Version == nil then
+
+            -- Update old setting name
+            if BuffwatchConfig.HideOmniCC ~= nil then
+                BuffwatchConfig.HideCooldownText = BuffwatchConfig.HideOmniCC;
+                BuffwatchConfig.HideOmniCC = nil;
+            end
+        
+        end
+            
+        if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "7.02" then 
+
+            if BuffwatchConfig.CooldownTextScale == nil then
+                BuffwatchConfig.CooldownTextScale = BUFFWATCHADDON.DEFAULTS.CooldownTextScale;
+            end    
+        end
+       
+        BuffwatchConfig.Version = BUFFWATCHADDON.VERSION;
+
+    end
+    
+    if BuffwatchPlayerConfig.Version == BUFFWATCHADDON.VERSION then
+        -- Nothing to do
+    else
+    
+        if BuffwatchPlayerConfig.Version == "7.02" then
+            BuffwatchPlayerConfig.CooldownTextScale = nil;
+        end
+    
+        BuffwatchPlayerConfig.Version = BUFFWATCHADDON.VERSION;
+    end
+    
+end
+
+
 -- Setup basic list of possible UNIT_IDs
 function BUFFWATCHADDON.Set_UNIT_IDs(forced)
 
     if BuffwatchPlayerConfig.Mode == BUFFWATCHADDON.MODE_DROPDOWN_LIST[1] then  -- "Solo"
 
         UNIT_IDs = table.wipe(UNIT_IDs);
+        UNIT_IDs_Keyed = table.wipe(UNIT_IDs_Keyed);
+        
         UNIT_IDs[1] = "player";
+        UNIT_IDs_Keyed["player"] = 1;
+        
         if BuffwatchPlayerConfig.ShowPets == true then
             UNIT_IDs[2] = "pet";
+            UNIT_IDs_Keyed["pet"] = 2;
         end
+        
         grouptype = "solo";
 
     else
@@ -806,14 +850,17 @@ function BUFFWATCHADDON.Set_UNIT_IDs(forced)
             if grouptype ~= "raid" or forced == true then
 
                 UNIT_IDs = table.wipe(UNIT_IDs);
+                UNIT_IDs_Keyed = table.wipe(UNIT_IDs_Keyed);
 
                 for i = 1, 40 do
                     UNIT_IDs[i] = "raid"..i;
+                    UNIT_IDs_Keyed["raid"..i] = i;
                 end
 
                 if BuffwatchPlayerConfig.ShowPets == true then
                     for i = 1, 40 do
                         UNIT_IDs[i+40] = "raidpet"..i;
+                        UNIT_IDs_Keyed["raidpet"..i] = i+40;
                     end
                 end
 
@@ -825,12 +872,18 @@ function BUFFWATCHADDON.Set_UNIT_IDs(forced)
 
             --UNIT_IDs = { };
             UNIT_IDs = table.wipe(UNIT_IDs);
+            UNIT_IDs_Keyed = table.wipe(UNIT_IDs_Keyed);
 
             UNIT_IDs[1] = "player";
             UNIT_IDs[2] = "party1";
             UNIT_IDs[3] = "party2";
             UNIT_IDs[4] = "party3";
             UNIT_IDs[5] = "party4";
+            UNIT_IDs_Keyed["player"] = 1;
+            UNIT_IDs_Keyed["party1"] = 2;
+            UNIT_IDs_Keyed["party2"] = 3;
+            UNIT_IDs_Keyed["party3"] = 4;
+            UNIT_IDs_Keyed["party4"] = 5;
 
             if BuffwatchPlayerConfig.ShowPets == true then
                 UNIT_IDs[6] = "pet";
@@ -838,6 +891,11 @@ function BUFFWATCHADDON.Set_UNIT_IDs(forced)
                 UNIT_IDs[8] = "partypet2";
                 UNIT_IDs[9] = "partypet3";
                 UNIT_IDs[10] = "partypet4";
+                UNIT_IDs_Keyed["pet"] = 6;
+                UNIT_IDs_Keyed["partypet1"] = 7;
+                UNIT_IDs_Keyed["partypet2"] = 8;
+                UNIT_IDs_Keyed["partypet3"] = 9;
+                UNIT_IDs_Keyed["partypet4"] = 10;
             end
 
             grouptype = "party";
@@ -917,7 +975,11 @@ function BUFFWATCHADDON.GetPlayerInfo()
                         Player_Info[unitname]["IsPet"] = 0;
                     end
                     
-                    Player_Info[unitname]["DeadorDC"] = 0;
+                    if UnitIsDeadOrGhost(UNIT_IDs[i]) or UnitIsConnected(UNIT_IDs[i]) == false then
+                        Player_Info[unitname]["DeadorDC"] = 1;
+                    else
+                        Player_Info[unitname]["DeadorDC"] = 0;
+                    end
 
                     local namebutton = _G["BuffwatchFrame_PlayerFrame"..id.."_Name"];
                     local nametext = _G["BuffwatchFrame_PlayerFrame"..id.."_NameText"];
@@ -1066,7 +1128,7 @@ function BUFFWATCHADDON.PositionAllPlayerFrames()
 
     BUFFWATCHADDON.GetPlayerSortOrder();
 
-    for k, v in pairs(Player_Order) do
+    for k, v in ipairs(Player_Order) do
         BUFFWATCHADDON.PositionPlayerFrame(v.ID);
     end
 
@@ -1423,7 +1485,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                         if buffGroup then
 
                             -- Iterate Group for this buff
-                            for index, val in pairs(GroupBuffs.Group[buffGroup]) do
+                            for index, val in ipairs(GroupBuffs.Group[buffGroup]) do
 
                               if val ~= buff then
 
@@ -2180,5 +2242,11 @@ function BUFFWATCHADDON_G.GetInCombat_Events()
 
     return InCombat_Events;
 
+end
+
+function BUFFWATCHADDON_G.GetGroupBuffs()
+
+    return GroupBuffs;
+    
 end
 ]]
