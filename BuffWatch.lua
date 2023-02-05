@@ -4,7 +4,9 @@
 
 -- Changes
 --
--- ToC update for WoD
+-- ToC update for Legion
+-- Removed old group buffs
+-- Added new legion flasks
 --
 
 -- ****************************************************************************
@@ -14,8 +16,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "5.06";
-BW_RELEASE_DATE = "11 Apr 2016";
+BW_VERSION = "7.00";
+BW_RELEASE_DATE = "22 Jul 2016";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -119,132 +121,91 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.GroupName = { };
 
     -- Class Group Buffs
-    GroupBuffs.GroupName[1] = "Mastery"
-    GroupBuffs.Buff["Blessing of Might"] = 1;
-    GroupBuffs.Buff["Grace of Air"] = 1;
-    GroupBuffs.Buff["Roar of Courage"] = 1;
-    GroupBuffs.Buff["Spirit Beast Blessing"] = 1;
+    GroupBuffs.GroupName[1] = "Burst Haste"
+    GroupBuffs.Buff["Bloodlust"] = 1;
+    GroupBuffs.Buff["Heroism"] = 1;
+    GroupBuffs.Buff["Time Warp"] = 1;
+    GroupBuffs.Buff["Ancient Hysteria"] = 1;
 
-    GroupBuffs.GroupName[2] = "5% stats"
-    GroupBuffs.Buff["Blessing of Kings"] = 2;
-    GroupBuffs.Buff["Mark of the Wild"] = 2;
-    GroupBuffs.Buff["Legacy of the Emperor"] = 2;
-    GroupBuffs.Buff["Embrace of the Shale Spider"] = 2;
-    
-    GroupBuffs.GroupName[3] = "10% AP"
-    GroupBuffs.Buff["Trueshot Aura"] = 3;
-    GroupBuffs.Buff["Horn of Winter"] = 3;
-    GroupBuffs.Buff["Battle Shout"] = 3;
+    GroupBuffs.GroupName[2] = "Mage Armor"
+    GroupBuffs.Buff["Mage Armor"] = 2;
+    GroupBuffs.Buff["Frost Armor"] = 2;
+    GroupBuffs.Buff["Molten Armor"] = 2;
 
-    GroupBuffs.GroupName[4] = "Burst Haste"
-    GroupBuffs.Buff["Bloodlust"] = 4;
-    GroupBuffs.Buff["Heroism"] = 4;
-    GroupBuffs.Buff["Time Warp"] = 4;
-    GroupBuffs.Buff["Ancient Hysteria"] = 4;
-
-    GroupBuffs.GroupName[5] = "Health"
-    GroupBuffs.Buff["Power Word: Fortitude"] = 5;
-    GroupBuffs.Buff["Commanding Shout"] = 5;
-    GroupBuffs.Buff["Blood Pact"] = 5;
-    GroupBuffs.Buff["Qiraji Fortitude"] = 5;
-
-    GroupBuffs.GroupName[6] = "10% Spell Power"
-    GroupBuffs.Buff["Dalaran Brilliance"] = 6;
-    GroupBuffs.Buff["Arcane Brilliance"] = 6;
-    GroupBuffs.Buff["Burning Wrath"] = 6;
-    GroupBuffs.Buff["Dark Intent"] = 6;
-    GroupBuffs.Buff["Still Water"] = 6;
-
-    GroupBuffs.GroupName[7] = "5% Crit"
-    --GroupBuffs.Buff["Dalaran Brilliance"] = 7; Need to redesign auto buff replacements
-    --GroupBuffs.Buff["Arcane Brilliance"] = 7;   to get these to work
-    GroupBuffs.Buff["Leader of the Pack"] = 7;
-    GroupBuffs.Buff["Legacy of the White Tiger"] = 7;
-    GroupBuffs.Buff["Bellowing Roar"] = 7;
-    GroupBuffs.Buff["Furious Howl"] = 7;
-    GroupBuffs.Buff["Terrifying Roar"] = 7;
-    GroupBuffs.Buff["Fearless Roar"] = 7;
-    GroupBuffs.Buff["Still Water"] = 7; -- same as AB/DB
-
-    GroupBuffs.GroupName[8] = "10% Haste"
-    GroupBuffs.Buff["Unholy Aura"] = 8;
-    GroupBuffs.Buff["Swiftblade's Cunning"] = 8;
-    GroupBuffs.Buff["Unleashed Rage"] = 8;
-    GroupBuffs.Buff["Cackling Howl"] = 8;
-    GroupBuffs.Buff["Serpent's Swiftness"] = 8;
-    
-    GroupBuffs.GroupName[9] = "5% Spell Haste"
-    GroupBuffs.Buff["Moonkin Aura"] = 9;
-    GroupBuffs.Buff["Shadowform"] = 9;
-    GroupBuffs.Buff["Elemental Oath"] = 9;
-
-    GroupBuffs.GroupName[13] = "Mage Armor"
-    GroupBuffs.Buff["Mage Armor"] = 13;
-    GroupBuffs.Buff["Frost Armor"] = 13;
-    GroupBuffs.Buff["Molten Armor"] = 13;
-
-    GroupBuffs.GroupName[14] = "Flasks"
-    GroupBuffs.Buff["Flask of Endless Rage"] = 14;
-    GroupBuffs.Buff["Flask of Pure Mojo"] = 14;
-    GroupBuffs.Buff["Flask of Stoneblood"] = 14;
-    GroupBuffs.Buff["Flask of the Frost Wyrm"] = 14;
-    GroupBuffs.Buff["Flask of Enhancement"] = 14;
-    GroupBuffs.Buff["Flask of Flowing Water"] = 14;
-    GroupBuffs.Buff["Flask of Steelskin"] = 14;
-    GroupBuffs.Buff["Flask of Titanic Strength"] = 14;
-    GroupBuffs.Buff["Flask of the Draconic Mind"] = 14;
-    GroupBuffs.Buff["Flask of the Winds"] = 14;
-    GroupBuffs.Buff["Flask of Spring Blossoms"] = 14;
-    GroupBuffs.Buff["Flask of the Warm Sun"] = 14;
-    GroupBuffs.Buff["Flask of Falling Leaves"] = 14;
-    GroupBuffs.Buff["Flask of the Earth"] = 14;
-    GroupBuffs.Buff["Flask of Winter's Bite"] = 14;    
+    GroupBuffs.GroupName[3] = "Flasks"
+    GroupBuffs.Buff["Flask of Endless Rage"] = 3;
+    GroupBuffs.Buff["Flask of Pure Mojo"] = 3;
+    GroupBuffs.Buff["Flask of Stoneblood"] = 3;
+    GroupBuffs.Buff["Flask of the Frost Wyrm"] = 3;
+    GroupBuffs.Buff["Flask of Enhancement"] = 3;
+    GroupBuffs.Buff["Flask of Flowing Water"] = 3;
+    GroupBuffs.Buff["Flask of Steelskin"] = 3;
+    GroupBuffs.Buff["Flask of Titanic Strength"] = 3;
+    GroupBuffs.Buff["Flask of the Draconic Mind"] = 3;
+    GroupBuffs.Buff["Flask of the Winds"] = 3;
+    GroupBuffs.Buff["Flask of Spring Blossoms"] = 3;
+    GroupBuffs.Buff["Flask of the Warm Sun"] = 3;
+    GroupBuffs.Buff["Flask of Falling Leaves"] = 3;
+    GroupBuffs.Buff["Flask of the Earth"] = 3;
+    GroupBuffs.Buff["Flask of Winter's Bite"] = 3;
+    GroupBuffs.Buff["Draenic Intellect Flask"] = 3;
+    GroupBuffs.Buff["Draenic stamina Flask"] = 3;
+    GroupBuffs.Buff["Draenic Strength Flask"] = 3;
+    GroupBuffs.Buff["Draenic Agility Flask"] = 3;
+    GroupBuffs.Buff["Greater Draenic Intellect Flask"] = 3;
+    GroupBuffs.Buff["Greater Draenic stamina Flask"] = 3;
+    GroupBuffs.Buff["Greater Draenic Strength Flask"] = 3;
+    GroupBuffs.Buff["Greater Draenic Agility Flask"] = 3;
+    GroupBuffs.Buff["Flask of Countless Armies"] = 3;
+    GroupBuffs.Buff["Flask of Ten Thousand Stars"] = 3;
+    GroupBuffs.Buff["Flask of the Seventh Demon"] = 3;
+    GroupBuffs.Buff["Flask of the Whispered Pact"] = 3;
 
     -- Lvl80 Battle Elixirs
-    GroupBuffs.GroupName[15] = "Battle Elixirs"
-    GroupBuffs.Buff["Accuracy"] = 15;
-    GroupBuffs.Buff["Armor Piercing"] = 15;
-    GroupBuffs.Buff["Deadly Strikes"] = 15;
-    GroupBuffs.Buff["Expertise"] = 15;
-    GroupBuffs.Buff["Lightning Speed"] = 15;
-    GroupBuffs.Buff["Mighty Agility"] = 15;
-    GroupBuffs.Buff["Mighty Mana Regeneration"] = 15;
-    GroupBuffs.Buff["Mighty Strength"] = 15;
-    GroupBuffs.Buff["Elixir of Spirit"] = 15;
-    GroupBuffs.Buff["Guru's Elixir"] = 15;
-    GroupBuffs.Buff["Spellpower Elixir"] = 15;
-    GroupBuffs.Buff["Wrath Elixir"] = 15;
+    GroupBuffs.GroupName[4] = "Battle Elixirs"
+    GroupBuffs.Buff["Accuracy"] = 4;
+    GroupBuffs.Buff["Armor Piercing"] = 4;
+    GroupBuffs.Buff["Deadly Strikes"] = 4;
+    GroupBuffs.Buff["Expertise"] = 4;
+    GroupBuffs.Buff["Lightning Speed"] = 4;
+    GroupBuffs.Buff["Mighty Agility"] = 4;
+    GroupBuffs.Buff["Mighty Mana Regeneration"] = 4;
+    GroupBuffs.Buff["Mighty Strength"] = 4;
+    GroupBuffs.Buff["Elixir of Spirit"] = 4;
+    GroupBuffs.Buff["Guru's Elixir"] = 4;
+    GroupBuffs.Buff["Spellpower Elixir"] = 4;
+    GroupBuffs.Buff["Wrath Elixir"] = 4;
 
     -- Lvl85 Battle Elixirs
-    GroupBuffs.Buff["Impossible Accuracy"] = 15;
-    GroupBuffs.Buff["Mighty Speed"] = 15;
-    GroupBuffs.Buff["Elixir of the Cobra"] = 15;
-    GroupBuffs.Buff["Elixir of the Master"] = 15;
-    GroupBuffs.Buff["Elixir of the Naga"] = 15;
-    GroupBuffs.Buff["Ghost Elixir"] = 15;
+    GroupBuffs.Buff["Impossible Accuracy"] = 4;
+    GroupBuffs.Buff["Mighty Speed"] = 4;
+    GroupBuffs.Buff["Elixir of the Cobra"] = 4;
+    GroupBuffs.Buff["Elixir of the Master"] = 4;
+    GroupBuffs.Buff["Elixir of the Naga"] = 4;
+    GroupBuffs.Buff["Ghost Elixir"] = 4;
 
     -- Lvl90 Battle Elixirs
-    GroupBuffs.Buff["Mad Hozen Elixir"] = 15;
-    GroupBuffs.Buff["Elixir of the Rapids"] = 15;
-    GroupBuffs.Buff["Elixir of Peace"] = 15;
-    GroupBuffs.Buff["Elixir of Perfection"] = 15;
-    GroupBuffs.Buff["Monk's Elixir"] = 15;
-    GroupBuffs.Buff["Elixir of Weaponry"] = 15;
+    GroupBuffs.Buff["Mad Hozen Elixir"] = 4;
+    GroupBuffs.Buff["Elixir of the Rapids"] = 4;
+    GroupBuffs.Buff["Elixir of Peace"] = 4;
+    GroupBuffs.Buff["Elixir of Perfection"] = 4;
+    GroupBuffs.Buff["Monk's Elixir"] = 4;
+    GroupBuffs.Buff["Elixir of Weaponry"] = 4;
     
     -- Lvl80 Guardian Elixirs
-    GroupBuffs.GroupName[16] = "Guardian Elixirs"
-    GroupBuffs.Buff["Mighty Defense"] = 16;
-    GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 16;
-    GroupBuffs.Buff["Mighty Thoughts"] = 16;
-    GroupBuffs.Buff["Protection"] = 16;
+    GroupBuffs.GroupName[5] = "Guardian Elixirs"
+    GroupBuffs.Buff["Mighty Defense"] = 5;
+    GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 5;
+    GroupBuffs.Buff["Mighty Thoughts"] = 5;
+    GroupBuffs.Buff["Protection"] = 5;
 
     -- Lvl85 Guardian Elixirs
-    GroupBuffs.Buff["Elixir of Deep Earth"] = 16;
-    GroupBuffs.Buff["Prismatic Elixir"] = 16;
+    GroupBuffs.Buff["Elixir of Deep Earth"] = 5;
+    GroupBuffs.Buff["Prismatic Elixir"] = 5;
 
     -- Lvl90 Battle Elixirs
-    GroupBuffs.Buff["Mantid Elixir"] = 16;
-    GroupBuffs.Buff["Elixir of Mirrors"] = 16;
+    GroupBuffs.Buff["Mantid Elixir"] = 5;
+    GroupBuffs.Buff["Elixir of Mirrors"] = 5;
 
     GroupBuffs.Group = { };
 
