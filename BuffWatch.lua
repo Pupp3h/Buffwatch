@@ -1,28 +1,10 @@
 
 -- ** Buffwatch++
 -- **
--- ** TODO:
--- **
-
--- ** Add back in option to only show players that have missing buffs,
--- **   with warning that it will only update out of combat
-
--- ** Timers for buffs expiring
--- ** Warning message for buff expiring (toggle option for each buff)
--- ** Blink icons near to expiration
--- ** Option for showing only last x minutes of a buff as a cooldown spiral
--- ** Localisation
-
--- ** Ability to modify Buff Groups in game, with reset option.
--- ** Range checking and dead player greying.
--- ** Load / Save templates
--- ** Weapon Buffs
--- ** change anchor point temporarily to centre which changing scale?
 
 -- Changes
 --
--- Added Pandaren Flasks & Elixirs to Buff Groups
--- Removed Paladin Seals from Buff Groups
+-- Added Group Name to tooltips
 --
 
 -- ****************************************************************************
@@ -32,8 +14,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "5.02";
-BW_RELEASE_DATE = "5 Nov 2012";
+BW_VERSION = "5.03";
+BW_RELEASE_DATE = "24 Mar 2013";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -656,6 +638,11 @@ function Buffwatch_Buff_Tooltip(self)
             GameTooltip:SetText(buff, 1, 1, 0);
         end
 
+    end
+    
+    if GroupBuffs.Buff[buff] ~= nil then
+    	GameTooltip:AddLine("Group: "..GroupBuffs.GroupName[GroupBuffs.Buff[buff]], 0.2, 1, 0.2);
+    	GameTooltip:Show();
     end
 
 end
