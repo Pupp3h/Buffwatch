@@ -28,6 +28,9 @@
 -- 8.10
 -- Persist Hide Unmonitored / Minimised state
 
+-- 8.11
+-- ToC update to 80200
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -39,8 +42,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.10";
-BUFFWATCHADDON.RELEASE_DATE = "11 Apr 2019";
+BUFFWATCHADDON.VERSION = "8.11";
+BUFFWATCHADDON.RELEASE_DATE = "19 Jul 2019";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
