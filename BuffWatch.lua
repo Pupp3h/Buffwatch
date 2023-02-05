@@ -23,6 +23,10 @@
 -- 8.05
 -- Added BfA flasks & Netherwinds burst haste to group buffs
 -- Cleaned up some variable and function scope
+--
+-- 8.06
+-- Fixed nil expTime variable error when a known player joins the group
+--
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -35,8 +39,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.05";
-BUFFWATCHADDON.RELEASE_DATE = "1 Aug 2018";
+BUFFWATCHADDON.VERSION = "8.06";
+BUFFWATCHADDON.RELEASE_DATE = "31 Aug 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -1242,7 +1246,6 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
             for i = 1, 32 do
 
                 -- temporary code to get around broken RAID filter for UnitAura()
-                --local buff, rank, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
                 local buff, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i);
 			
                 if buff and showbuffs == "RAID" then
@@ -1531,10 +1534,16 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
                 curr_buff:Show();
                 curr_buff_icon:SetTexture(BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Icon"]);
 
+                local buff = BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Buff"];
+                local buffbuttonid, duration, expTime;
+
+                buffbuttonid, duration, expTime = BUFFWATCHADDON.UnitHasBuff(v.UNIT_ID, buff);
+                    
                 curr_buff:SetAttribute("type", "spell");
                 curr_buff:SetAttribute("unit1", v.UNIT_ID);
-                curr_buff:SetAttribute("spell1", BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Buff"]);
+                curr_buff:SetAttribute("spell1", buff);
 --BUFFWATCHADDON.Debug("LoadBuffs: Player="..v.Name)
+--BUFFWATCHADDON.Debug("LoadBuffs: Buff="..buff)
                 if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --BUFFWATCHADDON.Debug("LoadBuffs: BuffID="..i..", expTime="..expTime..",duration="..duration)
                     curr_buff.cooldown:Show();
