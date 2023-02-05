@@ -4,7 +4,7 @@
 
 -- Changes
 --
--- Added Group Name to tooltips
+-- ToC update for WoD
 --
 
 -- ****************************************************************************
@@ -14,8 +14,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "5.03";
-BW_RELEASE_DATE = "24 Mar 2013";
+BW_VERSION = "5.05";
+BW_RELEASE_DATE = "16 Oct 2014";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
