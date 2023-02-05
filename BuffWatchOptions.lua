@@ -5,7 +5,8 @@ BW_TTIP_MODE = "Selects which players to show";
 BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire";
 BW_TTIP_SCALE = "Sets the scale of the Buffwatch window";
 BW_TTIP_SHOWALLFORPLAYER = "Always show all buffs for this player";
-BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
+--BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
+BW_TTIP_SHOWCASTABLEBUFFS = "This option is disabled until Blizzard fix their API";
 BW_TTIP_SHOWDEBUFFS = "Show debuffs";
 BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell";
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire";
@@ -25,7 +26,7 @@ function Buffwatch_Options_OnLoad(self)
     self.name = BW_ADDONNAME;
     self.default = Buffwatch_Options_SetDefaults;
     self.refresh = Buffwatch_Options_Init;
---    self.okay = Buffwatch_Options_OkayButton;
+    self.okay = Buffwatch_Options_OkayButton;
     self.cancel = Buffwatch_Options_CancelButton;
 
     InterfaceOptions_AddCategory(self);
@@ -37,21 +38,21 @@ function Buffwatch_HelpFrame_OnLoad(self)
     "  - |cff5555ffBuffwatch Usage|cffffffff - v|cffff5555" .. BW_VERSION .. " |cffffffff- " .. [[
 
 
-  1) Make sure the buffs you want to monitor are on the relevant 
+  1) Make sure the buffs you want to monitor are on the relevant
        players
 
-  2) Tick the checkbox next to each player which locks those buffs 
-       to the player (alternatively tick the checkbox at the top to lock 
+  2) Tick the checkbox next to each player which locks those buffs
+       to the player (alternatively tick the checkbox at the top to lock
        them all)
 
-  3) Remove monitoring of the buffs you are not interested in, using 
+  3) Remove monitoring of the buffs you are not interested in, using
        the following methods :
 
      * |cffff5555Alt|cffffffff-|cffff5555Right Click|cffffffff to remove the selected buff
 
      * |cffff5555Alt|cffffffff-|cffff5555Left Click|cffffffff to remove all buffs but the selected one
 
-  4) Buffs that have expired will turn red, and clicking on them will 
+  4) Buffs that have expired will turn red, and clicking on them will
        recast the buff on the player (if you have the spell)
 
 
@@ -80,11 +81,11 @@ function Buffwatch_HelpFrame_OnLoad(self)
     self.parent = BW_ADDONNAME;
 
     InterfaceOptions_AddCategory(self);
-    
+
 	Buffwatch_HelpFrameText:ClearAllPoints();
 	--Buffwatch_HelpFrameText:SetPoint("TOPLEFT", "Buffwatch_HelpScrollFrame", "TOPLEFT", 10, 0);
 	Buffwatch_HelpFrameText:SetPoint("TOPLEFT", 10, -4);
-	Buffwatch_HelpFrameText:SetPoint("BOTTOMRIGHT", -55, 5);    
+	Buffwatch_HelpFrameText:SetPoint("BOTTOMRIGHT", -55, 5);
 
 end
 
@@ -93,6 +94,9 @@ function Buffwatch_Options_Init()
 
     BuffwatchTempConfig = CopyTable(BuffwatchConfig);
     BuffwatchTempPlayerConfig = CopyTable(BuffwatchPlayerConfig);
+
+-- Temporary disabled until the RAID filter is working again, or a new method is found
+BuffwatchPlayerConfig.ShowCastableBuffs = false;
 
     UIDropDownMenu_SetSelectedValue(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
     UIDropDownMenu_SetText(Buffwatch_Options_Mode, BuffwatchPlayerConfig.Mode);
@@ -115,8 +119,6 @@ function Buffwatch_Options_Init()
     Buffwatch_Options_ShowAllForPlayer:SetChecked(BuffwatchPlayerConfig.ShowAllForPlayer);
     Buffwatch_Options_ShowAllForPlayer_OnClick(Buffwatch_Options_ShowAllForPlayer, true);
 
---    Buffwatch_Options_ShowDebuffs:SetChecked(BuffwatchPlayerConfig.ShowDebuffs);
---    Buffwatch_Options_ShowOnlyDispellDebuffs:SetChecked(BuffwatchPlayerConfig.ShowDispellableDebuffs);
 --    Buffwatch_Options_ShowExpiredWarning:SetChecked(BuffwatchConfig.ExpiredWarning);
 --    Buffwatch_Options_PlayExpiredSound:SetChecked(BuffwatchConfig.ExpiredSound);
 
@@ -308,11 +310,12 @@ function Buffwatch_Options_SetDefaults()
     BuffwatchPlayerConfig = CopyTable(BW_PLAYER_DEFAULTS);
 end
 
---[[
-function Buffwatch_Options_OkayButton()
 
+function Buffwatch_Options_OkayButton()
+-- Temporary disabled until the RAID filter is working again, or a new method is found
+BuffwatchPlayerConfig.ShowCastableBuffs = false;
 end
-]]
+
 
 function Buffwatch_Options_CancelButton()
     BuffwatchConfig = CopyTable(BuffwatchTempConfig);

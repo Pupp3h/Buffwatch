@@ -4,13 +4,12 @@
 -- ** TODO:
 -- **
 
--- ** Figure out why spirals dont show on reload
 -- ** Add back in option to only show players that have missing buffs,
--- **   with warning that it will only update in combat
+-- **   with warning that it will only update out of combat
 
--- ** Alt click for Lesser/Greater Buffs (?)
 -- ** Timers for buffs expiring
 -- ** Warning message for buff expiring (toggle option for each buff)
+-- ** Blink icons near to expiration
 -- ** Option for showing only last x minutes of a buff as a cooldown spiral
 -- ** Localisation
 
@@ -22,10 +21,8 @@
 
 -- Changes
 --
--- Fix for 'Check All' checkbox being unticked when all players are locked
--- Fix for rare error when lots of buff changes occur on an unlocked player
--- Tidied and moved help page to interface options panel
--- Moved Elixir of the Naga to the Battle Elixir Buff Group
+-- ToC update
+-- Temporarily disabled Show Only Castable option
 --
 
 -- ****************************************************************************
@@ -35,8 +32,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "4.02";
-BW_RELEASE_DATE = "29 November 2010";
+BW_VERSION = "4.03";
+BW_RELEASE_DATE = "05 July 2011";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
