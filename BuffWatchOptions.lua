@@ -234,14 +234,14 @@ function Buffwatch_Options_HideOmniCC_OnClick(self, suppressRefresh)
     else
         BuffwatchConfig.HideOmniCC = false;
     end
-    if (OmniCC) then
---      OmniCC:HookCooldown();
-        OmniCC.Timer:ForAllShown('UpdateShown');
-    end
 
     if (suppressRefresh ~= true) then
         Buffwatch_GetAllBuffs();
     end
+    
+    if (OmniCC) then
+        OmniCC.Timer:ForAllShown('UpdateShown');
+    end    
 
 end
 

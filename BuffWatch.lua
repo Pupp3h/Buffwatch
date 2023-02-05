@@ -8,17 +8,19 @@
 -- ** Timers for buffs expiring
 -- ** Warning message for buff expiring (toggle option for each buff)
 -- ** Option for showing only last x minutes of a buff as a cooldown spiral
+-- ** Localisation
 
 -- ** Ability to modify Buff Groups in game, with reset option.
 -- ** Range checking and dead player greying.
 -- ** Load / Save templates
 -- ** Weapon Buffs
 
+-- ** change anchor point temporarily to centre which changing scale?
+
 -- Changes
 --
--- Updates for Cataclysm Interface changes
--- Updated buff groupings for Cataclysm
--- Fixed occasional error when a group member or pet left during combat
+-- Fixed integration with OmniCC
+-- Further updates to Buff Groupings
 --
 
 -- ****************************************************************************
@@ -28,8 +30,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++"
-BW_VERSION = "4.00";
-BW_RELEASE_DATE = "12 October 2010";
+BW_VERSION = "4.01";
+BW_RELEASE_DATE = "26 October 2010";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -134,73 +136,112 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff = { };
 
     -- Class Group Buffs
-    GroupBuffs.Buff["Blessing of Kings"] = 1;
-    GroupBuffs.Buff["Mark of the Wild"] = 1;
-
-    GroupBuffs.Buff["Horn of Winter"] = 2;
-    GroupBuffs.Buff["Strength of Earth"] = 2;
-    GroupBuffs.Buff["Battle Shout"] = 2;
-
-    GroupBuffs.Buff["Bloodlust"] = 3;
-    GroupBuffs.Buff["Heroism"] = 3;
-    GroupBuffs.Buff["Time Warp"] = 3;
-    GroupBuffs.Buff["Ancient Hysteria"] = 3;
-
-    GroupBuffs.Buff["Dalaran Brilliance"] = 4;
-    GroupBuffs.Buff["Arcane Brilliance"] = 4;
-
+    -- Agility and Strength
+    GroupBuffs.Buff["Horn of Winter"] = 1;
+    GroupBuffs.Buff["Strength of Earth"] = 1;
+    GroupBuffs.Buff["Battle Shout"] = 1;
+    GroupBuffs.Buff["Roar of Courage"] = 1;
+    
+    -- Armor
+    GroupBuffs.Buff["Devotion Aura"] = 2;
+    GroupBuffs.Buff["Stoneskin Totem"] = 2;
+    
+    -- 10% AP
+    GroupBuffs.Buff["Blessing of Might"] = 3;  -- this also includes mana regen
+    GroupBuffs.Buff["Abomination's Might"] = 3;
+    GroupBuffs.Buff["Unleashed Rage"] = 3;
+    GroupBuffs.Buff["Trueshot Aura"] = 3;    
+    
+    -- Burst Haste
+    GroupBuffs.Buff["Bloodlust"] = 4;
+    GroupBuffs.Buff["Heroism"] = 4;
+    GroupBuffs.Buff["Time Warp"] = 4;
+    GroupBuffs.Buff["Ancient Hysteria"] = 4;
+    
+    -- Health
     GroupBuffs.Buff["Power Word: Fortitude"] = 5;
     GroupBuffs.Buff["Commanding Shout"] = 5;
+    GroupBuffs.Buff["Blood Pact"] = 5;
+    GroupBuffs.Buff["Qiraji Fortitude"] = 5;    
+    
+    -- Mana Pool
+    GroupBuffs.Buff["Dalaran Brilliance"] = 6;
+    GroupBuffs.Buff["Arcane Brilliance"] = 6;
+    
+    -- 5% Crit
+    GroupBuffs.Buff["Rampage"] = 7;
+    GroupBuffs.Buff["Leader of the Pack"] = 7;
+    GroupBuffs.Buff["Honor Among Thieves"] = 7;
+    GroupBuffs.Buff["Elemental Oath"] = 7;
+    
+    -- 10% Melee Attack Speed
+    GroupBuffs.Buff["Windfury Totem"] = 8;
+    GroupBuffs.Buff["Improved Icy Talons"] = 8;
+    GroupBuffs.Buff["Hunting Party"] = 8;
+    
+    -- 5% Spell Haste
+    GroupBuffs.Buff["Wrath of Air Totem"] = 9;
+    GroupBuffs.Buff["Moonkin Aura"] = 9;
+    --GroupBuffs.Buff["Shadowform"] = 9; -- moo, whats the buff for this? is there one?
+    
+    -- 5% stats
+    GroupBuffs.Buff["Blessing of Kings"] = 12;
+    GroupBuffs.Buff["Mark of the Wild"] = 12;
 
+    -- Mage Armor
+    GroupBuffs.Buff["Mage Armor"] = 13;
+    GroupBuffs.Buff["Frost Armor"] = 13;
+    GroupBuffs.Buff["Molten Armor"] = 13;
+    
     -- Flasks
-    GroupBuffs.Buff["Flask of Endless Rage"] = 10;
-    GroupBuffs.Buff["Flask of Pure Mojo"] = 10;
-    GroupBuffs.Buff["Flask of Stoneblood"] = 10;
-    GroupBuffs.Buff["Flask of the Frost Wyrm"] = 10;
-    GroupBuffs.Buff["Flask of Enhancement"] = 10;
-    GroupBuffs.Buff["Flask of Flowing Water"] = 10;
-    GroupBuffs.Buff["Flask of Steelskin"] = 10;
-    GroupBuffs.Buff["Flask of Titanic Strength"] = 10;
-    GroupBuffs.Buff["Flask of the Draconic Mind"] = 10;
-    GroupBuffs.Buff["Flask of the Winds"] = 10;
+    GroupBuffs.Buff["Flask of Endless Rage"] = 14;
+    GroupBuffs.Buff["Flask of Pure Mojo"] = 14;
+    GroupBuffs.Buff["Flask of Stoneblood"] = 14;
+    GroupBuffs.Buff["Flask of the Frost Wyrm"] = 14;
+    GroupBuffs.Buff["Flask of Enhancement"] = 14;
+    GroupBuffs.Buff["Flask of Flowing Water"] = 14;
+    GroupBuffs.Buff["Flask of Steelskin"] = 14;
+    GroupBuffs.Buff["Flask of Titanic Strength"] = 14;
+    GroupBuffs.Buff["Flask of the Draconic Mind"] = 14;
+    GroupBuffs.Buff["Flask of the Winds"] = 14;
 
     -- Lvl80 Battle Elixirs
-    GroupBuffs.Buff["Accuracy"] = 11;
-    GroupBuffs.Buff["Armor Piercing"] = 11;
-    GroupBuffs.Buff["Deadly Strikes"] = 11;
-    GroupBuffs.Buff["Expertise"] = 11;
-    GroupBuffs.Buff["Lightning Speed"] = 11;
-    GroupBuffs.Buff["Mighty Agility"] = 11;
-    GroupBuffs.Buff["Mighty Mana Regeneration"] = 11;
-    GroupBuffs.Buff["Mighty Strength"] = 11;
-    GroupBuffs.Buff["Elixir of Spirit"] = 11;
-    GroupBuffs.Buff["Guru's Elixir"] = 11;
-    GroupBuffs.Buff["Spellpower Elixir"] = 11;
-    GroupBuffs.Buff["Wrath Elixir"] = 11;
+    GroupBuffs.Buff["Accuracy"] = 15;
+    GroupBuffs.Buff["Armor Piercing"] = 15;
+    GroupBuffs.Buff["Deadly Strikes"] = 15;
+    GroupBuffs.Buff["Expertise"] = 15;
+    GroupBuffs.Buff["Lightning Speed"] = 15;
+    GroupBuffs.Buff["Mighty Agility"] = 15;
+    GroupBuffs.Buff["Mighty Mana Regeneration"] = 15;
+    GroupBuffs.Buff["Mighty Strength"] = 15;
+    GroupBuffs.Buff["Elixir of Spirit"] = 15;
+    GroupBuffs.Buff["Guru's Elixir"] = 15;
+    GroupBuffs.Buff["Spellpower Elixir"] = 15;
+    GroupBuffs.Buff["Wrath Elixir"] = 15;
 
     -- Lvl85 Battle Elixirs
-    GroupBuffs.Buff["Impossible Accuracy"] = 11;
-    GroupBuffs.Buff["Mighty Speed"] = 11;
-    GroupBuffs.Buff["Elixir of the Cobra"] = 11;
-    GroupBuffs.Buff["Elixir of the Master"] = 11;
-    GroupBuffs.Buff["Ghost Elixir"] = 11;
+    GroupBuffs.Buff["Impossible Accuracy"] = 15;
+    GroupBuffs.Buff["Mighty Speed"] = 15;
+    GroupBuffs.Buff["Elixir of the Cobra"] = 15;
+    GroupBuffs.Buff["Elixir of the Master"] = 15;
+    GroupBuffs.Buff["Ghost Elixir"] = 15;
 
     -- Lvl80 Guardian Elixirs
-    GroupBuffs.Buff["Mighty Defense"] = 12;
-    GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 12;
-    GroupBuffs.Buff["Mighty Thoughts"] = 12;
-    GroupBuffs.Buff["Protection"] = 12;
+    GroupBuffs.Buff["Mighty Defense"] = 16;
+    GroupBuffs.Buff["Elixir of Mighty Fortitude"] = 16;
+    GroupBuffs.Buff["Mighty Thoughts"] = 16;
+    GroupBuffs.Buff["Protection"] = 16;
 
     -- Lvl85 Guardian Elixirs
-    GroupBuffs.Buff["Elixir of Deep Earth"] = 12;
-    GroupBuffs.Buff["Elixir of the Naga"] = 12;
-    GroupBuffs.Buff["Prismatic Elixir"] = 12;
+    GroupBuffs.Buff["Elixir of Deep Earth"] = 16;
+    GroupBuffs.Buff["Elixir of the Naga"] = 16;
+    GroupBuffs.Buff["Prismatic Elixir"] = 16;
 
     -- Seals
-    GroupBuffs.Buff["Seal of Truth"] = 13;
-    GroupBuffs.Buff["Seal of Justice"] = 13;
-    GroupBuffs.Buff["Seal of Insight"] = 13;
-    GroupBuffs.Buff["Seal of Righteousness"] = 13;
+    GroupBuffs.Buff["Seal of Truth"] = 17;
+    GroupBuffs.Buff["Seal of Justice"] = 17;
+    GroupBuffs.Buff["Seal of Insight"] = 17;
+    GroupBuffs.Buff["Seal of Righteousness"] = 17;
 
     GroupBuffs.Group = { };
 
@@ -1197,7 +1238,8 @@ end]]
                             _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
                         curr_buff:SetID(i);
 
-                        local cooldown = CreateFrame("Cooldown", nil, curr_buff, "CooldownFrameTemplate")
+                        local cooldown = CreateFrame("Cooldown", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown",
+                            curr_buff, "CooldownFrameTemplate");
                         curr_buff.cooldown = cooldown;
                         cooldown:SetAllPoints(curr_buff);
                         cooldown:SetReverse(true);
@@ -1478,7 +1520,8 @@ function Buffwatch_Player_LoadBuffs(v)
                         _G["BuffwatchFrame_PlayerFrame"..v.ID], "Buffwatch_BuffButton_Template");
                     curr_buff:SetID(i);
 
-                    local cooldown = CreateFrame("Cooldown", nil, curr_buff, "CooldownFrameTemplate")
+                    local cooldown = CreateFrame("Cooldown", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown", 
+                        curr_buff, "CooldownFrameTemplate");
                     curr_buff.cooldown = cooldown;
                     cooldown:SetAllPoints(curr_buff);
                     cooldown:SetReverse(true);
