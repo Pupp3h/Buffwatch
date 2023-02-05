@@ -25,6 +25,9 @@
 -- 8.09
 -- ToC update
 
+-- 8.10
+-- Persist Hide Unmonitored / Minimised state
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -36,8 +39,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.09";
-BUFFWATCHADDON.RELEASE_DATE = "14 Dec 2018";
+BUFFWATCHADDON.VERSION = "8.10";
+BUFFWATCHADDON.RELEASE_DATE = "11 Apr 2019";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -81,6 +84,8 @@ BUFFWATCHADDON.PLAYER_DEFAULTS = {
     AnchorPoint             = "Auto",
     AnchorX                 = 200,
     AnchorY                 = 200,
+    HideUnmonitored         = false, -- Whether to show locked frames that have no buffs
+    Minimized               = false, -- Is window minimized
     Mode                    = BUFFWATCHADDON.MODE_DROPDOWN_LIST[3],
     Scale                   = 1.0,
     ShowOnlyMine            = false,
@@ -96,9 +101,8 @@ local grouptype;                -- solo, raid or party
 local maxnamewidth = 0;         -- Width of the longest player name, to set buff button alignment
 local maxnameid = 1;            -- The frame ID with the longest player name
 --local buffexpired = 0;          -- Count of expired buffs, used for the Expired Warning
-local HideUnmonitored = false;  -- Whether to show locked frames that have no buffs
-local minimized = false;        -- Is window minimized
 local framePositioned = false;  -- Flag whether frame has been positioned correctly on login
+local initialSetupComplete = false; -- Flag whether we have completed the setup of the addon on login
 
 local Player_Info = { };        -- Details of each player, see BUFFWATCHADDON.GetPlayerInfo()
 local Player_Left = { };        -- Retained Player_Info for players that have left group
@@ -257,7 +261,6 @@ function BUFFWATCHADDON_G.OnLoad(self)
 
 end
 
-
 function BUFFWATCHADDON_G.OnEvent(self, event, ...)
 --[[
 if event ~= "ADDON_LOADED" or select(1, ...) == "Buffwatch" then
@@ -272,8 +275,8 @@ end
     if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
     
         -- Check version and setup config
-        BUFFWATCHADDON:VersionCheck();        
-        BUFFWATCHADDON:Options_Init();
+        BUFFWATCHADDON.VersionCheck();        
+        BUFFWATCHADDON.Options_Init();
         
     end
 
@@ -315,6 +318,11 @@ end
                 if BUFFWATCHADDON.InspectPlayerLocks() then
                     BuffwatchFrame_LockAll:SetChecked(true);
                 end
+        
+                BUFFWATCHADDON.HideUnmonitored(nil, BuffwatchPlayerConfig.HideUnmonitored);
+                BUFFWATCHADDON.SetMinimized(nil, BuffwatchPlayerConfig.Minimized);
+                
+                initialSetupComplete = true;
             end
 
         elseif event == "UNIT_AURA" and UNIT_IDs_Keyed[select(1, ...)] ~= nil then
@@ -375,7 +383,6 @@ end
     
 end
 
-
 function BUFFWATCHADDON_G.MouseDown(self, button)
     if button == "LeftButton" and BuffwatchPlayerConfig.WindowLocked == false then
         self:StartMoving();
@@ -390,7 +397,6 @@ function BUFFWATCHADDON_G.MouseUp(self, button)
     end
 end
 
-
 function BUFFWATCHADDON_G.Set_AllChecks(checked)
 
     -- Toggle all checkboxes on or off
@@ -402,7 +408,7 @@ function BUFFWATCHADDON_G.Set_AllChecks(checked)
             curr_lock:SetChecked(checked);
 
             -- Show or Hide any frames affected by the HideUnmonitored flag
-            if HideUnmonitored and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
+            if BuffwatchPlayerConfig.HideUnmonitored and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
                 BUFFWATCHADDON.PositionPlayerFrame(v.ID);
                 BUFFWATCHADDON.ResizeWindow();
             end
@@ -427,7 +433,6 @@ function BUFFWATCHADDON_G.Set_AllChecks(checked)
 
 end
 
-
 function BUFFWATCHADDON_G.Header_Clicked(button, down)
 
     -- Show the dropdown menu
@@ -442,7 +447,6 @@ function BUFFWATCHADDON_G.HeaderDropDown_OnLoad(self)
     UIDropDownMenu_Initialize(self, BUFFWATCHADDON.Buffwatch_HeaderDropDown_Initialize, "MENU");
     UIDropDownMenu_SetAnchor(self, 0, 0, "TOPLEFT", "BuffwatchFrame_Header", "CENTER");
 end
-
 
 function BUFFWATCHADDON.Buffwatch_HeaderDropDown_Initialize()
 
@@ -490,7 +494,6 @@ function BUFFWATCHADDON.Buffwatch_HeaderDropDown_Initialize()
 
 end
 
-
 function BUFFWATCHADDON_G.MinimizeButton_Clicked(self)
 
     if InCombatLockdown() then
@@ -498,41 +501,24 @@ function BUFFWATCHADDON_G.MinimizeButton_Clicked(self)
         BUFFWATCHADDON.Print("Cannot hide or show buffs while in combat.");
 
     else
-        minimized = not minimized;
-
-        if minimized then
-            BuffwatchFrame_PlayerFrame:Hide();
-            BuffwatchFrame_LockAll:Disable();
-            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Max");
-            GameTooltip:SetText("Max");
-        else
-            BuffwatchFrame_PlayerFrame:Show();
-            BuffwatchFrame_LockAll:Enable();
-            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Min");
-            GameTooltip:SetText("Min");
-            -- Do a refresh
-            BUFFWATCHADDON.GetPlayerInfo();
-            BUFFWATCHADDON.GetAllBuffs();
-        end
-
-        BUFFWATCHADDON.ResizeWindow();
+    
+        BuffwatchPlayerConfig.Minimized = not BuffwatchPlayerConfig.Minimized;
+        BUFFWATCHADDON.SetMinimized(self, BuffwatchPlayerConfig.Minimized);
         
     end
 
 end
 
-
 function BUFFWATCHADDON_G.MinimizeButton_Enter(self)
 
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-    if minimized then
+    if BuffwatchPlayerConfig.Minimized then
         GameTooltip:SetText("Max");
     else
         GameTooltip:SetText("Min");
     end
     
 end
-
 
 function BUFFWATCHADDON_G.HideButton_Clicked(self)
 
@@ -542,35 +528,23 @@ function BUFFWATCHADDON_G.HideButton_Clicked(self)
 
     else
 
-        HideUnmonitored = not HideUnmonitored;
-        
-        if HideUnmonitored == true then
-            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Show");
-            GameTooltip:SetText("Show All");
-        else
-            self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Hide");
-            GameTooltip:SetText("Hide Unmonitored");
-        end
-
-        BUFFWATCHADDON.PositionAllPlayerFrames();
-        BUFFWATCHADDON.ResizeWindow();
+        BuffwatchPlayerConfig.HideUnmonitored = not BuffwatchPlayerConfig.HideUnmonitored;
+        BUFFWATCHADDON.HideUnmonitored(self, BuffwatchPlayerConfig.HideUnmonitored);
 
     end
 
 end
 
-
 function BUFFWATCHADDON_G.HideButton_Enter(self)
 
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-    if HideUnmonitored then
+    if BuffwatchPlayerConfig.HideUnmonitored then
         GameTooltip:SetText("Show All");
     else
         GameTooltip:SetText("Hide Unmonitored");
     end
 
 end
-
 
 function BUFFWATCHADDON_G.Check_Clicked(self, button, down)
 
@@ -590,7 +564,7 @@ function BUFFWATCHADDON_G.Check_Clicked(self, button, down)
         end
 
         -- Hide any frames affected by the HideUnmonitored flag
-        if HideUnmonitored and (next(BuffwatchPlayerBuffs[playername]["Buffs"], nil) == nil) then
+        if BuffwatchPlayerConfig.HideUnmonitored and (next(BuffwatchPlayerBuffs[playername]["Buffs"], nil) == nil) then
             BUFFWATCHADDON.PositionPlayerFrame(playerid);
             BUFFWATCHADDON.ResizeWindow();
         end
@@ -603,7 +577,6 @@ function BUFFWATCHADDON_G.Check_Clicked(self, button, down)
     end
 
 end
-
 
 function BUFFWATCHADDON_G.Buff_Clicked(self, button, down)
 
@@ -656,7 +629,7 @@ function BUFFWATCHADDON_G.Buff_Clicked(self, button, down)
                     _G[playerframe.."_Buff"..nextbuffid]:SetPoint(self:GetPoint());
                 end
 
-                if HideUnmonitored then
+                if BuffwatchPlayerConfig.HideUnmonitored then
                     if _G[playerframe.."_Lock"]:GetChecked() and next(BuffwatchPlayerBuffs[playername]["Buffs"], nil) == nil then
                         BUFFWATCHADDON.PositionPlayerFrame(playerid);
                     end
@@ -682,7 +655,6 @@ BUFFWATCHADDON.Debug("Attribute : Player="..UnitName(curr_buff:GetAttribute("uni
 end ]]
     end
 end
-
 
 function BUFFWATCHADDON_G.Buff_Tooltip(self)
 
@@ -713,7 +685,6 @@ function BUFFWATCHADDON_G.Buff_Tooltip(self)
     end
 
 end
-
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -768,6 +739,7 @@ end
 -- Config changes :
 --  7.02 - Added versioning for config, Renamed HideOmniCC to HideCooldownText, Added CooldownTextScale to player config
 --  7.03 - Added versioning for player config, Moved CooldownTextScale to config
+--  8.10 - Added HideUnmonitored and Minimized to player config
 function BUFFWATCHADDON.VersionCheck()
 
     if BuffwatchConfig.Version == BUFFWATCHADDON.VERSION then
@@ -785,13 +757,7 @@ function BUFFWATCHADDON.VersionCheck()
         
         end
         
-        -- pre 7.03
-        if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "7.02" then 
-
-            if BuffwatchConfig.CooldownTextScale == nil then
-                BuffwatchConfig.CooldownTextScale = BUFFWATCHADDON.DEFAULTS.CooldownTextScale;
-            end    
-        end
+        BUFFWATCHADDON.CopyDefaults(BUFFWATCHADDON.DEFAULTS, BuffwatchConfig);
        
         BuffwatchConfig.Version = BUFFWATCHADDON.VERSION;
 
@@ -804,12 +770,13 @@ function BUFFWATCHADDON.VersionCheck()
         if BuffwatchPlayerConfig.Version == "7.02" then
             BuffwatchPlayerConfig.CooldownTextScale = nil;
         end
+        
+        BUFFWATCHADDON.CopyDefaults(BUFFWATCHADDON.PLAYER_DEFAULTS, BuffwatchPlayerConfig);
     
         BuffwatchPlayerConfig.Version = BUFFWATCHADDON.VERSION;
     end
     
 end
-
 
 -- Setup basic list of possible UNIT_IDs
 function BUFFWATCHADDON.Set_UNIT_IDs(forced)
@@ -893,7 +860,6 @@ function BUFFWATCHADDON.Set_UNIT_IDs(forced)
     BUFFWATCHADDON.GetPlayerInfo();
 
 end
-
 
 --[[ Get details of each player we find in the UNIT_IDs list
 
@@ -1109,7 +1075,6 @@ function BUFFWATCHADDON.GetPlayerInfo()
 
 end
 
-
 function BUFFWATCHADDON.PositionAllPlayerFrames()
 
     BUFFWATCHADDON.GetPlayerSortOrder();
@@ -1119,7 +1084,6 @@ function BUFFWATCHADDON.PositionAllPlayerFrames()
     end
 
 end
-
 
 function BUFFWATCHADDON.PositionPlayerFrame(playerid)
 
@@ -1161,7 +1125,7 @@ function BUFFWATCHADDON.PositionPlayerFrame(playerid)
     k, playerdata = BUFFWATCHADDON.GetPlayerFramePosition(playerid);
 
     -- Insert frame into new order if it should be visible (ie. hide it if it is locked with no buffs and HideUnmonitored is set)
-    if k and (not HideUnmonitored or (next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) or not _G["BuffwatchFrame_PlayerFrame"..playerid.."_Lock"]:GetChecked()) then
+    if k and (not BuffwatchPlayerConfig.HideUnmonitored or (next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) or not _G["BuffwatchFrame_PlayerFrame"..playerid.."_Lock"]:GetChecked()) then
 
         -- Insert back into current order in new position
         table.insert(Current_Order, k,  playerdata);
@@ -1211,7 +1175,6 @@ function BUFFWATCHADDON.PositionPlayerFrame(playerid)
 
 end
 
-
 function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
 
     local hiddencount = 0;
@@ -1220,7 +1183,7 @@ function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
 
     for k, v in ipairs(Player_Order) do
 
-        if HideUnmonitored then
+        if BuffwatchPlayerConfig.HideUnmonitored then
 
             -- Adjust final player count, if any frames are hidden
             if _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked() and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
@@ -1240,11 +1203,10 @@ function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
 
 end
 
-
 function BUFFWATCHADDON.GetPlayerSortOrder()
 
-    -- Only bother to sort player frames if we can see them
-    if not minimized then
+    -- Only bother to sort player frames if we can see them, but always sort during the initial addon setup
+    if not BuffwatchPlayerConfig.Minimized or initialSetupComplete == false then
 
         --Player_Order = { };
         Player_Order = table.wipe(Player_Order);
@@ -1311,7 +1273,6 @@ function BUFFWATCHADDON.GetPlayerSortOrder()
 
 end
 
-
 function BUFFWATCHADDON.GetAllBuffs()
 
     for k, v in pairs(Player_Info) do
@@ -1321,7 +1282,6 @@ function BUFFWATCHADDON.GetAllBuffs()
     BUFFWATCHADDON.ResizeWindow();
 
 end
-
 
 function BUFFWATCHADDON.Player_GetBuffs(v)
 
@@ -1538,7 +1498,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                                 PlaySound("igQuestFailed");
                             end
 
---                            if minimized then
+--                            if BuffwatchPlayerConfig.Minimized then
 --                                Buffwatch_HeaderText:SetTextColor(1, 0, 0);
 --                            end
 
@@ -1567,7 +1527,6 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
 
 end
 
-
 -- Set buff button alignment based on longest player name
 function BUFFWATCHADDON.SetBuffAlignment()
 
@@ -1590,7 +1549,6 @@ function BUFFWATCHADDON.SetBuffAlignment()
     end
 
 end
-
 
 -- Setup buff list for the player based on our BuffwatchSaveBuffs list
 function BUFFWATCHADDON.Player_LoadBuffs(v)
@@ -1691,6 +1649,49 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
 
 end
 
+function BUFFWATCHADDON.SetMinimized(self, minimized)
+
+    if self == nil then
+        self = _G["BuffwatchFrame_MinimizeButton"];
+    end
+
+    if minimized then
+        BuffwatchFrame_PlayerFrame:Hide();
+        BuffwatchFrame_LockAll:Disable();
+        self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Max");
+        GameTooltip:SetText("Max");
+    else
+        BuffwatchFrame_PlayerFrame:Show();
+        BuffwatchFrame_LockAll:Enable();
+        self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Min");
+        GameTooltip:SetText("Min");
+        -- Do a refresh
+        BUFFWATCHADDON.GetPlayerInfo();
+        BUFFWATCHADDON.GetAllBuffs();
+    end
+
+    BUFFWATCHADDON.ResizeWindow();
+    
+end
+
+function BUFFWATCHADDON.HideUnmonitored(self, hidden)
+
+    if self == nil then
+        self = _G["BuffwatchFrame_HideButton"];
+    end
+    
+    if hidden == true then
+        self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Show");
+        GameTooltip:SetText("Show All");
+    else
+        self:SetNormalTexture("Interface\\AddOns\\Buffwatch\\MinimizeButton-Hide");
+        GameTooltip:SetText("Hide Unmonitored");
+    end
+
+    BUFFWATCHADDON.PositionAllPlayerFrames();
+    BUFFWATCHADDON.ResizeWindow();
+
+end
 
 function BUFFWATCHADDON.ResizeWindow()
 
@@ -1698,11 +1699,11 @@ function BUFFWATCHADDON.ResizeWindow()
 
         local x, y = BUFFWATCHADDON.GetPoint(BuffwatchFrame, BUFFWATCHADDON.ANCHORPOINT_DROPDOWN_MAP[BuffwatchPlayerConfig.AnchorPoint]);
 
-        if not minimized then
+        if not BuffwatchPlayerConfig.Minimized then
 
             local len, width;
 
-            if HideUnmonitored == false then
+            if BuffwatchPlayerConfig.HideUnmonitored == false then
                 BuffwatchFrame:SetHeight(24 + (#Player_Order * 18));
             else
 
@@ -1804,7 +1805,6 @@ function BUFFWATCHADDON.Add_InCombat_Events(value)
 
 end
 
-
 -- Combat lockdown is over, process any queued events
 function BUFFWATCHADDON.Process_InCombat_Events()
 
@@ -1838,7 +1838,6 @@ function BUFFWATCHADDON.Process_InCombat_Events()
 
 end
 
-
 function BUFFWATCHADDON_G.Toggle()
 
     if InCombatLockdown() then
@@ -1859,7 +1858,6 @@ function BUFFWATCHADDON_G.Toggle()
 
 end
 
-
 function BUFFWATCHADDON_G.OptionsToggle()
 
     -- Call twice to get around issue of correct panel not opening on first try
@@ -1868,7 +1866,6 @@ function BUFFWATCHADDON_G.OptionsToggle()
 
 end
 
-
 function BUFFWATCHADDON_G.ShowHelp()
 
     -- Call twice to get around issue of correct panel not opening on first try
@@ -1876,7 +1873,6 @@ function BUFFWATCHADDON_G.ShowHelp()
     InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
 
 end
-
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -1948,7 +1944,6 @@ function BUFFWATCHADDON.GetNextID(unitname)
 
 end
 
-
 function BUFFWATCHADDON.UnitHasBuff(unit, buff)
 
   local thisbuff, duration, expTime;
@@ -1970,7 +1965,6 @@ function BUFFWATCHADDON.UnitHasBuff(unit, buff)
   return 0;
 
 end
-
 
 function BUFFWATCHADDON.UnitHasDebuff(unit, buff)
 
@@ -1994,7 +1988,6 @@ function BUFFWATCHADDON.UnitHasDebuff(unit, buff)
 
 end
 
-
 function BUFFWATCHADDON.ColourAllNames()
 
     for k, v in pairs(Player_Info) do
@@ -2002,7 +1995,6 @@ function BUFFWATCHADDON.ColourAllNames()
     end
 
 end
-
 
 function BUFFWATCHADDON.Player_ColourName(v)
 
@@ -2058,7 +2050,6 @@ function BUFFWATCHADDON.GetLen(arr)
 
     return len;
 end
-
 
 function BUFFWATCHADDON.GetPoint(frame, point)
 
@@ -2145,6 +2136,21 @@ function BUFFWATCHADDON.Wait(delay, func, ...)
     return true;
 end
 
+function BUFFWATCHADDON.CopyDefaults(from, to)
+	if not from then return { } end
+	if not to then to = { } end
+    
+	for k, v in pairs(from) do
+		if type(v) == "table" then
+			to[k] = BUFFWATCHADDON.CopyDefaults(v, to[k]);
+		elseif type(v) ~= type(to[k]) then
+			to[k] = v;
+		end
+	end
+    
+	return to;
+end
+
 function BUFFWATCHADDON.Print(msg, R, G, B)
 
     if R == nil then
@@ -2155,7 +2161,6 @@ function BUFFWATCHADDON.Print(msg, R, G, B)
 
 end
 
-
 function BUFFWATCHADDON.Debug(msg, R, G, B)
 
     if BuffwatchConfig.debug == true then
@@ -2163,7 +2168,6 @@ function BUFFWATCHADDON.Debug(msg, R, G, B)
     end
 
 end
-
 
 -- for debugging
 --[[
@@ -2206,6 +2210,12 @@ end
 function BUFFWATCHADDON_G.GetBuffwatchConfig()
 
     return BuffwatchConfig;
+
+end
+
+function BUFFWATCHADDON_G.GetBuffwatchPlayerConfig()
+
+    return BuffwatchPlayerConfig;
 
 end
 
