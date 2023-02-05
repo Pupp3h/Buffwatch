@@ -1,12 +1,12 @@
 BW_TTIP_ALPHA = "Sets the transparency of the Buffwatch window";
 BW_TTIP_ANCHORPOINT = "Determines which direction the window expands when resizing";
-BW_TTIP_HIDEOMNICC = "Hide OmniCC text overlays";
+BW_TTIP_COOLDOWNTEXTSCALE = "Sets the scale of the cooldown text";
+BW_TTIP_HIDECOOLDOWNTEXT = "Hide cooldown text overlays";
 BW_TTIP_MODE = "Selects which players to show";
 BW_TTIP_PLAYEXPIREDSOUND = "Plays a sound if buffs have started to expire";
 BW_TTIP_SCALE = "Sets the scale of the Buffwatch window";
 BW_TTIP_SHOWALLFORPLAYER = "Always show all buffs for this player";
 BW_TTIP_SHOWCASTABLEBUFFS = "Only show buffs you can cast on other players";
---BW_TTIP_SHOWCASTABLEBUFFS = "This option is disabled until Blizzard fix their API";
 BW_TTIP_SHOWDEBUFFS = "Show debuffs";
 BW_TTIP_SHOWDISPELLDEBUFFS = "Only show debuffs you can dispell";
 BW_TTIP_SHOWEXPIREDWARNING = "Shows a warning if buffs have started to expire";
@@ -108,7 +108,6 @@ function Buffwatch_Options_Init()
     UIDropDownMenu_SetText(Buffwatch_Options_AnchorPoint, BuffwatchPlayerConfig.AnchorPoint);
 
     Buffwatch_Options_ShowPets:SetChecked(BuffwatchPlayerConfig.ShowPets);
-    Buffwatch_Options_ShowPets_OnClick(Buffwatch_Options_ShowPets);
 
     Buffwatch_Options_ShowOnlyMine:SetChecked(BuffwatchPlayerConfig.ShowOnlyMine);
     Buffwatch_Options_ShowOnlyMine_OnClick(Buffwatch_Options_ShowOnlyMine, true);
@@ -117,7 +116,6 @@ function Buffwatch_Options_Init()
     Buffwatch_Options_ShowOnlyCastableBuffs_OnClick(Buffwatch_Options_ShowOnlyCastableBuffs, true);
 
     Buffwatch_Options_ShowAllForPlayer:SetChecked(BuffwatchPlayerConfig.ShowAllForPlayer);
-    Buffwatch_Options_ShowAllForPlayer_OnClick(Buffwatch_Options_ShowAllForPlayer, true);
 
 --    Buffwatch_Options_ShowExpiredWarning:SetChecked(BuffwatchConfig.ExpiredWarning);
 --    Buffwatch_Options_PlayExpiredSound:SetChecked(BuffwatchConfig.ExpiredSound);
@@ -125,16 +123,13 @@ function Buffwatch_Options_Init()
     Buffwatch_Options_ShowSpirals:SetChecked(BuffwatchConfig.Spirals);
     Buffwatch_Options_ShowSpirals_OnClick(Buffwatch_Options_ShowSpirals, true);
 
-    Buffwatch_Options_HideOmniCC:SetChecked(BuffwatchConfig.HideOmniCC);
-    if (not OmniCC) then
-        Buffwatch_Options_HideOmniCC:Hide();
-    else
-    	Buffwatch_Options_HideOmniCC:Show();
-    end
-    Buffwatch_Options_HideOmniCC_OnClick(Buffwatch_Options_HideOmniCC, true);
+    Buffwatch_Options_HideCooldownText:SetChecked(BuffwatchConfig.HideCooldownText);
 
     Buffwatch_Options_Alpha:SetValue(BuffwatchConfig.Alpha);
+    
     Buffwatch_Options_Scale:SetValue(BuffwatchPlayerConfig.Scale);
+    
+    Buffwatch_Options_CooldownTextScale:SetValue(BuffwatchPlayerConfig.CooldownTextScale);
 
     if (framePositioned == true) then
         Buffwatch_GetAllBuffs();
@@ -256,30 +251,24 @@ function Buffwatch_Options_ShowOnlyCastableBuffs_OnClick(self, suppressRefresh)
 
 end
 
-function Buffwatch_Options_ShowAllForPlayer_OnClick(self, suppressRefresh)
+function Buffwatch_Options_ShowAllForPlayer_OnClick(self)
     if (self:GetChecked()) then
         BuffwatchPlayerConfig.ShowAllForPlayer = true;
     else
         BuffwatchPlayerConfig.ShowAllForPlayer = false;
     end
-
-    if (suppressRefresh ~= true) then
-        Buffwatch_GetAllBuffs();
-    end
+    
+    Buffwatch_GetAllBuffs();
 
 end
 
 function Buffwatch_Options_ShowSpirals_OnClick(self, suppressRefresh)
     if (self:GetChecked()) then
         BuffwatchConfig.Spirals = true;
-        if (OmniCC) then
-            Buffwatch_EnableCheckbox(Buffwatch_Options_HideOmniCC);
-        end
+        Buffwatch_EnableCheckbox(Buffwatch_Options_HideCooldownText);
     else
         BuffwatchConfig.Spirals = false;
-        if (OmniCC) then
-            Buffwatch_DisableCheckbox(Buffwatch_Options_HideOmniCC);
-        end
+        Buffwatch_DisableCheckbox(Buffwatch_Options_HideCooldownText);
     end
 
     if (suppressRefresh ~= true) then
@@ -288,19 +277,17 @@ function Buffwatch_Options_ShowSpirals_OnClick(self, suppressRefresh)
 
 end
 
-function Buffwatch_Options_HideOmniCC_OnClick(self, suppressRefresh)
+function Buffwatch_Options_HideCooldownText_OnClick(self)
     if (self:GetChecked()) then
-        BuffwatchConfig.HideOmniCC = true;
+        BuffwatchConfig.HideCooldownText = true;
     else
-        BuffwatchConfig.HideOmniCC = false;
+        BuffwatchConfig.HideCooldownText = false;
     end
 
-    if (suppressRefresh ~= true) then
-        Buffwatch_GetAllBuffs();
-    end
+    Buffwatch_GetAllBuffs();
 
     if (OmniCC) then
-        OmniCC.Timer:ForAllShown('UpdateShown');
+        OmniCC.Timer:ForAll('UpdateShown');
     end
 
 end
