@@ -250,7 +250,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_HideOmniCC" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_HideCooldownText" inherits="OptionsCheckButtonTemplate">
                 <Size>
                     <AbsDimension x="20" y="20"/>
                 </Size>
@@ -263,21 +263,21 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Hide OmniCC text");
+                        getglobal(self:GetName().."Text"):SetText("Hide Cooldown text");
                     </OnLoad>
                     <OnShow>
-                        if (BuffwatchConfig.Spirals == true and OmniCC) then
+                        if (BuffwatchConfig.Spirals == true) then
                             Buffwatch_EnableCheckbox(self);
                         else
                             Buffwatch_DisableCheckbox(self);
                         end
                     </OnShow>
                     <OnClick>
-                        Buffwatch_Options_HideOmniCC_OnClick(self);
+                        Buffwatch_Options_HideCooldownText_OnClick(self);
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BW_TTIP_HIDEOMNICC);
+                        GameTooltip:SetText(BW_TTIP_HIDECOOLDOWNTEXT);
                     </OnEnter>
                     <OnLeave>
                         GameTooltip:Hide();
@@ -349,7 +349,7 @@
                     <AbsDimension x="220" y="16"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_HideOmniCC" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="$parent_HideCooldownText" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="0" y="-20" />
                         </Offset>
@@ -410,6 +410,39 @@
                 </Scripts>
             </Slider>
 
+            <Slider name="$parent_CooldownTextScale" inherits="OptionsSliderTemplate">
+                <Size>
+                    <AbsDimension x="220" y="16"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_Scale" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-20" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        _G[self:GetName().."High"]:SetText("100%");
+                        _G[self:GetName().."Low"]:SetText("20%");
+                        self:SetMinMaxValues(0.2,1.0);
+                        self:SetValueStep(0.01);
+                    </OnLoad>
+                    <OnValueChanged>
+                        BuffwatchPlayerConfig.CooldownTextScale = self:GetValue();
+                        Buffwatch_Set_CooldownTextScale();
+                        _G[self:GetName().."Text"]:SetText("Cooldown Text Scale ("..string.format("%.0f%%", BuffwatchPlayerConfig.CooldownTextScale * 100)..")");
+                    </OnValueChanged>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BW_TTIP_COOLDOWNTEXTSCALE);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Slider>
+			
         </Frames>
 
         <Scripts>

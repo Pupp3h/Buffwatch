@@ -4,7 +4,11 @@
 
 -- Changes
 --
--- Initial fixes for BfA 8.0 compatibility
+-- Added support for blizzards own cooldown text
+-- Added scaling for cooldown text
+-- Added versioning for config
+-- Resolved issue of missing unit(s) if they hadn't yet fully loaded into the world
+-- Fixed hide cooldown text checkbox error when OmniCC is installed
 --
 
 -- ****************************************************************************
@@ -14,8 +18,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "8.00";
-BW_RELEASE_DATE = "8 Jun 2018";
+BW_VERSION = "8.01";
+BW_RELEASE_DATE = "14 Jun 2018";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -45,18 +49,20 @@ BW_ANCHORPOINT_DROPDOWN_MAP = {
 };
 
 BW_DEFAULTS = {
-    Alpha          = 0.5,
-    ExpiredSound   = false,
-    ExpiredWarning = true,
-    HideOmniCC     = true,
-    Spirals        = true,
-    debug          = false
+    Alpha            = 0.5,
+    ExpiredSound     = false,
+    ExpiredWarning   = true,
+    HideCooldownText = true,
+    Spirals          = true,
+    Version          = BW_VERSION,
+    debug            = false
 }
 
 BW_PLAYER_DEFAULTS = {
     AnchorPoint             = "Auto",
     AnchorX                 = 200,
     AnchorY                 = 200,
+    CooldownTextScale       = 0.45,
     Mode                    = BW_MODE_DROPDOWN_LIST[3],
     Scale                   = 1.0,
     ShowOnlyMine            = false,
@@ -223,7 +229,7 @@ end
 function Buffwatch_OnEvent(self, event, ...)
 --[[
 if event ~= "ADDON_LOADED" or select(1, ...) == "Buffwatch" then
-    Buffwatch_Debug("Event vars for "..event..":");
+    Buffwatch_Debug("Event "..event.." fired. Vars :");
     for i = 1, select("#", ...) do
         Buffwatch_Debug("i="..i..", v="..select(i, ...));
     end
@@ -232,7 +238,30 @@ end
 
     -- Set default values, if unset
     if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
+    
+        -- Check version and setup config
+        if BuffwatchConfig.Version == BW_VERSION then
+            -- Nothing to do
+        elseif BuffwatchConfig.Version == nil then
+
+            -- Update old setting name
+            if BuffwatchConfig.HideOmniCC ~= nil then
+                BuffwatchConfig.HideCooldownText = BuffwatchConfig.HideOmniCC;
+                BuffwatchConfig.HideOmniCC = nil;
+            end
+            
+            if BuffwatchPlayerConfig.CooldownTextScale == nil then
+                BuffwatchPlayerConfig.CooldownTextScale = BW_PLAYER_DEFAULTS.CooldownTextScale;
+            end
+           
+            BuffwatchConfig.Version = BW_VERSION;
+
+        -- elseif BuffwatchConfig.Version == "8.01" then -- for future
+        
+        end
+        
         Buffwatch_Options_Init();
+        
     end
 
     if event == "PLAYER_LOGIN" then
@@ -739,6 +768,7 @@ function Buffwatch_GetPlayerInfo()
 
         local getnewalignpos = false;
         local positionframe;
+        local foundunknownunit = false;
 
         for i = 1, #UNIT_IDs do
 
@@ -857,7 +887,9 @@ function Buffwatch_GetPlayerInfo()
                 end
 
                 Player_Info[unitname]["Checked"] = 1;
-
+                
+            elseif (unitname == "Unknown") then
+                foundunknownunit = true;
             end
 
             if positionframe == true then
@@ -866,7 +898,13 @@ function Buffwatch_GetPlayerInfo()
             end
 
         end
-
+        
+        -- A unit wasn't fully loaded into the game yet, make a callback to try again
+        if foundunknownunit == true then
+--Buffwatch_Debug("Found an unknown unit, firing off a refresh in 5sec...");        
+            Buffwatch_wait(5, Buffwatch_GetPlayerInfo);
+        end
+        
         -- Remove players that are no longer in the group
         for k, v in pairs(Player_Info) do
 
@@ -1187,10 +1225,10 @@ function Buffwatch_Player_GetBuffs(v)
 
                         local cooldown = CreateFrame("Cooldown", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown",
                             curr_buff, "CooldownFrameTemplate");
-                        curr_buff.cooldown = cooldown;
                         cooldown:SetAllPoints(curr_buff);
                         cooldown:SetReverse(true);
-
+                        cooldown:SetScale(BuffwatchPlayerConfig.CooldownTextScale);
+                        curr_buff.cooldown = cooldown;
                     end
 
                     if lastshownid == 0 then
@@ -1218,7 +1256,8 @@ function Buffwatch_Player_GetBuffs(v)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --Buffwatch_Debug("GetBuffs1: BuffID="..i..", expTime="..expTime..",duration="..duration)
                         curr_buff.cooldown:Show();
-                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
+                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideCooldownText; -- For OmniCC text
+                        curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
                         curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
 --Buffwatch_Debug("GetBuffs1: BuffID="..i..", Hiding")
@@ -1355,7 +1394,8 @@ function Buffwatch_Player_GetBuffs(v)
                     if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --Buffwatch_Debug("GetBuffs2: BuffID="..i..", expTime="..expTime..",duration="..duration)
                         curr_buff.cooldown:Show();
-                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
+                        curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideCooldownText; -- For OmniCC text
+                        curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
                         curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                     else
 --Buffwatch_Debug("GetBuffs2: BuffID="..i..", Hiding")
@@ -1432,10 +1472,10 @@ function Buffwatch_Player_LoadBuffs(v)
 
                     local cooldown = CreateFrame("Cooldown", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown",
                         curr_buff, "CooldownFrameTemplate");
-                    curr_buff.cooldown = cooldown;
                     cooldown:SetAllPoints(curr_buff);
                     cooldown:SetReverse(true);
-
+                    cooldown:SetScale(BuffwatchPlayerConfig.CooldownTextScale);
+                    curr_buff.cooldown = cooldown;
                 end
 
                 if i == 1 then
@@ -1457,7 +1497,8 @@ function Buffwatch_Player_LoadBuffs(v)
                 if BuffwatchConfig.Spirals == true and duration and duration > 0 then
 --Buffwatch_Debug("LoadBuffs: BuffID="..i..", expTime="..expTime..",duration="..duration)
                     curr_buff.cooldown:Show();
-                    curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideOmniCC;
+                    curr_buff.cooldown.noCooldownCount = BuffwatchConfig.HideCooldownText; -- For OmniCC text
+                    curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
                     curr_buff.cooldown:SetCooldown(expTime - duration, duration);
                 else
 --Buffwatch_Debug("LoadBuffs: BuffID="..i..", Hiding")
@@ -1844,6 +1885,24 @@ function Buffwatch_Player_ColourName(v)
 
 end
 
+function Buffwatch_Set_CooldownTextScale()
+
+    for k, v in pairs(Player_Info) do
+        
+        for i = 1, 32 do
+
+            local cooldown = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown"];
+			
+            if cooldown then
+                cooldown:SetScale(BuffwatchPlayerConfig.CooldownTextScale);
+            end
+			
+        end
+		
+    end
+
+end
+
 
 function GetLen(arr)
 
@@ -1897,6 +1956,53 @@ function Buffwatch_SetPoint(frame, point, x, y)
 
     end
 
+end
+
+local waitTable = {};
+local waitFrame = nil;
+
+function Buffwatch_wait(delay, func, ...)
+
+    if (type(delay) ~= "number" or type(func) ~= "function") then
+        return false;
+    end
+    
+    if (waitFrame == nil) then
+        waitFrame = CreateFrame("Frame", "BuffwatchWaitFrame", UIParent);
+        waitFrame:SetScript("onUpdate", function (self, elapse)
+            local count = #waitTable;
+            local i = 1;
+            while (i <= count) do
+                local waitRecord = tremove(waitTable, i);
+                local d = tremove(waitRecord, 1);
+                local f = tremove(waitRecord, 1);
+                local p = tremove(waitRecord, 1);
+                
+                if (d > elapse) then
+                    tinsert(waitTable, i, {d-elapse, f, p});
+                    i = i + 1;
+                else
+                    count = count - 1;
+                    f(unpack(p));
+                end
+            end
+        end);
+    end
+    
+    -- Check if this has already been added
+    local skipinsert = false;
+    for _, v in pairs(waitTable) do
+        if v[2] == func then
+            skipinsert = true;
+            break;
+        end
+    end
+    
+    if (not skipinsert) then
+        tinsert(waitTable, {delay, func, {...}});
+    end
+    
+    return true;
 end
 
 function Buffwatch_Print(msg, R, G, B)
@@ -1971,7 +2077,7 @@ end
 
 function GetBuffwatchSaveBuffs()
 
-    return BuffwatchPlayerBuffs;
+    return BuffwatchSaveBuffs;
 
 end
 
