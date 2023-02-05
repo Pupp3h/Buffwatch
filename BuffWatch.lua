@@ -3,12 +3,16 @@
 -- **
 
 -- Changes
---
+-- 
+-- 7.02
 -- Added support for blizzards own cooldown text
 -- Added scaling for cooldown text
 -- Added versioning for config
 -- Resolved issue of missing unit(s) if they hadn't yet fully loaded into the world
 -- Fixed hide cooldown text checkbox error when OmniCC is installed
+--
+-- 7.03
+-- Fix for handling new config options over multiple chars
 --
 
 -- ****************************************************************************
@@ -18,7 +22,7 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "7.02";
+BW_VERSION = "7.03";
 BW_RELEASE_DATE = "14 Jun 2018";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
@@ -49,20 +53,20 @@ BW_ANCHORPOINT_DROPDOWN_MAP = {
 };
 
 BW_DEFAULTS = {
-    Alpha            = 0.5,
-    ExpiredSound     = false,
-    ExpiredWarning   = true,
-    HideCooldownText = true,
-    Spirals          = true,
-    Version          = BW_VERSION,
-    debug            = false
+    Alpha             = 0.5,
+    CooldownTextScale = 0.45,    
+    ExpiredSound      = false,
+    ExpiredWarning    = true,
+    HideCooldownText  = true,
+    Spirals           = true,
+    Version           = BW_VERSION,
+    debug             = false
 }
 
 BW_PLAYER_DEFAULTS = {
     AnchorPoint             = "Auto",
     AnchorX                 = 200,
     AnchorY                 = 200,
-    CooldownTextScale       = 0.45,
     Mode                    = BW_MODE_DROPDOWN_LIST[3],
     Scale                   = 1.0,
     ShowOnlyMine            = false,
@@ -70,6 +74,7 @@ BW_PLAYER_DEFAULTS = {
     ShowAllForPlayer        = false,
     ShowPets                = true,
     SortOrder               = BW_SORTORDER_DROPDOWN_LIST[1],
+    Version                 = BW_VERSION,
     WindowLocked            = false
 }
 
@@ -222,7 +227,7 @@ function Buffwatch_OnLoad(self)
       table.insert(GroupBuffs.Group[v], k);
 
     end
-	
+
 end
 
 
@@ -242,22 +247,38 @@ end
         -- Check version and setup config
         if BuffwatchConfig.Version == BW_VERSION then
             -- Nothing to do
-        elseif BuffwatchConfig.Version == nil then
+        else
+        
+            if BuffwatchConfig.Version == nil then
 
-            -- Update old setting name
-            if BuffwatchConfig.HideOmniCC ~= nil then
-                BuffwatchConfig.HideCooldownText = BuffwatchConfig.HideOmniCC;
-                BuffwatchConfig.HideOmniCC = nil;
-            end
+                -- Update old setting name
+                if BuffwatchConfig.HideOmniCC ~= nil then
+                    BuffwatchConfig.HideCooldownText = BuffwatchConfig.HideOmniCC;
+                    BuffwatchConfig.HideOmniCC = nil;
+                end
             
-            if BuffwatchPlayerConfig.CooldownTextScale == nil then
-                BuffwatchPlayerConfig.CooldownTextScale = BW_PLAYER_DEFAULTS.CooldownTextScale;
+            end
+                
+            if BuffwatchConfig.Version == nil or BuffwatchConfig.Version == "7.02" then 
+
+                if BuffwatchConfig.CooldownTextScale == nil then
+                    BuffwatchConfig.CooldownTextScale = BW_DEFAULTS.CooldownTextScale;
+                end    
             end
            
             BuffwatchConfig.Version = BW_VERSION;
 
-        -- elseif BuffwatchConfig.Version == "7.02" then -- for future
+        end
         
+        if BuffwatchPlayerConfig.Version == BW_VERSION then
+            -- Nothing to do
+        else
+        
+            if BuffwatchPlayerConfig.Version == "7.02" then
+                BuffwatchPlayerConfig.CooldownTextScale = nil;
+            end
+        
+            BuffwatchPlayerConfig.Version = BW_VERSION;
         end
         
         Buffwatch_Options_Init();
@@ -1231,7 +1252,7 @@ function Buffwatch_Player_GetBuffs(v)
                             curr_buff, "CooldownFrameTemplate");
                         cooldown:SetAllPoints(curr_buff);
                         cooldown:SetReverse(true);
-                        cooldown:SetScale(BuffwatchPlayerConfig.CooldownTextScale);
+                        cooldown:SetScale(BuffwatchConfig.CooldownTextScale);
                         curr_buff.cooldown = cooldown;
                     end
 
@@ -1481,7 +1502,7 @@ function Buffwatch_Player_LoadBuffs(v)
                         curr_buff, "CooldownFrameTemplate");
                     cooldown:SetAllPoints(curr_buff);
                     cooldown:SetReverse(true);
-                    cooldown:SetScale(BuffwatchPlayerConfig.CooldownTextScale);
+                    cooldown:SetScale(BuffwatchConfig.CooldownTextScale);
                     curr_buff.cooldown = cooldown;
                 end
 
@@ -1919,7 +1940,7 @@ function Buffwatch_Set_CooldownTextScale()
             local cooldown = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."_Cooldown"];
 			
             if cooldown then
-                cooldown:SetScale(BuffwatchPlayerConfig.CooldownTextScale);
+                cooldown:SetScale(BuffwatchConfig.CooldownTextScale);
             end
 			
         end
@@ -1927,7 +1948,6 @@ function Buffwatch_Set_CooldownTextScale()
     end
 
 end
-
 
 function GetLen(arr)
 

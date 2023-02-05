@@ -429,9 +429,9 @@
                         self:SetValueStep(0.01);
                     </OnLoad>
                     <OnValueChanged>
-                        BuffwatchPlayerConfig.CooldownTextScale = self:GetValue();
+                        BuffwatchConfig.CooldownTextScale = self:GetValue();
                         Buffwatch_Set_CooldownTextScale();
-                        _G[self:GetName().."Text"]:SetText("Cooldown Text Scale ("..string.format("%.0f%%", BuffwatchPlayerConfig.CooldownTextScale * 100)..")");
+                        _G[self:GetName().."Text"]:SetText("Cooldown Text Scale ("..string.format("%.0f%%", BuffwatchConfig.CooldownTextScale * 100)..")");
                     </OnValueChanged>
                     <OnEnter>
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
