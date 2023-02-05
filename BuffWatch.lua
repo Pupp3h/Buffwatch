@@ -21,8 +21,8 @@
 
 -- Changes
 --
--- Updated Buff Groupings for 5.0.4
--- Fixed display in a party with raid mode selected
+-- Added Pandaren Flasks & Elixirs to Buff Groups
+-- Removed Paladin Seals from Buff Groups
 --
 
 -- ****************************************************************************
@@ -32,8 +32,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "5.01";
-BW_RELEASE_DATE = "30 Aug 2012";
+BW_VERSION = "5.02";
+BW_RELEASE_DATE = "5 Nov 2012";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -212,6 +212,11 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Flask of Titanic Strength"] = 14;
     GroupBuffs.Buff["Flask of the Draconic Mind"] = 14;
     GroupBuffs.Buff["Flask of the Winds"] = 14;
+    GroupBuffs.Buff["Flask of Spring Blossoms"] = 14;
+    GroupBuffs.Buff["Flask of the Warm Sun"] = 14;
+    GroupBuffs.Buff["Flask of Falling Leaves"] = 14;
+    GroupBuffs.Buff["Flask of the Earth"] = 14;
+    GroupBuffs.Buff["Flask of Winter's Bite"] = 14;    
 
     -- Lvl80 Battle Elixirs
     GroupBuffs.GroupName[15] = "Battle Elixirs"
@@ -236,6 +241,14 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Elixir of the Naga"] = 15;
     GroupBuffs.Buff["Ghost Elixir"] = 15;
 
+    -- Lvl90 Battle Elixirs
+    GroupBuffs.Buff["Mad Hozen Elixir"] = 15;
+    GroupBuffs.Buff["Elixir of the Rapids"] = 15;
+    GroupBuffs.Buff["Elixir of Peace"] = 15;
+    GroupBuffs.Buff["Elixir of Perfection"] = 15;
+    GroupBuffs.Buff["Monk's Elixir"] = 15;
+    GroupBuffs.Buff["Elixir of Weaponry"] = 15;
+    
     -- Lvl80 Guardian Elixirs
     GroupBuffs.GroupName[16] = "Guardian Elixirs"
     GroupBuffs.Buff["Mighty Defense"] = 16;
@@ -247,11 +260,9 @@ function Buffwatch_OnLoad(self)
     GroupBuffs.Buff["Elixir of Deep Earth"] = 16;
     GroupBuffs.Buff["Prismatic Elixir"] = 16;
 
-    GroupBuffs.GroupName[17] = "Seals"
-    GroupBuffs.Buff["Seal of Truth"] = 17;
-    GroupBuffs.Buff["Seal of Justice"] = 17;
-    GroupBuffs.Buff["Seal of Insight"] = 17;
-    GroupBuffs.Buff["Seal of Righteousness"] = 17;
+    -- Lvl90 Battle Elixirs
+    GroupBuffs.Buff["Mantid Elixir"] = 16;
+    GroupBuffs.Buff["Elixir of Mirrors"] = 16;
 
     GroupBuffs.Group = { };
 
