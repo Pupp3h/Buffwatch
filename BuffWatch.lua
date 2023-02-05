@@ -22,6 +22,9 @@
 --  https://github.com/tullamods/OmniCC/wiki/What-are-Groups%3F
 --  See Buffwatch++ description for more info
 
+-- 8.09
+-- ToC update
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -33,8 +36,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.08";
-BUFFWATCHADDON.RELEASE_DATE = "25 Oct 2018";
+BUFFWATCHADDON.VERSION = "8.09";
+BUFFWATCHADDON.RELEASE_DATE = "14 Dec 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
