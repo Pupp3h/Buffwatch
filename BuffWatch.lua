@@ -14,8 +14,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "5.05";
-BW_RELEASE_DATE = "16 Oct 2014";
+BW_VERSION = "5.06";
+BW_RELEASE_DATE = "11 Apr 2016";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
