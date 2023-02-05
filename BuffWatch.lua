@@ -21,8 +21,7 @@
 
 -- Changes
 --
--- Workaround for broken UnitAura function
--- Re-enabled Show Only Castable option
+-- ToC Update
 --
 
 -- ****************************************************************************
@@ -32,8 +31,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "4.04";
-BW_RELEASE_DATE = "12 July 2011";
+BW_VERSION = "4.05";
+BW_RELEASE_DATE = "17 Mar 2012";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
