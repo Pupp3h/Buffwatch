@@ -1,7 +1,7 @@
-## Interface: 40300
+## Interface: 50001
 ## Title: Buffwatch++
 ## Author: Pup
-## Version: 4.05
+## Version: 5.00
 ## Notes: Monitors Player/Party/Raid buffs of your choosing
 ## SavedVariables: BuffwatchConfig
 ## SavedVariablesPerCharacter: BuffwatchPlayerConfig, BuffwatchSaveBuffs

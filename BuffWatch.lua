@@ -21,7 +21,7 @@
 
 -- Changes
 --
--- ToC Update
+-- WoW v5.0.4 fixes
 --
 
 -- ****************************************************************************
@@ -31,8 +31,8 @@
 -- ****************************************************************************
 
 BW_ADDONNAME = "Buffwatch++";
-BW_VERSION = "4.05";
-BW_RELEASE_DATE = "17 Mar 2012";
+BW_VERSION = "5.00";
+BW_RELEASE_DATE = "29 Aug 2012";
 BW_HELPFRAMENAME = "Buffwatch Help";
 BW_MODE_DROPDOWN_LIST = {
     "Solo",
@@ -121,8 +121,7 @@ local debugchatframe = DEFAULT_CHAT_FRAME;  -- Frame to output debug messages to
 function Buffwatch_OnLoad(self)
 
     self:RegisterEvent("PLAYER_LOGIN");
-    self:RegisterEvent("PARTY_MEMBERS_CHANGED");
-    self:RegisterEvent("RAID_ROSTER_UPDATE");
+    self:RegisterEvent("GROUP_ROSTER_UPDATE");
     self:RegisterEvent("UNIT_PET");
     self:RegisterEvent("UNIT_AURA");
     self:RegisterEvent("ADDON_LOADED");
@@ -295,7 +294,7 @@ end
 
     if BuffwatchFrame_PlayerFrame:IsVisible() then
 
-        if event == "PLAYER_LOGIN" or event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE"
+        if event == "PLAYER_LOGIN" or event == "GROUP_ROSTER_UPDATE" 
             or (event == "UNIT_PET" and BuffwatchPlayerConfig.ShowPets == true) then
 
             Buffwatch_Set_UNIT_IDs();
@@ -708,7 +707,7 @@ function Buffwatch_Set_UNIT_IDs(forced)
 
     else
 
-        if GetNumRaidMembers() > 0 and BuffwatchPlayerConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
+        if GetNumGroupMembers() > 0 and BuffwatchPlayerConfig.Mode == BW_MODE_DROPDOWN_LIST[3] then  -- "Raid"
 
             if grouptype ~= "raid" or forced == true then
 
