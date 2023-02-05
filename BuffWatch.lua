@@ -17,6 +17,8 @@
 -- Fixed this player not un-greying when ressing
 -- Fixed greying of players when they join group or we login or reloadui
 -- Some performance optimisation for events that relate to specific UnitIDs
+-- 8.07b3
+-- Performance optimisation when trying to find player info for a specific UnitID
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -29,8 +31,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.07b2";
-BUFFWATCHADDON.RELEASE_DATE = "22 Oct 2018";
+BUFFWATCHADDON.VERSION = "8.07b3";
+BUFFWATCHADDON.RELEASE_DATE = "23 Oct 2018";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -98,7 +100,9 @@ local Player_Left = { };        -- Retained Player_Info for players that have le
 local Player_Order = { };       -- Sorted order of players
 local Current_Order = { };      -- Currently visible order of players
 local UNIT_IDs = { };           -- UnitIDs, based on grouptype and whether we want pets
-local UNIT_IDs_Keyed = { };     -- Same as above but keyed by UnitID
+local UNIT_IDs_Keyed = { };     -- Same as above but keyed by UnitID. Used to ensure we only check
+                                --  events for units we are interested in, and dont duplicate checks
+                                --  in cases such as when our target or focus is in the group
 local InCombat_Events = { };    -- Events that occur in combat lockdown, to sort out after combat
 local GroupBuffs = { };         -- Relationship list of buffs that can automatically replace each other
 local dropdowninfo = { };       -- Info for dropdown menu buttons
@@ -264,7 +268,7 @@ end
     if event == "ADDON_LOADED" and select(1, ...) == "Buffwatch" then
     
         -- Check version and setup config
-        BUFFWATCHADDON.VersionCheck();        
+        BUFFWATCHADDON:VersionCheck();        
         BUFFWATCHADDON:Options_Init();
         
     end
@@ -312,14 +316,11 @@ end
         elseif event == "UNIT_AURA" and UNIT_IDs_Keyed[select(1, ...)] ~= nil then
 
             -- Someone gained or lost a buff
-            for k, v in pairs(Player_Info) do
-
-                if select(1, ...) == v.UNIT_ID then
-                    BUFFWATCHADDON.Player_GetBuffs(v);
-                    BUFFWATCHADDON.ResizeWindow();
-                    break;
-                end
-
+            local player = Player_Info[UnitName(select(1, ...))];
+            
+            if player ~= nil then               
+                BUFFWATCHADDON.Player_GetBuffs(player);
+                BUFFWATCHADDON.ResizeWindow();
             end
 
         elseif event == "PLAYER_REGEN_ENABLED" then
@@ -363,28 +364,25 @@ end
             local unit = select(1, ...);
 
             if unit ~= "player" and UNIT_IDs_Keyed[unit] ~= nil then
-        
-                for k, v in pairs(Player_Info) do
-
-                    if select(1, ...) == v.UNIT_ID then
+            
+                local player = Player_Info[UnitName(unit)];
+                
+                if player ~= nil then
+                
+                    local DeadorDC = 0;
                     
-                        local DeadorDC = 0;
-                        
-                        if UnitIsDeadOrGhost(v.UNIT_ID) or UnitIsConnected(v.UNIT_ID) == false then
-                            DeadorDC = 1;
-                        end
+                    if UnitIsDeadOrGhost(player.UNIT_ID) or UnitIsConnected(player.UNIT_ID) == false then
+                        DeadorDC = 1;
+                    end
 
-                        if DeadorDC ~= v.DeadorDC then
-                            v.DeadorDC = DeadorDC;
-                            BUFFWATCHADDON.Player_ColourName(v);
-                            BUFFWATCHADDON.Player_GetBuffs(v);
-                        end
-                        
-                        break;
+                    if DeadorDC ~= player.DeadorDC then
+                        player.DeadorDC = DeadorDC;
+                        BUFFWATCHADDON.Player_ColourName(player);
+                        BUFFWATCHADDON.Player_GetBuffs(player);
                     end
 
                 end
-            
+
             end
 
         end
