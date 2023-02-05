@@ -129,7 +129,7 @@ function Buffwatch_Options_Init()
     
     Buffwatch_Options_Scale:SetValue(BuffwatchPlayerConfig.Scale);
     
-    Buffwatch_Options_CooldownTextScale:SetValue(BuffwatchPlayerConfig.CooldownTextScale);
+    Buffwatch_Options_CooldownTextScale:SetValue(BuffwatchConfig.CooldownTextScale);
 
     if (framePositioned == true) then
         Buffwatch_GetAllBuffs();
