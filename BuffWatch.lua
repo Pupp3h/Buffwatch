@@ -7,6 +7,9 @@
 -- ToC update to 90001
 -- Updated backdrop for 9.0
 
+-- 9.01
+-- ToC update to 90002
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -18,8 +21,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "9.00";
-BUFFWATCHADDON.RELEASE_DATE = "14 Oct 2020";
+BUFFWATCHADDON.VERSION = "9.01";
+BUFFWATCHADDON.RELEASE_DATE = "18 Nov 2020";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
