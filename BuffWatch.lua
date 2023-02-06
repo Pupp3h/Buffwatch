@@ -16,6 +16,9 @@
 -- 9.03
 -- ToC update to 90100
 
+-- 9.04
+-- ToC update to 90207
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -27,8 +30,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "9.03";
-BUFFWATCHADDON.RELEASE_DATE = "17 Aug 2021";
+BUFFWATCHADDON.VERSION = "9.04";
+BUFFWATCHADDON.RELEASE_DATE = "12 Sep 2022";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
