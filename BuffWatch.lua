@@ -3,21 +3,10 @@
 
 -- Changes
 --
--- 9.00
--- ToC update to 90001
--- Updated backdrop for 9.0
-
--- 9.01
--- ToC update to 90002
-
--- 9.02
--- Added checking for Temporary Weapon Enchants (Player only)
-
--- 9.03
--- ToC update to 90100
-
--- 9.04
--- ToC update to 90207
+-- 10.00
+-- ToC update to 100000
+-- Various updates for 10.0 changes
+-- Removed Help link from header menu
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -30,8 +19,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "9.04";
-BUFFWATCHADDON.RELEASE_DATE = "12 Sep 2022";
+BUFFWATCHADDON.VERSION = "10.00";
+BUFFWATCHADDON.RELEASE_DATE = "27 Oct 2022";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -512,9 +501,10 @@ function BUFFWATCHADDON.Buffwatch_HeaderDropDown_Initialize()
     dropdowninfo.func = BUFFWATCHADDON_G.OptionsToggle;
     UIDropDownMenu_AddButton(dropdowninfo);
 
-    dropdowninfo.text = "Help";
-    dropdowninfo.func = BUFFWATCHADDON_G.ShowHelp;
-    UIDropDownMenu_AddButton(dropdowninfo);
+-- Temp disabled as existing code won't open to it, maybe need to look at new Settings API in 10.0 to get it working again 
+--    dropdowninfo.text = "Help";
+--    dropdowninfo.func = BUFFWATCHADDON_G.ShowHelp;
+--    UIDropDownMenu_AddButton(dropdowninfo);
 
     dropdowninfo.text = "Close Buffwatch";
     dropdowninfo.func = BUFFWATCHADDON_G.Toggle;
@@ -722,8 +712,8 @@ local curr_buff = _G[playerframe.."_Buff"..buffid];
 
 BUFFWATCHADDON.Debug("Casting spell :");
 BUFFWATCHADDON.Debug("Array : Player="..playername..", Buff="..BuffwatchPlayerBuffs[playername]["Buffs"][buffid]["Buff"]);
-BUFFWATCHADDON.Debug("Attribute : Player="..UnitName(curr_buff:GetAttribute("unit1"))..", Buff="..curr_buff:GetAttribute("spell1"));
-end ]]
+BUFFWATCHADDON.Debug("Attribute : Unit="..curr_buff:GetAttribute("unit1")..", Player="..UnitName(curr_buff:GetAttribute("unit1"))..", Buff="..curr_buff:GetAttribute("spell1"));
+end]]
     end
 end
 
@@ -2267,17 +2257,17 @@ end
 
 function BUFFWATCHADDON_G.OptionsToggle()
 
-    -- Call twice to get around issue of correct panel not opening on first try
     InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
-    InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
+    -- Used to call twice to get around issue of correct panel not opening on first try, left here in case needed again
+    --InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
 
 end
 
 function BUFFWATCHADDON_G.ShowHelp()
 
-    -- Call twice to get around issue of correct panel not opening on first try
     InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
-    InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
+    -- Used to call twice to get around issue of correct panel not opening on first try, left here in case needed again
+    --InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
 
 end
 

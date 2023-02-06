@@ -115,7 +115,7 @@
                 </Scripts>
             </Frame>
 
-            <CheckButton name="$parent_Visible" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_Visible" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_AnchorPointLabel" relativePoint="BOTTOMLEFT">
                         <Offset>
@@ -140,7 +140,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_ShowPets" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_Visible" relativePoint="BOTTOMLEFT">
                         <Offset>
@@ -165,7 +165,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_ShowOnlyMine" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_ShowOnlyMine" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowPets" relativePoint="BOTTOMLEFT">
                         <Offset>
@@ -190,7 +190,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_ShowOnlyCastableBuffs" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_ShowOnlyCastableBuffs" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyMine" relativePoint="BOTTOMLEFT">
                         <Offset>
@@ -215,7 +215,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_ShowAllForPlayer" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_ShowAllForPlayer" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Size>
                     <AbsDimension x="20" y="20"/>
                 </Size>
@@ -250,7 +250,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_ShowSpirals" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_ShowSpirals" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_ShowAllForPlayer" relativePoint="BOTTOMLEFT">
                         <Offset>
@@ -275,7 +275,7 @@
                 </Scripts>
             </CheckButton>
 
-            <CheckButton name="$parent_HideCooldownText" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_HideCooldownText" inherits="InterfaceOptionsCheckButtonTemplate">
                 <Size>
                     <AbsDimension x="20" y="20"/>
                 </Size>

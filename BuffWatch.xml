@@ -210,7 +210,7 @@
     </Layers>
     <Scripts>
       <OnLoad>
-        self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+        self:RegisterForClicks("AnyUp", "AnyDown");
       </OnLoad>
     </Scripts>
   </Button>
@@ -226,7 +226,7 @@
     </Layers>
     <Scripts>
       <OnLoad>
-        self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+        self:RegisterForClicks("AnyUp", "AnyDown");
       </OnLoad>
       <PostClick>
         BUFFWATCHADDON_G.Buff_Clicked(self, button, down);
@@ -251,7 +251,7 @@
     </Layers>
     <Scripts>
       <OnLoad>
-        self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+        self:RegisterForClicks("AnyUp", "AnyDown");
       </OnLoad>
       <PostClick>
         BUFFWATCHADDON_G.TemporaryEnchant_Clicked(self, button, down);
