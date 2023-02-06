@@ -3,34 +3,9 @@
 
 -- Changes
 --
--- 8.12
--- Fixed checking buff events after combat
--- Updated buff limit from 32 to 255
--- Optimisation when checking buffs
--- Fixed toggling Hide cooldown text when OmniCC is installed
-
--- 8.13
--- Hotfix for buff frames not hiding correctly
-
--- 8.14
--- Fixed UnitBuff filtering that was removed in v4.03
---  (Some buffs that were incorrectly shown with 'Show only castable buffs'
---   will no longer show with this option selected)
--- Added caster name to tooltips
--- Optimisations for checking locked buffs and when looking for group buffs
--- Added special rules for buffs that should only match to the original caster
--- Updated Mage Armor group buff names
-
--- 8.15
--- ToC update to 80205
-
--- 8.16
--- Persist visible state between logins
--- Added checkbox to hide or show Buffwatch in options panel
--- Some minor code cleanup and optimisations
-
--- 8.17
--- ToC update to 80300
+-- 9.00
+-- ToC update to 90001
+-- Updated backdrop for 9.0
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -43,8 +18,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.17";
-BUFFWATCHADDON.RELEASE_DATE = "16 Jan 2020";
+BUFFWATCHADDON.VERSION = "9.00";
+BUFFWATCHADDON.RELEASE_DATE = "14 Oct 2020";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -100,6 +75,16 @@ BUFFWATCHADDON.PLAYER_DEFAULTS = {
     Version                 = BUFFWATCHADDON.VERSION,
     Visible                 = true,
     WindowLocked            = false
+};
+
+BUFFWATCHADDON_G.BACKDROPSTYLE = {
+	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = true,
+	tileEdge = true,
+	tileSize = 12,
+	edgeSize = 12,
+	insets = { left = 2, right = 2, top = 2, bottom = 2 },
 };
 
 local grouptype;                -- solo, raid or party

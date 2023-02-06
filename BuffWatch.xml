@@ -16,21 +16,11 @@
 
     <Frames>
 
-      <Frame name="$parent_Background" SetAllPoints="true">
-
-        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
-          <BackgroundInsets>
-            <AbsInset left="2" right="2" top="2" bottom="2" />
-          </BackgroundInsets>
-          <TileSize>
-            <AbsValue val="12" />
-          </TileSize>
-          <EdgeSize>
-            <AbsValue val="12" />
-          </EdgeSize>
-          <BorderColor r="0" g="0" b="0" />
-        </Backdrop>
-
+      <Frame name="$parent_Background" SetAllPoints="true" inherits="BackdropTemplate">
+        <KeyValues>
+          <KeyValue key="backdropInfo" value="BUFFWATCHADDON_G.BACKDROPSTYLE" type="global"/>
+          <KeyValue key="backdropBorderColor" value="BLACK_FONT_COLOR" type="global"/>
+        </KeyValues>
       </Frame>
 
       <CheckButton name="$parent_LockAll" inherits="UICheckButtonTemplate">
