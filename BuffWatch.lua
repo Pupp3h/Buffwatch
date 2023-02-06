@@ -29,6 +29,9 @@
 -- Added checkbox to hide or show Buffwatch in options panel
 -- Some minor code cleanup and optimisations
 
+-- 8.17
+-- ToC update to 80300
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -40,8 +43,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.16";
-BUFFWATCHADDON.RELEASE_DATE = "23 Nov 2019";
+BUFFWATCHADDON.VERSION = "8.17";
+BUFFWATCHADDON.RELEASE_DATE = "16 Jan 2020";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -1152,7 +1155,7 @@ function BUFFWATCHADDON.PositionPlayerFrame(playerid)
         or next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) then
 
         -- Insert back into current order in new position
-        table.insert(Current_Order, fpos,  playerdata);
+        table.insert(Current_Order, fpos, playerdata);
 
         -- Reattach into player frames in new position
         if fpos == 1 then
