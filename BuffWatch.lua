@@ -24,6 +24,11 @@
 -- 8.15
 -- ToC update to 80205
 
+-- 8.16
+-- Persist visible state between logins
+-- Added checkbox to hide or show Buffwatch in options panel
+-- Some minor code cleanup and optimisations
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -35,8 +40,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "8.15";
-BUFFWATCHADDON.RELEASE_DATE = "25 Sep 2019";
+BUFFWATCHADDON.VERSION = "8.16";
+BUFFWATCHADDON.RELEASE_DATE = "23 Nov 2019";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -90,6 +95,7 @@ BUFFWATCHADDON.PLAYER_DEFAULTS = {
     ShowPets                = true,
     SortOrder               = BUFFWATCHADDON.SORTORDER_DROPDOWN_LIST[1],
     Version                 = BUFFWATCHADDON.VERSION,
+    Visible                 = true,
     WindowLocked            = false
 };
 
@@ -248,11 +254,11 @@ function BUFFWATCHADDON_G.OnLoad(self)
     --  which we can iterate through to check for a replacement
     for k, v in pairs(GroupBuffs.Buff) do
 
-      if GroupBuffs.Group[v] == nil then
-        GroupBuffs.Group[v] = { };
-      end
+        if GroupBuffs.Group[v] == nil then
+            GroupBuffs.Group[v] = { };
+        end
 
-      table.insert(GroupBuffs.Group[v], k);
+        table.insert(GroupBuffs.Group[v], k);
 
     end
 
@@ -290,8 +296,8 @@ end
         for i = 1, 10 do
             windowname = GetChatWindowInfo(i);
             if windowname and windowname == "BWDebug" then
-            debugchatframe = _G["ChatFrame"..i];
-            break;
+                debugchatframe = _G["ChatFrame"..i];
+                break;
             end
         end
     end
@@ -321,6 +327,10 @@ end
                 BUFFWATCHADDON.HideUnmonitored(nil, BuffwatchPlayerConfig.HideUnmonitored);
                 BUFFWATCHADDON.SetMinimized(nil, BuffwatchPlayerConfig.Minimized);
 
+                if BuffwatchPlayerConfig.Visible == false then
+                    BuffwatchFrame:Hide();
+                end
+
                 initialSetupComplete = true;
             end
 
@@ -338,7 +348,7 @@ end
 
             -- We have come out of combat, remove combat restrictions and process any pending events
             for _, v in pairs(Player_Info) do
-                local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
+                local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"];
                 curr_lock:Enable();
             end
 
@@ -348,7 +358,7 @@ end
 
             -- We have entered combat, enforce combat restrictions
             for _, v in pairs(Player_Info) do
-                local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
+                local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"];
                 curr_lock:Disable();
             end
 
@@ -401,7 +411,7 @@ function BUFFWATCHADDON_G.Set_AllChecks(checked)
     -- Toggle all checkboxes on or off
     for _, v in pairs(Player_Info) do
 
-        local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"]
+        local curr_lock = _G["BuffwatchFrame_PlayerFrame" .. v.ID .. "_Lock"];
 
         if curr_lock:GetChecked() ~= checked then
             curr_lock:SetChecked(checked);
@@ -597,9 +607,10 @@ function BUFFWATCHADDON_G.Buff_Clicked(self, button, down)
 
                 -- Hide all but the clicked buff and adjust positions
                 for i = 1, maxBuffCount do
-                    if _G[playerframe.."_Buff"..i] then
+                    local curr_buff = _G[playerframe.."_Buff"..i];
+                    if curr_buff then
                         if i ~= buffid then
-                            _G[playerframe.."_Buff"..i]:Hide();
+                            curr_buff:Hide();
                             BuffwatchPlayerBuffs[playername]["Buffs"][i] = nil;
                         else
                             self:SetPoint("TOPLEFT", playerframe.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
@@ -624,8 +635,9 @@ function BUFFWATCHADDON_G.Buff_Clicked(self, button, down)
 
                 -- Re-anchor any following buff
                 if nextbuffid then
-                    _G[playerframe.."_Buff"..nextbuffid]:ClearAllPoints();
-                    _G[playerframe.."_Buff"..nextbuffid]:SetPoint(self:GetPoint());
+                    local curr_buff = _G[playerframe.."_Buff"..nextbuffid];
+                    curr_buff:ClearAllPoints();
+                    curr_buff:SetPoint(self:GetPoint());
                 end
 
                 if BuffwatchPlayerConfig.HideUnmonitored then
@@ -671,7 +683,7 @@ function BUFFWATCHADDON_G.Buff_Tooltip(self)
 
         -- If the buff isn't present, create a tooltip
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
-        GameTooltip:SetText(buff, 1, 1, 0);
+        GameTooltip:SetText(buff, 1, 0.82, 0);
 
     end
 
@@ -881,6 +893,7 @@ end
     IsPet - true if a pet (pets are sorted last, and can be hidden)
     SubGroup - 1 if in party, or 1-8 if in raid (Used for sorting)
     DeadorDC - For greying out player frames if dead or disconnected
+    IsUnitPlayer - Is this our player
     Checked - Used only in this function to determine players that are no longer present
 ]]--
 function BUFFWATCHADDON.GetPlayerInfo()
@@ -956,6 +969,10 @@ function BUFFWATCHADDON.GetPlayerInfo()
                     end
 
                     Player_Info[unitname]["UNIT_ID"] = UNIT_IDs[i];
+                    if UnitIsUnit(UNIT_IDs[i], "player") then
+                        Player_Info[unitname]["IsUnitPlayer"] = true;
+                    end
+
                     -- Setup left and right click actions on the name button
                     namebutton:SetAttribute("type1", "target");
                     namebutton:SetAttribute("type2", "assist");
@@ -966,7 +983,6 @@ function BUFFWATCHADDON.GetPlayerInfo()
                     if not BuffwatchPlayerBuffs[unitname] then
                         BuffwatchPlayerBuffs[unitname] = { };
                         BuffwatchPlayerBuffs[unitname]["Buffs"] = { };
-
                         BUFFWATCHADDON.Player_LoadBuffs(Player_Info[unitname]);
                         BUFFWATCHADDON.Player_GetBuffs(Player_Info[unitname]);
                     end
@@ -1132,7 +1148,8 @@ function BUFFWATCHADDON.PositionPlayerFrame(playerid)
     fpos, playerdata = BUFFWATCHADDON.GetPlayerFramePosition(playerid);
 
     -- Insert frame into new order if it should be visible (ie. hide it if it is locked with no buffs and HideUnmonitored is set)
-    if fpos and (not BuffwatchPlayerConfig.HideUnmonitored or (next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) or not _G["BuffwatchFrame_PlayerFrame"..playerid.."_Lock"]:GetChecked()) then
+    if fpos and (not BuffwatchPlayerConfig.HideUnmonitored or not _G["BuffwatchFrame_PlayerFrame"..playerid.."_Lock"]:GetChecked()
+        or next(BuffwatchPlayerBuffs[playerdata.Name]["Buffs"], nil) ~= nil) then
 
         -- Insert back into current order in new position
         table.insert(Current_Order, fpos,  playerdata);
@@ -1193,7 +1210,9 @@ function BUFFWATCHADDON.GetPlayerFramePosition(playerid)
         if BuffwatchPlayerConfig.HideUnmonitored then
 
             -- Adjust final player count, if any frames are hidden
-            if _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked() and (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil) then
+            if _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked()
+                and next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) == nil then
+
                 hiddencount = hiddencount + 1;
             end
 
@@ -1308,7 +1327,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
 
             -- Setup buff filter
             local showbuffs = "";
-            if BuffwatchPlayerConfig.ShowAllForPlayer == false or UnitIsUnit(v.UNIT_ID, "player") == false then
+            if BuffwatchPlayerConfig.ShowAllForPlayer == false or not v.IsUnitPlayer then
                 if BuffwatchPlayerConfig.ShowCastableBuffs == true then
                     if BuffwatchPlayerConfig.ShowOnlyMine == true then
                         showbuffs = "RAID|PLAYER";
@@ -1320,7 +1339,7 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                 end
             end
 
-            local lastshownid = 0;
+            local lastbuffid = 0;
 
             for i = 1, maxBuffCount do
 
@@ -1336,13 +1355,13 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                         curr_buff = BUFFWATCHADDON.CreateBuffButton(v.ID, i);
                     end
 
-                    if lastshownid == 0 then
+                    if lastbuffid == 0 then
                         curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Name", "TOPLEFT", maxnamewidth + 5, 4);
                     else
-                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..lastshownid, "TOPRIGHT");
+                        curr_buff:SetPoint("TOPLEFT", "BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..lastbuffid, "TOPRIGHT");
                     end
 
-                    lastshownid = i;
+                    lastbuffid = i;
 
                     local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
@@ -1397,9 +1416,10 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
 
                 local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
                 if not curr_buff then break; end
-                local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
                 if curr_buff:IsShown() then
+
+                    local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
                     -- Set buff icon to grey if player is dead or offline
                     if v.DeadorDC == 1 then
@@ -1436,56 +1456,48 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
                                 for _, val in ipairs(GroupBuffs.Group[buffGroup]) do
 
                                   if val ~= buff then
-                                    -- note: may need to start passing castername in here if we end up
-                                    --       having Special Buffs that also have replacements
-                                    buffid = BUFFWATCHADDON.FindBuff(playerbuffs, val);
+
+                                    buffid = BUFFWATCHADDON.FindBuff(playerbuffs, val, castername);
 
                                     if buffid ~= 0 then
-
                                       buff = val;
                                       break;
-
                                     end
 
                                   end
 
                                 end
 
-                                if buffid ~= 0 then
+                            end
 
-                                     -- Set buff icon to its normal colour as it has an automatic replacement
-                                    curr_buff_icon:SetVertexColor(1,1,1);
+                            if buffid ~= 0 then
 
-                                    if InCombatLockdown() then
+                                -- Set buff icon to its normal colour as it has an automatic replacement
+                                curr_buff_icon:SetVertexColor(1,1,1);
 
-                                        BUFFWATCHADDON.Add_InCombat_Events({"GetBuffs", v});
+                                if InCombatLockdown() then
 
-                                    else
-
-                                        -- Replace buff button with auto replacement
-                                        local icon = playerbuffs[buffid]["Icon"];
-                                        curr_buff_icon:SetTexture(icon);
-                                        BuffwatchPlayerBuffs[v.Name]["Buffs"][i] = { };
-                                        BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Buff"] = buff;
-                                        BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Icon"] = icon;
-
-                                        -- Setup action for this buff button
-                                        curr_buff:SetAttribute("type", "spell");
-                                        curr_buff:SetAttribute("unit1", v.UNIT_ID);
-                                        curr_buff:SetAttribute("spell1", buff);
-
-                                    end
-
-                                    local caster = playerbuffs[buffid]["Caster"];
-                                    if caster then
-                                        BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["CasterName"] = UnitName(caster);
-                                    end
+                                    BUFFWATCHADDON.Add_InCombat_Events({"GetBuffs", v});
 
                                 else
 
-                                    -- Possible replacement buff isn't on player, so set icon to red
-                                    curr_buff_icon:SetVertexColor(1,0,0);
+                                    -- Replace buff button with auto replacement
+                                    local icon = playerbuffs[buffid]["Icon"];
+                                    curr_buff_icon:SetTexture(icon);
+                                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i] = { };
+                                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Buff"] = buff;
+                                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["Icon"] = icon;
 
+                                    -- Setup action for this buff button
+                                    curr_buff:SetAttribute("type", "spell");
+                                    curr_buff:SetAttribute("unit1", v.UNIT_ID);
+                                    curr_buff:SetAttribute("spell1", buff);
+
+                                end
+
+                                local caster = playerbuffs[buffid]["Caster"];
+                                if caster then
+                                    BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["CasterName"] = UnitName(caster);
                                 end
 
                             else
@@ -1594,8 +1606,6 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
 
         BuffwatchPlayerBuffs[v.Name]["Buffs"] = BuffwatchSaveBuffs[v.Name]["Buffs"];
 
-        local playerbuffs = BUFFWATCHADDON.GetPlayerBuffs(v.UNIT_ID);
-
         for i = 1, maxBuffCount do
 
             local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
@@ -1615,7 +1625,7 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
 
                 local curr_buff_icon = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i.."Icon"];
 
-                curr_buff_icon:SetVertexColor(1,1,1);
+                curr_buff_icon:SetVertexColor(0.4,0.4,0.4);
                 curr_buff_icon:SetTexture(BuffwatchSaveBuffs[v.Name]["Buffs"][i]["Icon"]);
                 curr_buff:Show();
 
@@ -1624,35 +1634,6 @@ function BUFFWATCHADDON.Player_LoadBuffs(v)
                 curr_buff:SetAttribute("type", "spell");
                 curr_buff:SetAttribute("unit1", v.UNIT_ID);
                 curr_buff:SetAttribute("spell1", buff);
---BUFFWATCHADDON.Debug("LoadBuffs: Player="..v.Name)
---BUFFWATCHADDON.Debug("LoadBuffs: Buff="..buff)
-
-                local castername;
-                if SpecialBuffs[buff] == 1 then
-                    castername = BuffwatchSaveBuffs[v.Name]["Buffs"][i]["CasterName"] or "";
-                end
-
-                local buffid = BUFFWATCHADDON.FindBuff(playerbuffs, buff, castername);
-
-                if buffid ~= 0 then
-                    local caster = playerbuffs[buffid]["Caster"];
-
-                    if caster then
-                        BuffwatchPlayerBuffs[v.Name]["Buffs"][i]["CasterName"] = UnitName(caster);
-                    end
-
-                    local duration = playerbuffs[buffid]["Duration"];
-                    if BuffwatchConfig.Spirals == true and duration and duration > 0 then
-                        local expTime = playerbuffs[buffid]["ExpTime"];
---BUFFWATCHADDON.Debug("LoadBuffs: BuffID="..i..", expTime="..expTime..",duration="..duration)
-                        curr_buff.cooldown:Show();
-                        curr_buff.cooldown:SetHideCountdownNumbers(BuffwatchConfig.HideCooldownText); -- For Blizz text
-                        curr_buff.cooldown:SetCooldown(expTime - duration, duration);
-                    else
---BUFFWATCHADDON.Debug("LoadBuffs: BuffID="..i..", Hiding")
-                        curr_buff.cooldown:Hide();
-                    end
-                end
 
             else
 
@@ -1759,7 +1740,9 @@ function BUFFWATCHADDON.ResizeWindow()
 
                 -- Only count player frames that are not hidden
                 for _, v in pairs(Player_Info) do
-                    if not _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked() or (next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) ~= nil) then
+                    if not _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Lock"]:GetChecked()
+                        or next(BuffwatchPlayerBuffs[v.Name]["Buffs"], nil) ~= nil then
+
                         players = players + 1;
                     end
                 end
@@ -1839,7 +1822,6 @@ function BUFFWATCHADDON.Add_InCombat_Events(value)
             elseif value[1] == "GetPlayerInfo" then
                 found = true;
                 break;
-
             end
 
         end
@@ -1894,12 +1876,14 @@ function BUFFWATCHADDON_G.Toggle()
 
     else
 
-        if BuffwatchFrame:IsVisible() then
-            BuffwatchFrame:Hide();
-            BUFFWATCHADDON.Print("Type '/bfw toggle' to show the Buffwatch window again.");
-        else
+        BuffwatchPlayerConfig.Visible = not BuffwatchPlayerConfig.Visible;
+
+        if BuffwatchPlayerConfig.Visible then
             BUFFWATCHADDON.Set_UNIT_IDs();
             BuffwatchFrame:Show();
+        else
+            BuffwatchFrame:Hide();
+            BUFFWATCHADDON.Print("Type '/bfw toggle' or go to the interface options to show the Buffwatch window again.");
         end
 
     end
@@ -2183,8 +2167,8 @@ function BUFFWATCHADDON.Wait(delay, func, ...)
 end
 
 function BUFFWATCHADDON.CopyDefaults(from, to)
-    if not from then return { } end
-    if not to then to = { } end
+    if not from then return { }; end
+    if not to then to = { }; end
 
     for k, v in pairs(from) do
         if type(v) == "table" then
@@ -2286,27 +2270,9 @@ function BUFFWATCHADDON_G.GetPlayer_Order()
 
 end
 
-function BUFFWATCHADDON_G.GetBuffwatchConfig()
-
-    return BuffwatchConfig;
-
-end
-
-function BUFFWATCHADDON_G.GetBuffwatchPlayerConfig()
-
-    return BuffwatchPlayerConfig;
-
-end
-
 function BUFFWATCHADDON_G.GetBuffwatchPlayerBuffs()
 
     return BuffwatchPlayerBuffs;
-
-end
-
-function BUFFWATCHADDON_G.GetBuffwatchSaveBuffs()
-
-    return BuffwatchSaveBuffs;
 
 end
 
@@ -2321,4 +2287,4 @@ function BUFFWATCHADDON_G.GetGroupBuffs()
     return GroupBuffs;
 
 end
-]]
+--]]

@@ -1,7 +1,7 @@
 ## Interface: 80205
 ## Title: Buffwatch++
 ## Author: Pup
-## Version: 8.15
+## Version: 8.16
 ## Notes: Monitors Player/Party/Raid buffs of your choosing
 ## SavedVariables: BuffwatchConfig
 ## SavedVariablesPerCharacter: BuffwatchPlayerConfig, BuffwatchSaveBuffs

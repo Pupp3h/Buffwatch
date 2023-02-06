@@ -115,11 +115,36 @@
                 </Scripts>
             </Frame>
 
-            <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parent_Visible" inherits="OptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent_AnchorPointLabel" relativePoint="BOTTOMLEFT">
                         <Offset>
                             <AbsDimension x="-5" y="-30"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        _G[self:GetName().."Text"]:SetText("Visible");
+                    </OnLoad>
+                    <OnClick>
+                        BUFFWATCHADDON_G.Toggle();
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.VISIBLE);
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </CheckButton>
+
+            <CheckButton name="$parent_ShowPets" inherits="OptionsCheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent_Visible" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -263,7 +288,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(self:GetName().."Text"):SetText("Hide cooldown text");
+                        _G[self:GetName().."Text"]:SetText("Hide cooldown text");
                     </OnLoad>
                     <OnShow>
                         if (BuffwatchConfig.Spirals == true) then
@@ -396,7 +421,7 @@
 
     <Frame name="Buffwatch_HelpFrame">
         <Frames>
-    
+
             <ScrollFrame name="$parentScrollFrame" inherits="UIPanelScrollFrameTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" x="0" y="-4"/>
@@ -412,7 +437,7 @@
                         </Layers>
                     </Frame>
                 </ScrollChild>
-            </ScrollFrame>        
+            </ScrollFrame>
 
         </Frames>
 
