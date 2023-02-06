@@ -1,10 +1,10 @@
 ## Interface: 90002
 ## Title: Buffwatch++
 ## Author: Pup
-## Version: 9.01
+## Version: 9.02
 ## Notes: Monitors Player/Party/Raid buffs of your choosing
 ## SavedVariables: BuffwatchConfig
-## SavedVariablesPerCharacter: BuffwatchPlayerConfig, BuffwatchSaveBuffs
+## SavedVariablesPerCharacter: BuffwatchPlayerConfig, BuffwatchSaveTempEnch, BuffwatchSaveBuffs
 Buffwatch.lua
 Buffwatch.xml
 BuffwatchOptions.lua

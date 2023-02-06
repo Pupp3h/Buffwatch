@@ -240,6 +240,31 @@
     </Scripts>
   </Button>
 
+  <Button name="Buffwatch_TemporaryEnchant_Template" inherits="SecureActionButtonTemplate" hidden="false" virtual="true">
+    <Size>
+      <AbsDimension x="18" y="18"/>
+    </Size>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture name="$parentIcon"/>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad>
+        self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+      </OnLoad>
+      <PostClick>
+        BUFFWATCHADDON_G.TemporaryEnchant_Clicked(self, button, down);
+      </PostClick>
+      <OnEnter>
+        BUFFWATCHADDON_G.TemporaryEnchant_Tooltip(self, motion);
+      </OnEnter>
+      <OnLeave>
+        GameTooltip:Hide();
+      </OnLeave>
+    </Scripts>
+  </Button>
+
   <Frame name="Buffwatch_Player_Template" hidden="false" virtual="true">
     <Size>
       <AbsDimension x="100" y="18"/>
