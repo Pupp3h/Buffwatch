@@ -13,6 +13,9 @@
 -- 9.02
 -- Added checking for Temporary Weapon Enchants (Player only)
 
+-- 9.03
+-- ToC update to 90100
+
 -- ****************************************************************************
 -- **                                                                        **
 -- **  Variables                                                             **
@@ -24,8 +27,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "9.02";
-BUFFWATCHADDON.RELEASE_DATE = "4 Dec 2020";
+BUFFWATCHADDON.VERSION = "9.03";
+BUFFWATCHADDON.RELEASE_DATE = "17 Aug 2021";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
