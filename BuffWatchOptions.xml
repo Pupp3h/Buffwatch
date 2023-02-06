@@ -285,65 +285,6 @@
                 </Scripts>
             </CheckButton>
 
-<!--
-            <CheckButton name="$parent_ShowExpiredWarning" inherits="OptionsCheckButtonTemplate">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowOnlyDispellDebuffs" relativePoint="BOTTOMLEFT">
-                        <Offset>
-                            <AbsDimension x="0" y="0"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-                <Scripts>
-                    <OnLoad>
-                        _G[self:GetName().."Text"]:SetText("Show Expired Warning");
-                    </OnLoad>
-                    <OnClick>
-                        if (self:GetChecked()) then
-                            BuffwatchConfig.ExpiredWarning = true;
-                        else
-                            BuffwatchConfig.ExpiredWarning = false;
-                        end
-                    </OnClick>
-                    <OnEnter>
-                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.SHOWEXPIREDWARNING);
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
-            </CheckButton>
-
-            <CheckButton name="$parent_PlayExpiredSound" inherits="OptionsCheckButtonTemplate">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent_ShowExpiredWarning" relativePoint="BOTTOMLEFT">
-                        <Offset>
-                            <AbsDimension x="0" y="0"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-                <Scripts>
-                    <OnLoad>
-                        _G[self:GetName().."Text"]:SetText("Play Expired Sound");
-                    </OnLoad>
-                    <OnClick>
-                        if (self:GetChecked()) then
-                            BuffwatchConfig.ExpiredSound = true;
-                        else
-                            BuffwatchConfig.ExpiredSound = false;
-                        end
-                    </OnClick>
-                    <OnEnter>
-                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                        GameTooltip:SetText(BUFFWATCHADDON_G.TOOLTIP.PLAYEXPIREDSOUND);
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
-            </CheckButton>
--->
             <Slider name="$parent_Alpha" inherits="OptionsSliderTemplate">
                 <Size>
                     <AbsDimension x="220" y="16"/>
