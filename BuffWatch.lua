@@ -7,6 +7,9 @@
 -- ToC update to 100000
 -- Various updates for 10.0 changes
 -- Removed Help link from header menu
+--
+-- 10.01
+-- ToC update to 100007
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -19,8 +22,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "10.00";
-BUFFWATCHADDON.RELEASE_DATE = "27 Oct 2022";
+BUFFWATCHADDON.VERSION = "10.01";
+BUFFWATCHADDON.RELEASE_DATE = "27 Mar 2023";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
