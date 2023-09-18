@@ -16,6 +16,9 @@
 --
 -- 10.03
 -- ToC update to 100105
+--
+-- 10.04
+-- ToC update to 100107
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -28,8 +31,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "10.03";
-BUFFWATCHADDON.RELEASE_DATE = "23 Jul 2023";
+BUFFWATCHADDON.VERSION = "10.04";
+BUFFWATCHADDON.RELEASE_DATE = "18 Sep 2023";
 BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
