@@ -411,12 +411,6 @@
 
         </Frames>
 
-        <Scripts>
-            <OnLoad>
-                BUFFWATCHADDON_G.Options_OnLoad(self);
-            </OnLoad>
-        </Scripts>
-
     </Frame>
 
     <Frame name="Buffwatch_HelpFrame">
@@ -432,7 +426,8 @@
                         <Size x="500" y="500"/>
                         <Layers>
                             <Layer level="ARTWORK">
-                                <FontString name="Buffwatch_HelpFrameText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"/>
+                                <FontString name="Buffwatch_HelpFrameText_Title" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"/>
+                                <FontString name="Buffwatch_HelpFrameText_Body" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"/>
                             </Layer>
                         </Layers>
                     </Frame>

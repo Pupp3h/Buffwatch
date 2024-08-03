@@ -3,25 +3,10 @@
 
 -- Changes
 --
--- 10.00
--- ToC update to 100000
--- Various updates for 10.0 changes
--- Removed Help link from header menu
---
--- 10.01
--- ToC update to 100007
---
--- 10.02
--- ToC update to 100100
---
--- 10.03
--- ToC update to 100105
---
--- 10.04
--- ToC update to 100107
+-- 11.00
+-- ToC update to 110002
+-- Fixes to options panel and help text
 
--- 10.05
--- ToC update to 100207
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -34,9 +19,9 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "10.05";
-BUFFWATCHADDON.RELEASE_DATE = "23 May 2024";
-BUFFWATCHADDON.HELPFRAMENAME = "Buffwatch Help";
+BUFFWATCHADDON.VERSION = "11.00";
+BUFFWATCHADDON.RELEASE_DATE = "3 Aug 2024";
+BUFFWATCHADDON.HELPFRAMENAME = "Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
     "Party",
@@ -2272,17 +2257,13 @@ end
 
 function BUFFWATCHADDON_G.OptionsToggle()
 
-    InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
-    -- Used to call twice to get around issue of correct panel not opening on first try, left here in case needed again
-    --InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.NAME);
+    Settings.OpenToCategory(BUFFWATCHADDON.NAME);
 
 end
 
 function BUFFWATCHADDON_G.ShowHelp()
 
-    InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
-    -- Used to call twice to get around issue of correct panel not opening on first try, left here in case needed again
-    --InterfaceOptionsFrame_OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
+    Settings.OpenToCategory(BUFFWATCHADDON.HELPFRAMENAME);
 
 end
 

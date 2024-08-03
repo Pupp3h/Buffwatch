@@ -7,7 +7,7 @@ ignore = {
 	"11./SLASH_.*", -- Setting an undefined (Slash handler) global variable
 	"11./BuffwatchFrame.*",
 	"11./Buffwatch_Options_.*",
-	"11./Buffwatch_HelpFrameText",
+	"11./Buffwatch_HelpFrameText.*",
 }
 
 globals = {
@@ -24,8 +24,6 @@ globals = {
 	-- FrameXML
 	"DEFAULT_CHAT_FRAME",
 	"GameTooltip",
-	"InterfaceOptions_AddCategory",
-	"InterfaceOptionsFrame_OpenToCategory",
 	"SlashCmdList",
 	"UIDropDownMenu_AddButton",
 	"UIDropDownMenu_Initialize",
@@ -53,6 +51,7 @@ globals = {
 	"GetWeaponEnchantInfo",
 	"InCombatLockdown",
 	"IsAltKeyDown",
+	"Settings",
 	"table.wipe",
 	"tinsert",
 	"tremove",
