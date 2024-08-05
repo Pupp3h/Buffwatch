@@ -7,6 +7,9 @@
 -- ToC update to 110002
 -- Fixes to options panel and help text
 
+-- 11.01
+-- Fixes for War Within api changes
+
 
 -- ****************************************************************************
 -- **                                                                        **
@@ -19,8 +22,8 @@ local addonName, BUFFWATCHADDON = ...;
 BUFFWATCHADDON_G = { };
 
 BUFFWATCHADDON.NAME = "Buffwatch++";
-BUFFWATCHADDON.VERSION = "11.00";
-BUFFWATCHADDON.RELEASE_DATE = "3 Aug 2024";
+BUFFWATCHADDON.VERSION = "11.01";
+BUFFWATCHADDON.RELEASE_DATE = "5 Aug 2024";
 BUFFWATCHADDON.HELPFRAMENAME = "Help";
 BUFFWATCHADDON.MODE_DROPDOWN_LIST = {
     "Solo",
@@ -1496,12 +1499,18 @@ function BUFFWATCHADDON.Player_GetBuffs(v)
 
             for i = 1, maxBuffCount do
 
-                local buff, icon, _, _, duration, expTime, caster = UnitBuff(v.UNIT_ID, i, showbuffs);
+                local aura = C_UnitAuras.GetBuffDataByIndex(v.UNIT_ID, i, showbuffs);
                 local curr_buff = _G["BuffwatchFrame_PlayerFrame"..v.ID.."_Buff"..i];
 
-                if not buff and not curr_buff then break; end
+                if not aura and not curr_buff then break; end
 
-                if buff then
+                if aura then
+
+                    local buff = aura.name;
+                    local icon = aura.icon;
+                    local duration = aura.duration;
+                    local expTime = aura.expirationTime;
+                    local caster = aura.sourceUnit;
 
                     -- Check if buff button has been created
                     if curr_buff == nil then
@@ -1833,16 +1842,16 @@ function BUFFWATCHADDON.GetPlayerBuffs(unitid)
 
     for i = 1, maxBuffCount do
 
-        local buff, icon, _, _, duration, expTime, caster = UnitBuff(unitid, i);
+        local aura = C_UnitAuras.GetBuffDataByIndex(unitid, i);
 
-        if not buff then break; end
+        if not aura then break; end
 
         playerbuffs[i] = { };
-        playerbuffs[i]["Buff"] = buff;
-        playerbuffs[i]["Icon"] = icon;
-        playerbuffs[i]["Duration"] = duration;
-        playerbuffs[i]["ExpTime"] = expTime;
-        playerbuffs[i]["Caster"] = caster;
+        playerbuffs[i]["Buff"] = aura.name;
+        playerbuffs[i]["Icon"] = aura.icon;
+        playerbuffs[i]["Duration"] = aura.duration;
+        playerbuffs[i]["ExpTime"] = aura.expirationTime;
+        playerbuffs[i]["Caster"] = aura.sourceUnit;
 
     end
 
@@ -2357,15 +2366,15 @@ end
 
 function BUFFWATCHADDON.UnitHasBuff(unit, buff)
 
-    local thisbuff;
+    local aura;
 
     for i = 1, maxBuffCount do
 
-        thisbuff = UnitBuff(unit, i);
+        aura = C_UnitAuras.GetBuffDataByIndex(unit, i);
 
-        if not thisbuff then break; end
+        if not aura then break; end
 
-        if thisbuff == buff then
+        if aura.name == buff then
 
             return i;
 
